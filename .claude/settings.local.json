@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(open ~/Documents/tradiepilot/.claude)",
+      "Bash(open ~/Desktop/claude/tradiepilot/.claude)"
+    ]
+  }
+}

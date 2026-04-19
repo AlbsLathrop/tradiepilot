@@ -70,23 +70,23 @@ export default async function HomePage() {
           <div className="grid grid-cols-3 gap-2">
             <Link
               href="/jobs/new"
-              className="flex flex-col items-center justify-center bg-[#1F2937] rounded-lg p-4 border border-slate-700 shadow-sm hover:border-[#06B6D4] transition min-h-[80px]"
+              className="flex flex-col items-center justify-center bg-[#06B6D4] text-[#111827] rounded-lg p-4 border border-slate-700 shadow-sm hover:bg-[#0891B2] transition min-h-12"
             >
-              <Briefcase size={20} className="text-[#06B6D4] mb-2" />
-              <span className="text-xs font-semibold text-[#F9FAFB] text-center">New Job</span>
+              <Briefcase size={20} className="mb-1" />
+              <span className="text-xs font-semibold text-center">New Job</span>
             </Link>
             <Link
               href="/leads"
-              className="flex flex-col items-center justify-center bg-[#1F2937] rounded-lg p-4 border border-slate-700 shadow-sm hover:border-[#06B6D4] transition min-h-[80px]"
+              className="flex flex-col items-center justify-center bg-[#06B6D4] text-[#111827] rounded-lg p-4 border border-slate-700 shadow-sm hover:bg-[#0891B2] transition min-h-12"
             >
-              <Users size={20} className="text-[#06B6D4] mb-2" />
-              <span className="text-xs font-semibold text-[#F9FAFB] text-center">New Lead</span>
+              <Users size={20} className="mb-1" />
+              <span className="text-xs font-semibold text-center">New Lead</span>
             </Link>
             <button
-              className="flex flex-col items-center justify-center bg-[#1F2937] rounded-lg p-4 border border-slate-700 shadow-sm hover:border-[#06B6D4] transition min-h-[80px]"
+              className="flex flex-col items-center justify-center bg-[#06B6D4] text-[#111827] rounded-lg p-4 border border-slate-700 shadow-sm hover:bg-[#0891B2] transition min-h-12"
             >
-              <MessageCircle size={20} className="text-[#06B6D4] mb-2" />
-              <span className="text-xs font-semibold text-[#F9FAFB] text-center">FIXER</span>
+              <MessageCircle size={20} className="mb-1" />
+              <span className="text-xs font-semibold text-center">FIXER</span>
             </button>
           </div>
         </div>

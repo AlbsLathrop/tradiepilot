@@ -70,7 +70,7 @@ export default function JobDetailPage() {
 
       if (!res.ok) throw new Error('Failed to update job')
 
-      router.push('/app/jobs')
+      router.push('/jobs')
     } catch (err) {
       setError('Failed to save changes')
       console.error(err)
@@ -85,7 +85,7 @@ export default function JobDetailPage() {
     try {
       const res = await fetch(`/api/jobs/${jobId}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Failed to delete job')
-      router.push('/app/jobs')
+      router.push('/jobs')
     } catch (err) {
       setError('Failed to delete job')
       console.error(err)
@@ -167,8 +167,21 @@ export default function JobDetailPage() {
         <label className="text-sm font-semibold text-[#F9FAFB]">Status</label>
         <select
           value={status}
-          onChange={e => setStatus(e.target.value)}
-          className="w-full px-4 py-3 bg-[#111827] border border-[#06B6D4] rounded-lg text-[#F9FAFB] font-semibold text-lg focus:outline-none focus:border-[#0891B2] appearance-none"
+          onChange={async (e) => {
+            const newStatus = e.target.value
+            setStatus(newStatus)
+            try {
+              const res = await fetch('/api/orbit/status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jobId, status: newStatus }),
+              })
+              if (!res.ok) console.error('Failed to trigger webhook')
+            } catch (err) {
+              console.error('Webhook error:', err)
+            }
+          }}
+          className="w-full px-4 py-3 h-12 bg-[#111827] border border-[#06B6D4] rounded-lg text-[#F9FAFB] font-semibold text-base focus:outline-none focus:border-[#0891B2] appearance-none flex items-center"
         >
           {JOB_STATUSES.map(s => (
             <option key={s} value={s}>
@@ -189,7 +202,7 @@ export default function JobDetailPage() {
         <select
           value={currentPhase}
           onChange={e => setCurrentPhase(e.target.value)}
-          className="w-full px-3 py-2 bg-[#111827] border border-[#374151] rounded-lg text-[#F9FAFB] focus:outline-none focus:border-[#06B6D4]"
+          className="w-full px-3 py-3 h-12 bg-[#111827] border border-[#374151] rounded-lg text-[#F9FAFB] focus:outline-none focus:border-[#06B6D4] appearance-none flex items-center"
         >
           <option value="">Select a phase</option>
           {PHASES.map(phase => (
@@ -206,7 +219,7 @@ export default function JobDetailPage() {
         <textarea
           value={notes}
           onChange={e => setNotes(e.target.value)}
-          className="w-full px-3 py-2 bg-[#111827] border border-[#374151] rounded-lg text-[#F9FAFB] focus:outline-none focus:border-[#06B6D4] min-h-24 resize-none"
+          className="w-full px-3 py-3 bg-[#111827] border border-[#374151] rounded-lg text-[#F9FAFB] focus:outline-none focus:border-[#06B6D4] min-h-32 resize-none"
           placeholder="Add notes about this job..."
         />
       </div>
@@ -217,7 +230,7 @@ export default function JobDetailPage() {
         <select
           value={materialsStatus}
           onChange={e => setMaterialsStatus(e.target.value)}
-          className="w-full px-3 py-2 bg-[#111827] border border-[#374151] rounded-lg text-[#F9FAFB] focus:outline-none focus:border-[#06B6D4]"
+          className="w-full px-3 py-3 h-12 bg-[#111827] border border-[#374151] rounded-lg text-[#F9FAFB] focus:outline-none focus:border-[#06B6D4] appearance-none flex items-center"
         >
           <option value="">Select status</option>
           {MATERIAL_STATUSES.map(status => (
@@ -252,13 +265,13 @@ export default function JobDetailPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full px-4 py-3 bg-[#06B6D4] text-[#111827] rounded-lg font-semibold hover:bg-[#0891B2] disabled:opacity-50 transition"
+          className="w-full px-4 py-3 h-12 bg-[#06B6D4] text-[#111827] rounded-lg font-semibold hover:bg-[#0891B2] disabled:opacity-50 transition flex items-center justify-center"
         >
           {saving ? 'Updating...' : 'Update Job'}
         </button>
         <button
           onClick={handleDelete}
-          className="w-full px-4 py-2 bg-red-500/20 text-red-400 rounded-lg font-semibold hover:bg-red-500/30 transition"
+          className="w-full px-4 py-3 h-12 bg-red-500/20 text-red-400 rounded-lg font-semibold hover:bg-red-500/30 transition flex items-center justify-center"
         >
           Delete Job
         </button>

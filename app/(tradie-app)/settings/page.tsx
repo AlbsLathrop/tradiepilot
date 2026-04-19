@@ -40,16 +40,16 @@ export default function SettingsPage() {
 
         {/* Stats Section */}
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-[#F9FAFB] uppercase tracking-wider">Quick Stats</h2>
+          <h2 className="text-sm font-semibold text-[#F9FAFB] uppercase tracking-wider">This Month</h2>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-[#1F2937] rounded-lg p-4 border border-slate-700 shadow-sm">
               <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wider mb-2">Active Jobs</p>
-              <p className="text-2xl font-bold text-[#06B6D4]">0</p>
+              <p className="text-3xl font-bold text-[#06B6D4]">3</p>
             </div>
             <div className="bg-[#1F2937] rounded-lg p-4 border border-slate-700 shadow-sm">
-              <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wider mb-2">This Month</p>
-              <p className="text-2xl font-bold text-[#F9FAFB]">0</p>
+              <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wider mb-2">New Leads</p>
+              <p className="text-3xl font-bold text-[#F9FAFB]">7</p>
             </div>
           </div>
         </div>
@@ -63,14 +63,14 @@ export default function SettingsPage() {
               href="https://wa.me/61000000000"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 w-full bg-[#1F2937] text-[#F9FAFB] rounded-lg py-3 px-4 border border-slate-700 hover:border-[#06B6D4] transition"
+              className="flex items-center justify-center gap-3 w-full h-12 bg-[#1F2937] text-[#F9FAFB] rounded-lg py-3 px-4 border border-slate-700 hover:border-[#06B6D4] transition"
             >
               <MessageCircle size={18} className="text-[#06B6D4]" />
               <span className="text-sm font-semibold">WhatsApp Support</span>
             </a>
             <a
               href="#"
-              className="flex items-center gap-3 w-full bg-[#1F2937] text-[#F9FAFB] rounded-lg py-3 px-4 border border-slate-700 hover:border-[#06B6D4] transition"
+              className="flex items-center justify-center gap-3 w-full h-12 bg-[#1F2937] text-[#F9FAFB] rounded-lg py-3 px-4 border border-slate-700 hover:border-[#06B6D4] transition"
             >
               <HelpCircle size={18} className="text-[#06B6D4]" />
               <span className="text-sm font-semibold">Message FIXER</span>
@@ -89,7 +89,7 @@ export default function SettingsPage() {
                 callbackUrl: '/',
               })
             }
-            className="flex items-center justify-center gap-2 w-full bg-red-500/10 text-red-400 rounded-lg py-3 px-4 border border-red-500/30 hover:bg-red-500/20 transition font-semibold text-sm"
+            className="flex items-center justify-center gap-2 w-full h-12 bg-red-500/10 text-red-400 rounded-lg py-3 px-4 border border-red-500/30 hover:bg-red-500/20 transition font-semibold text-sm"
           >
             <LogOut size={18} />
             Logout

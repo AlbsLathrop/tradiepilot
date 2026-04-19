@@ -26,7 +26,8 @@ export default function JobsPage() {
       try {
         setLoading(true)
         setError(null)
-        const res = await fetch('/api/jobs')
+        const tradieConfigId = session?.user?.tradieConfigId || 'demo-tradie-id'
+        const res = await fetch(`/api/jobs?tradieConfigId=${tradieConfigId}`)
         if (!res.ok) {
           if (res.status === 401) {
             setError('Please log in to view jobs')
@@ -52,7 +53,7 @@ export default function JobsPage() {
     }
 
     fetchJobs()
-  }, [])
+  }, [session?.user?.tradieConfigId])
 
   useEffect(() => {
     let filtered = selectedStatus ? jobs.filter(j => j?.status === selectedStatus) : jobs

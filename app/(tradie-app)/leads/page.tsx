@@ -139,13 +139,13 @@ export default function LeadsPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => window.location.href = `tel:${lead.phone}`}
-                        className="flex-1 inline-flex items-center justify-center gap-2 bg-[#06B6D4] text-[#111827] rounded-lg py-2 text-xs font-semibold hover:bg-[#0891B2] transition"
+                        className="flex-1 inline-flex items-center justify-center gap-2 h-12 bg-[#06B6D4] text-[#111827] rounded-lg py-2 text-xs font-semibold hover:bg-[#0891B2] transition"
                       >
                         <Phone size={14} />
                         Call
                       </button>
                       <button
-                        className="flex-1 inline-flex items-center justify-center gap-2 bg-[#1F2937] text-[#F9FAFB] border border-slate-600 rounded-lg py-2 text-xs font-semibold hover:bg-slate-700 transition"
+                        className="flex-1 inline-flex items-center justify-center gap-2 h-12 bg-[#1F2937] text-[#F9FAFB] border border-slate-600 rounded-lg py-2 text-xs font-semibold hover:bg-slate-700 transition"
                       >
                         <MessageSquare size={14} />
                         Text

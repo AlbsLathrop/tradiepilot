@@ -19,6 +19,7 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<ApiJob[]>([])
   const [filteredJobs, setFilteredJobs] = useState<ApiJob[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string[]>([])
   const [jobTypeFilter, setJobTypeFilter] = useState<string[]>([])
   const [showStatusDropdown, setShowStatusDropdown] = useState(false)
@@ -29,11 +30,16 @@ export default function JobsPage() {
 
     const fetchJobs = async () => {
       try {
+        setLoading(true)
+        setError(null)
         const res = await fetch(`/api/jobs?tradieConfigId=${session?.user?.tradieConfigId}`)
+        if (!res.ok) throw new Error(`Failed to fetch jobs: ${res.status}`)
         const data = await res.json()
-        setJobs(data)
-      } catch (error) {
-        console.error('Failed to fetch jobs:', error)
+        setJobs(Array.isArray(data) ? data : [])
+      } catch (err) {
+        console.error('Failed to fetch jobs:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load jobs')
+        setJobs([])
       } finally {
         setLoading(false)
       }
@@ -80,6 +86,17 @@ export default function JobsPage() {
         {[1, 2, 3].map(i => (
           <div key={i} className="h-24 bg-[#1F2937] rounded-xl animate-pulse" />
         ))}
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-4">
+        <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 text-red-400">
+          <p className="font-semibold">Error loading jobs</p>
+          <p className="text-sm mt-1">{error}</p>
+        </div>
       </div>
     )
   }
@@ -165,13 +182,9 @@ export default function JobsPage() {
         </Link>
       </div>
 
-      {/* Job cards */}
+      {/* Job cards with safety check */}
       <div className="space-y-3">
-        {filteredJobs.length === 0 ? (
-          <div className="bg-[#1F2937] rounded-xl p-6 border border-[#374151] text-center">
-            <p className="text-[#9CA3AF]">No jobs match your filters</p>
-          </div>
-        ) : (
+        {Array.isArray(filteredJobs) && filteredJobs.length > 0 ? (
           filteredJobs.map(job => (
             <Link
               key={job.id}
@@ -207,6 +220,10 @@ export default function JobsPage() {
               </div>
             </Link>
           ))
+        ) : (
+          <div className="bg-[#1F2937] rounded-xl p-6 border border-[#374151] text-center">
+            <p className="text-[#9CA3AF]">No jobs match your filters</p>
+          </div>
         )}
       </div>
     </div>

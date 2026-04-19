@@ -70,7 +70,7 @@ export default async function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pb-3 px-3">
-              <p className="text-xl font-bold text-cyan-400">{kpi.value}</p>
+              <p className="text-lg font-bold text-cyan-400">{kpi.value}</p>
             </CardContent>
           </Card>
         ))}

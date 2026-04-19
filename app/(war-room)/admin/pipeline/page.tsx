@@ -31,12 +31,10 @@ export default async function PipelinePage() {
   return (
     <main className="min-h-screen bg-[#111827] p-4 text-[#F9FAFB]">
       <div className="mb-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Link href="/admin/dashboard" className="inline-flex items-center gap-1 text-sm text-[#F9FAFB]/70 hover:text-[#06B6D4] transition-colors">
-            <ChevronLeft size={16} />
-            Dashboard
-          </Link>
-        </div>
+        <Link href="/admin/dashboard" className="inline-flex items-center gap-1 text-sm text-[#06B6D4] hover:underline transition-all mb-4">
+          <ChevronLeft size={16} />
+          Dashboard
+        </Link>
         <h1 className="text-2xl font-bold text-center">Pipeline</h1>
         <Suspense fallback={<div className="text-xs text-[#F9FAFB]/30 mt-1 text-center">Loading...</div>}>
           <DateDisplay />

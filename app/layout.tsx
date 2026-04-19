@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist_Mono } from "next/font/google";
+import { Providers } from "./providers";
 import "./globals.css";
 
 const geistMono = Geist_Mono({
@@ -8,8 +9,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "JobFlow - TradiePilot War Room",
-  description: "Internal operations dashboard for TradiePilot",
+  title: "TradiePilot",
+  description: "Cockpit + War Room for TradiePilot",
 };
 
 export default function RootLayout({
@@ -23,7 +24,9 @@ export default function RootLayout({
       className={`${geistMono.variable} h-full antialiased dark`}
       style={{ "--font-sans": "Helvetica, Arial, sans-serif" } as React.CSSProperties}
     >
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

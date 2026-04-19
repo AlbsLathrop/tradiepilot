@@ -29,11 +29,11 @@ Never make up data — if you don't have it, say so.
 Keep responses under 200 words unless a detailed breakdown is needed.
 Respond in the same language the user writes in (English or Spanish).`
 
-  const result = streamText({
+  const result = await streamText({
     model: anthropic('claude-sonnet-4-6'),
     system: systemPrompt,
     messages,
   })
 
-  return result.toDataStreamResponse()
+  return result.toTextStreamResponse()
 }

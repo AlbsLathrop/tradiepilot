@@ -30,7 +30,7 @@ export function StageColumn({ stage, leads }: StageColumnProps) {
       className={`flex-1 min-w-80 bg-[#0f111a] rounded-lg p-4 transition-all ${
         isOver ? 'ring-2 ring-offset-2 ring-offset-[#0f111a]' : ''
       }`}
-      style={{ ringColor: isOver ? config.color : 'transparent' }}
+      style={{ '--ring-color': isOver ? config.color : 'transparent' } as React.CSSProperties}
     >
       {/* Header */}
       <div className="mb-6">

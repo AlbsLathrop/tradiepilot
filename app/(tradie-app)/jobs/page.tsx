@@ -3,16 +3,15 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
-import { STATUS_COLORS, JOB_STATUSES } from '@/lib/constants'
+import { STATUS_COLORS } from '@/lib/constants'
 import { Job } from '@/lib/notion'
+import { Plus, Filter } from 'lucide-react'
 
 interface ApiJob extends Job {
   id: string
 }
 
-const JOB_TYPES = ['Residential Direct', 'Commercial via Builder']
-const PHASES = ['Scoping', 'Quoted', 'Scheduled', 'In Progress', 'Running Late', 'Complete']
-const MATERIAL_STATUSES = ['Not Started', 'On Order', 'Arrived', 'In Use', 'Complete']
+const STATUS_OPTIONS = ['SCHEDULED', 'IN PROGRESS', 'RUNNING LATE', 'COMPLETE', 'INVOICED']
 
 export default function JobsPage() {
   const { data: session } = useSession()
@@ -20,36 +19,32 @@ export default function JobsPage() {
   const [filteredJobs, setFilteredJobs] = useState<ApiJob[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = useState<string[]>([])
-  const [jobTypeFilter, setJobTypeFilter] = useState<string[]>([])
-  const [showStatusDropdown, setShowStatusDropdown] = useState(false)
-  const [showJobTypeDropdown, setShowJobTypeDropdown] = useState(false)
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!session?.user?.tradieConfigId) return
-
     const fetchJobs = async () => {
       try {
         setLoading(true)
         setError(null)
-        const tradieConfigId = session?.user?.tradieConfigId
-        if (!tradieConfigId) {
-          setError('No tradie config found')
+        const res = await fetch('/api/jobs')
+        if (!res.ok) {
+          if (res.status === 401) {
+            setError('Please log in to view jobs')
+          } else {
+            setError(`Error ${res.status}`)
+          }
           setJobs([])
           return
         }
-        const res = await fetch(`/api/jobs?tradieConfigId=${tradieConfigId}`)
-        if (!res.ok) throw new Error(`Failed to fetch jobs: ${res.status}`)
         const data = await res.json()
-        if (!data || !Array.isArray(data)) {
-          console.warn('Invalid jobs data received:', data)
+        if (!Array.isArray(data)) {
           setJobs([])
         } else {
           setJobs(data)
         }
       } catch (err) {
         console.error('Failed to fetch jobs:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load jobs')
+        setError('Unable to load jobs. Using demo mode.')
         setJobs([])
       } finally {
         setLoading(false)
@@ -57,193 +52,112 @@ export default function JobsPage() {
     }
 
     fetchJobs()
-  }, [session?.user?.tradieConfigId])
+  }, [])
 
   useEffect(() => {
-    let filtered = jobs
-
-    if (statusFilter.length > 0) {
-      filtered = filtered.filter(job => statusFilter.includes(job.status))
-    }
-
-    if (jobTypeFilter.length > 0) {
-      filtered = filtered.filter(job => jobTypeFilter.includes(job.jobType))
-    }
-
+    let filtered = selectedStatus ? jobs.filter(j => j?.status === selectedStatus) : jobs
     setFilteredJobs(filtered)
-  }, [jobs, statusFilter, jobTypeFilter])
-
-  const toggleStatusFilter = (status: string) => {
-    setStatusFilter(prev =>
-      prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
-    )
-  }
-
-  const toggleJobTypeFilter = (type: string) => {
-    setJobTypeFilter(prev =>
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
-    )
-  }
-
-  const resetFilters = () => {
-    setStatusFilter([])
-    setJobTypeFilter([])
-  }
+  }, [jobs, selectedStatus])
 
   if (loading) {
     return (
-      <div className="p-4 space-y-4">
-        <div className="h-8 bg-[#1F2937] rounded w-24 animate-pulse" />
+      <div className="px-4 py-6 space-y-4 pb-24">
+        <div className="h-8 bg-[#1F2937] rounded w-32 animate-pulse" />
         {[1, 2, 3].map(i => (
-          <div key={i} className="h-24 bg-[#1F2937] rounded-xl animate-pulse" />
+          <div key={i} className="h-20 bg-[#1F2937] rounded-lg animate-pulse" />
         ))}
       </div>
     )
   }
 
-  if (error) {
+  if (error && jobs.length === 0) {
     return (
-      <div className="p-4">
-        <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 text-red-400">
-          <p className="font-semibold">Error loading jobs</p>
-          <p className="text-sm mt-1">{error}</p>
+      <div className="px-4 py-6 pb-24">
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+          <p className="text-sm text-amber-400">{error}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-4 space-y-4 pb-4">
-      {/* Header with filters and button */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          {/* Status Filter */}
-          <div className="relative">
-            <button
-              onClick={() => {
-                setShowStatusDropdown(!showStatusDropdown)
-                setShowJobTypeDropdown(false)
-              }}
-              className="px-3 py-2 bg-[#1F2937] border border-[#374151] rounded-lg text-sm text-[#F9FAFB] hover:bg-[#374151] transition"
+    <div className="min-h-screen bg-[#111827]">
+      <div className="px-4 py-6 space-y-4 pb-24">
+        {/* Header */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-[#F9FAFB]">Jobs</h1>
+              <p className="text-[#9CA3AF] text-sm">Your active projects</p>
+            </div>
+            <Link
+              href="/jobs/new"
+              className="inline-flex items-center justify-center w-12 h-12 bg-[#06B6D4] text-[#111827] rounded-lg hover:bg-[#0891B2] transition"
             >
-              Status {statusFilter.length > 0 && `(${statusFilter.length})`}
-            </button>
-            {showStatusDropdown && (
-              <div className="absolute top-full left-0 mt-2 bg-[#111827] border border-[#374151] rounded-lg shadow-lg z-10 min-w-48 max-h-64 overflow-y-auto">
-                {JOB_STATUSES.filter(s => s !== 'COMPLETE' && s !== 'PAID').map(status => (
-                  <label key={status} className="flex items-center px-4 py-2 hover:bg-[#1F2937] cursor-pointer border-b border-[#374151] last:border-b-0">
-                    <input
-                      type="checkbox"
-                      checked={statusFilter.includes(status)}
-                      onChange={() => toggleStatusFilter(status)}
-                      className="mr-2 w-4 h-4"
-                    />
-                    <span className="text-sm">{status}</span>
-                  </label>
-                ))}
-              </div>
-            )}
+              <Plus size={20} />
+            </Link>
           </div>
 
-          {/* Job Type Filter */}
-          <div className="relative">
+          {/* Status Filter Tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
             <button
-              onClick={() => {
-                setShowJobTypeDropdown(!showJobTypeDropdown)
-                setShowStatusDropdown(false)
-              }}
-              className="px-3 py-2 bg-[#1F2937] border border-[#374151] rounded-lg text-sm text-[#F9FAFB] hover:bg-[#374151] transition"
+              onClick={() => setSelectedStatus(null)}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
+                selectedStatus === null
+                  ? 'bg-[#06B6D4] text-[#111827]'
+                  : 'bg-[#1F2937] text-[#F9FAFB] border border-slate-700'
+              }`}
             >
-              Type {jobTypeFilter.length > 0 && `(${jobTypeFilter.length})`}
+              All
             </button>
-            {showJobTypeDropdown && (
-              <div className="absolute top-full left-0 mt-2 bg-[#111827] border border-[#374151] rounded-lg shadow-lg z-10 min-w-48">
-                {JOB_TYPES.map(type => (
-                  <label key={type} className="flex items-center px-4 py-2 hover:bg-[#1F2937] cursor-pointer border-b border-[#374151] last:border-b-0">
-                    <input
-                      type="checkbox"
-                      checked={jobTypeFilter.includes(type)}
-                      onChange={() => toggleJobTypeFilter(type)}
-                      className="mr-2 w-4 h-4"
-                    />
-                    <span className="text-sm">{type}</span>
-                  </label>
-                ))}
-              </div>
-            )}
+            {STATUS_OPTIONS.map(status => (
+              <button
+                key={status}
+                onClick={() => setSelectedStatus(status)}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
+                  selectedStatus === status
+                    ? 'bg-[#06B6D4] text-[#111827]'
+                    : 'bg-[#1F2937] text-[#F9FAFB] border border-slate-700'
+                }`}
+              >
+                {status}
+              </button>
+            ))}
           </div>
-
-          {/* Reset button */}
-          {(statusFilter.length > 0 || jobTypeFilter.length > 0) && (
-            <button
-              onClick={resetFilters}
-              className="px-3 py-2 text-xs text-[#9CA3AF] hover:text-[#F9FAFB] transition"
-            >
-              Reset
-            </button>
-          )}
         </div>
 
-        {/* New Job button */}
-        <Link
-          href="/jobs/new"
-          className="px-4 py-2 bg-[#06B6D4] text-[#111827] rounded-lg text-sm font-semibold hover:bg-[#0891B2] transition"
-        >
-          + New
-        </Link>
-      </div>
-
-      {/* Job cards with safety check */}
-      <div className="space-y-3">
-        {!filteredJobs || !Array.isArray(filteredJobs) ? (
-          <div className="bg-[#1F2937] rounded-xl p-6 border border-[#374151] text-center">
-            <p className="text-[#9CA3AF]">No jobs available</p>
-          </div>
-        ) : filteredJobs.length === 0 ? (
-          <div className="bg-[#1F2937] rounded-xl p-6 border border-[#374151] text-center">
-            <p className="text-[#9CA3AF]">No jobs match your filters</p>
-          </div>
-        ) : (
-          filteredJobs.map(job => {
-            if (!job?.id) return null
-            const status = job?.status || 'UNKNOWN'
-            return (
-              <Link
-                key={job.id}
-                href={`/jobs/${job.id}`}
-                className="block bg-[#1F2937] rounded-xl p-4 border border-[#374151] hover:border-[#06B6D4] transition cursor-pointer"
-              >
-                <div className="space-y-2">
-                  <div className="flex justify-between items-start gap-2">
-                    <h3 className="text-base font-bold text-[#F9FAFB]">{job?.clientName || 'Unnamed Job'}</h3>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_COLORS[status] || 'bg-gray-500/20 text-gray-400'}`}>
-                      {status}
-                    </span>
-                  </div>
-
-                  <p className="text-sm text-[#9CA3AF]">
-                    {job?.service || 'Service TBD'} • {job?.suburb || 'Location TBD'}
-                  </p>
-
-                  {job?.jobType && (
-                    <div className="flex gap-2 flex-wrap">
-                      <span className="px-2 py-1 rounded-full text-xs bg-blue-500/20 text-blue-400">
-                        {job.jobType}
+        {/* Jobs List */}
+        <div className="space-y-3">
+          {!filteredJobs || filteredJobs.length === 0 ? (
+            <div className="bg-[#1F2937] rounded-lg p-8 border border-slate-700 text-center">
+              <p className="text-[#9CA3AF] text-sm">{selectedStatus ? 'No jobs with this status' : 'No jobs assigned yet'}</p>
+            </div>
+          ) : (
+            filteredJobs.map(job => {
+              if (!job?.id) return null
+              const status = job?.status || 'UNKNOWN'
+              return (
+                <Link
+                  key={job.id}
+                  href={`/jobs/${job.id}`}
+                  className="block bg-[#1F2937] rounded-lg p-4 border border-slate-700 hover:border-[#06B6D4] transition"
+                >
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-start gap-3">
+                      <h3 className="text-sm font-semibold text-[#F9FAFB]">{job?.clientName || 'Unnamed'}</h3>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_COLORS[status] || 'bg-gray-500/10 text-gray-400'}`}>
+                        {status}
                       </span>
                     </div>
-                  )}
-
-                  <div className="text-xs text-[#6B7280] space-y-0.5">
-                    {job?.foreman && <p>Foreman: {job.foreman}</p>}
-                    {job?.lastMessageSent && (
-                      <p>Last msg: {new Date(job.lastMessageSent).toLocaleDateString()}</p>
-                    )}
+                    <p className="text-xs text-[#9CA3AF]">
+                      {job?.service || 'Service'} • {job?.suburb || 'Location'}
+                    </p>
                   </div>
-                </div>
-              </Link>
-            )
-          })
-        )}
+                </Link>
+              )
+            })
+          )}
+        </div>
       </div>
     </div>
   )

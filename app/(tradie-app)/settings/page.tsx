@@ -2,79 +2,106 @@
 
 import { useSession } from 'next-auth/react'
 import { signOut } from 'next-auth/react'
+import { LogOut, MessageCircle, HelpCircle } from 'lucide-react'
 
 export default function SettingsPage() {
   const { data: session } = useSession()
 
   return (
-    <div className="p-4 space-y-6 pb-20">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-[#F9FAFB]">Settings</h1>
-        <p className="text-[#9CA3AF]">Manage your account</p>
-      </div>
+    <div className="min-h-screen bg-[#111827]">
+      <div className="px-4 py-6 space-y-6 pb-24">
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-[#F9FAFB]">Settings</h1>
+          <p className="text-[#9CA3AF] text-sm">Account & preferences</p>
+        </div>
 
-      {/* Profile Card */}
-      <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151] space-y-4">
-        <div className="space-y-1">
-          <p className="text-xs text-[#9CA3AF] font-medium uppercase tracking-wide">Name</p>
-          <p className="text-base font-semibold text-[#F9FAFB]">{session?.user?.name || 'Tradie'}</p>
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs text-[#9CA3AF] font-medium uppercase tracking-wide">Email</p>
-          <p className="text-base font-semibold text-[#F9FAFB]">{session?.user?.email || 'user@example.com'}</p>
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs text-[#9CA3AF] font-medium uppercase tracking-wide">Package</p>
-          <span className="inline-block bg-[#06B6D4]/20 text-[#06B6D4] px-2 py-1 rounded-full text-xs font-medium uppercase">
-            Growth
-          </span>
-        </div>
-      </div>
-
-      {/* Support Section */}
-      <div className="space-y-2">
-        <h2 className="text-base font-semibold text-[#F9FAFB]">Support</h2>
+        {/* Profile Section */}
         <div className="space-y-3">
-          <a
-            href="https://wa.me/61000000000"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full bg-[#1F2937] text-[#F9FAFB] rounded-lg py-4 px-4 font-semibold border border-[#374151] hover:border-[#06B6D4] transition text-center min-h-12 flex items-center justify-center"
-          >
-            💬 Contact WhatsApp Support
-          </a>
-          <a
-            href="#"
-            className="block w-full bg-[#1F2937] text-[#F9FAFB] rounded-lg py-4 px-4 font-semibold border border-[#374151] hover:border-[#06B6D4] transition text-center min-h-12 flex items-center justify-center"
-          >
-            🤖 Message FIXER
-          </a>
+          <h2 className="text-sm font-semibold text-[#F9FAFB] uppercase tracking-wider">Profile</h2>
+
+          <div className="bg-[#1F2937] rounded-lg p-4 border border-slate-700 shadow-sm space-y-3">
+            <div>
+              <p className="text-xs text-[#9CA3AF] uppercase tracking-wider font-medium mb-1">Name</p>
+              <p className="text-sm font-semibold text-[#F9FAFB]">{session?.user?.name || 'Tradie'}</p>
+            </div>
+            <div className="border-t border-slate-600 pt-3">
+              <p className="text-xs text-[#9CA3AF] uppercase tracking-wider font-medium mb-1">Email</p>
+              <p className="text-sm font-semibold text-[#F9FAFB]">{session?.user?.email || 'user@example.com'}</p>
+            </div>
+            <div className="border-t border-slate-600 pt-3">
+              <p className="text-xs text-[#9CA3AF] uppercase tracking-wider font-medium mb-1">Package</p>
+              <span className="inline-block bg-[#06B6D4]/20 text-[#06B6D4] px-3 py-1 rounded-full text-xs font-semibold uppercase">
+                Growth Plan
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Account Actions */}
-      <div className="space-y-2">
-        <h2 className="text-base font-semibold text-[#F9FAFB]">Account</h2>
-        <button
-          onClick={() =>
-            signOut({
-              redirect: true,
-              callbackUrl: '/',
-            })
-          }
-          className="w-full bg-[#EF4444]/10 text-[#EF4444] rounded-lg py-4 px-4 font-semibold border border-[#EF4444]/30 hover:bg-[#EF4444]/20 transition min-h-12 flex items-center justify-center"
-        >
-          Logout
-        </button>
-      </div>
+        {/* Stats Section */}
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-[#F9FAFB] uppercase tracking-wider">Quick Stats</h2>
 
-      {/* Info Section */}
-      <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151]">
-        <p className="text-xs text-[#6B7280] space-y-2">
-          <p>TradiePilot v1.0.0</p>
-          <p>© 2026 TradiePilot. All rights reserved.</p>
-        </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-[#1F2937] rounded-lg p-4 border border-slate-700 shadow-sm">
+              <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wider mb-2">Active Jobs</p>
+              <p className="text-2xl font-bold text-[#06B6D4]">0</p>
+            </div>
+            <div className="bg-[#1F2937] rounded-lg p-4 border border-slate-700 shadow-sm">
+              <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wider mb-2">This Month</p>
+              <p className="text-2xl font-bold text-[#F9FAFB]">0</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Support Section */}
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-[#F9FAFB] uppercase tracking-wider">Support</h2>
+
+          <div className="space-y-2">
+            <a
+              href="https://wa.me/61000000000"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 w-full bg-[#1F2937] text-[#F9FAFB] rounded-lg py-3 px-4 border border-slate-700 hover:border-[#06B6D4] transition"
+            >
+              <MessageCircle size={18} className="text-[#06B6D4]" />
+              <span className="text-sm font-semibold">WhatsApp Support</span>
+            </a>
+            <a
+              href="#"
+              className="flex items-center gap-3 w-full bg-[#1F2937] text-[#F9FAFB] rounded-lg py-3 px-4 border border-slate-700 hover:border-[#06B6D4] transition"
+            >
+              <HelpCircle size={18} className="text-[#06B6D4]" />
+              <span className="text-sm font-semibold">Message FIXER</span>
+            </a>
+          </div>
+        </div>
+
+        {/* Account Actions */}
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-[#F9FAFB] uppercase tracking-wider">Account</h2>
+
+          <button
+            onClick={() =>
+              signOut({
+                redirect: true,
+                callbackUrl: '/',
+              })
+            }
+            className="flex items-center justify-center gap-2 w-full bg-red-500/10 text-red-400 rounded-lg py-3 px-4 border border-red-500/30 hover:bg-red-500/20 transition font-semibold text-sm"
+          >
+            <LogOut size={18} />
+            Logout
+          </button>
+        </div>
+
+        {/* Footer */}
+        <div className="pt-4 border-t border-slate-700 text-center">
+          <p className="text-xs text-[#6B7280]">
+            TradiePilot v1.0.0 • © 2026
+          </p>
+        </div>
       </div>
     </div>
   )

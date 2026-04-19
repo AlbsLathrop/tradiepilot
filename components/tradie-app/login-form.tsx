@@ -25,7 +25,7 @@ export function LoginForm() {
     if (result?.error) {
       setError('Email not found. Try joey@tradie.test for testing.');
     } else if (result?.ok) {
-      router.push('/app/home');
+      router.push('/home');
     }
   }
 

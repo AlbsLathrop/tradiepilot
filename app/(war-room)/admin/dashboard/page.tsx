@@ -1,11 +1,13 @@
 export const dynamic = 'force-dynamic'
 
 import { Suspense } from 'react'
+import Link from 'next/link'
 import { getActiveJobs, getRecentLeads } from '@/lib/notion'
 import { STATUS_COLORS } from '@/lib/constants'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { ChevronLeft } from 'lucide-react'
 
 function DateDisplay() {
   return <div className="text-xs text-[#F9FAFB]/50 mt-1">{new Date().toLocaleDateString('en-AU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
@@ -47,6 +49,12 @@ export default async function DashboardPage() {
   return (
     <main className="min-h-screen bg-[#111827] p-4 text-[#F9FAFB]">
       <div className="mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Link href="/admin/dashboard" className="inline-flex items-center gap-1 text-sm text-[#F9FAFB]/70 hover:text-[#06B6D4] transition-colors">
+            <ChevronLeft size={16} />
+            Dashboard
+          </Link>
+        </div>
         <h1 className="text-2xl font-bold text-center">War Room</h1>
         <Suspense fallback={<div className="text-xs text-[#F9FAFB]/30 mt-1 text-center">Loading...</div>}>
           <DateDisplay />
@@ -62,7 +70,7 @@ export default async function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pb-3 px-3">
-              <p className="text-3xl font-bold text-cyan-400">{kpi.value}</p>
+              <p className="text-xl font-bold text-cyan-400">{kpi.value}</p>
             </CardContent>
           </Card>
         ))}

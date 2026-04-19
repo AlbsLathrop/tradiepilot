@@ -13,8 +13,8 @@ export default async function HomePage() {
             month: 'long',
           })}
         </p>
-        <h1 className="text-3xl font-bold">G'day {session?.user?.name}</h1>
-        <p className="text-[#9CA3AF]">Here's your day at a glance</p>
+        <h1 className="text-3xl font-bold">G&apos;day {session?.user?.name}</h1>
+        <p className="text-[#9CA3AF]">Here&apos;s your day at a glance</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -37,7 +37,7 @@ export default async function HomePage() {
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-lg font-semibold">Today's Jobs</h2>
+        <h2 className="text-lg font-semibold">Today&apos;s Jobs</h2>
         <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151] text-center text-[#9CA3AF]">
           No jobs scheduled
         </div>

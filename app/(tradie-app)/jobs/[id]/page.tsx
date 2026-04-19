@@ -106,7 +106,7 @@ export default function JobDetailPage() {
     return (
       <div className="p-4 text-center">
         <p className="text-[#9CA3AF]">Job not found</p>
-        <Link href="/app/jobs" className="text-[#06B6D4] mt-4 inline-block">
+        <Link href="/jobs" className="text-[#06B6D4] mt-4 inline-block">
           Back to Jobs
         </Link>
       </div>
@@ -117,7 +117,7 @@ export default function JobDetailPage() {
     <div className="p-4 space-y-4 pb-24">
       {/* Back button */}
       <Link
-        href="/app/jobs"
+        href="/jobs"
         className="inline-flex items-center text-[#06B6D4] hover:text-[#0891B2] text-sm"
       >
         ← Back

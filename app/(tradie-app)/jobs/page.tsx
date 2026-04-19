@@ -158,7 +158,7 @@ export default function JobsPage() {
 
         {/* New Job button */}
         <Link
-          href="/app/jobs/new"
+          href="/jobs/new"
           className="px-4 py-2 bg-[#06B6D4] text-[#111827] rounded-lg text-sm font-semibold hover:bg-[#0891B2] transition"
         >
           + New
@@ -175,7 +175,7 @@ export default function JobsPage() {
           filteredJobs.map(job => (
             <Link
               key={job.id}
-              href={`/app/jobs/${job.id}`}
+              href={`/jobs/${job.id}`}
               className="block bg-[#1F2937] rounded-xl p-4 border border-[#374151] hover:border-[#06B6D4] transition cursor-pointer"
             >
               <div className="space-y-2">

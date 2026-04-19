@@ -6,7 +6,7 @@ export default async function LoginPage() {
   const session = await getServerSession();
 
   if (session) {
-    redirect('/app/home');
+    redirect('/home');
   }
 
   return <LoginForm />;

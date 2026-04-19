@@ -11,11 +11,11 @@ import {
 } from 'lucide-react';
 
 const tabs = [
-  { href: '/app/home', label: 'Home', icon: Home },
-  { href: '/app/jobs', label: 'Jobs', icon: Briefcase },
-  { href: '/app/leads', label: 'Leads', icon: UserPlus },
-  { href: '/app/report', label: 'Report', icon: BarChart3 },
-  { href: '/app/settings', label: 'Settings', icon: Settings },
+  { href: '/home', label: 'Home', icon: Home },
+  { href: '/jobs', label: 'Jobs', icon: Briefcase },
+  { href: '/leads', label: 'Leads', icon: UserPlus },
+  { href: '/report', label: 'Report', icon: BarChart3 },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export function BottomNav() {

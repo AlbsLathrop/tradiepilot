@@ -2,6 +2,29 @@ import { getServerSession } from 'next-auth';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+interface Stats {
+  activeJobs: number;
+  openQuotes: number;
+  reviews: number;
+  hoursSaved: number;
+}
+
+async function getStats(tradieConfigId?: string): Promise<Stats> {
+  if (!tradieConfigId) {
+    return { activeJobs: 0, openQuotes: 0, reviews: 0, hoursSaved: 0 };
+  }
+
+  try {
+    // TODO: Fetch real data from Notion
+    // const jobs = await getActiveJobs(tradieConfigId);
+    // const leads = await getNewLeads(tradieConfigId);
+    return { activeJobs: 0, openQuotes: 0, reviews: 0, hoursSaved: 0 };
+  } catch (error) {
+    console.error('Failed to fetch stats:', error);
+    return { activeJobs: 0, openQuotes: 0, reviews: 0, hoursSaved: 0 };
+  }
+}
+
 export default async function HomePage() {
   const session = await getServerSession();
 
@@ -9,16 +32,7 @@ export default async function HomePage() {
     redirect('/');
   }
 
-  // TODO: Fetch real data from Notion
-  // const jobs = await getActiveJobs(session.user.tradieConfigId);
-  // const leads = await getNewLeads(session.user.tradieConfigId);
-
-  const stats = {
-    activeJobs: 0,
-    openQuotes: 0,
-    reviews: 0,
-    hoursSaved: 0,
-  };
+  const stats = await getStats(session.user?.tradieConfigId);
 
   return (
     <div className="p-4 space-y-6 pb-20">
@@ -36,24 +50,30 @@ export default async function HomePage() {
       </div>
 
       {/* Stat Cards - 2x2 Grid */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-[#1F2937] rounded-xl p-4 border border-white/5 hover:border-[#06B6D4]/50 transition">
-          <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Active Jobs</p>
-          <p className="text-3xl font-bold text-[#F9FAFB]">{stats.activeJobs}</p>
+      {stats ? (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-[#1F2937] rounded-xl p-4 border border-white/5 hover:border-[#06B6D4]/50 transition">
+            <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Active Jobs</p>
+            <p className="text-3xl font-bold text-[#F9FAFB]">{stats?.activeJobs ?? 0}</p>
+          </div>
+          <div className="bg-[#1F2937] rounded-xl p-4 border border-white/5 hover:border-[#06B6D4]/50 transition">
+            <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Open Quotes</p>
+            <p className="text-3xl font-bold text-[#F9FAFB]">{stats?.openQuotes ?? 0}</p>
+          </div>
+          <div className="bg-[#1F2937] rounded-xl p-4 border border-white/5 hover:border-[#06B6D4]/50 transition">
+            <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Reviews</p>
+            <p className="text-3xl font-bold text-[#F9FAFB]">{stats?.reviews ?? 0}</p>
+          </div>
+          <div className="bg-[#1F2937] rounded-xl p-4 border border-white/5 hover:border-[#06B6D4]/50 transition">
+            <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Hrs Saved</p>
+            <p className="text-3xl font-bold text-[#06B6D4]">{stats?.hoursSaved ?? 0}</p>
+          </div>
         </div>
-        <div className="bg-[#1F2937] rounded-xl p-4 border border-white/5 hover:border-[#06B6D4]/50 transition">
-          <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Open Quotes</p>
-          <p className="text-3xl font-bold text-[#F9FAFB]">{stats.openQuotes}</p>
+      ) : (
+        <div className="bg-[#1F2937] rounded-xl p-6 border border-white/5 text-center">
+          <p className="text-[#9CA3AF]">Unable to load stats</p>
         </div>
-        <div className="bg-[#1F2937] rounded-xl p-4 border border-white/5 hover:border-[#06B6D4]/50 transition">
-          <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Reviews</p>
-          <p className="text-3xl font-bold text-[#F9FAFB]">{stats.reviews}</p>
-        </div>
-        <div className="bg-[#1F2937] rounded-xl p-4 border border-white/5 hover:border-[#06B6D4]/50 transition">
-          <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Hrs Saved</p>
-          <p className="text-3xl font-bold text-[#06B6D4]">{stats.hoursSaved}</p>
-        </div>
-      </div>
+      )}
 
       {/* Today's Jobs Section */}
       <div className="space-y-3">

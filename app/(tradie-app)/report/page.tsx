@@ -1,4 +1,44 @@
-export default function ReportPage() {
+interface ReportStats {
+  leadsResponded: number
+  followUpsSent: number
+  clientUpdates: number
+  reviewsRequested: number
+  messagesSent: number
+  responseRate: string
+  avgResponseTime: string
+  timeSaved: string
+}
+
+async function getReportStats(): Promise<ReportStats> {
+  try {
+    // TODO: Fetch real data from Notion
+    return {
+      leadsResponded: 0,
+      followUpsSent: 0,
+      clientUpdates: 0,
+      reviewsRequested: 0,
+      messagesSent: 12,
+      responseRate: '85%',
+      avgResponseTime: '2.3h',
+      timeSaved: '8.5h',
+    }
+  } catch (error) {
+    console.error('Failed to fetch report stats:', error)
+    return {
+      leadsResponded: 0,
+      followUpsSent: 0,
+      clientUpdates: 0,
+      reviewsRequested: 0,
+      messagesSent: 0,
+      responseRate: '0%',
+      avgResponseTime: '0h',
+      timeSaved: '0h',
+    }
+  }
+}
+
+export default async function ReportPage() {
+  const stats = await getReportStats()
   const weekStart = new Date('2026-04-14')
   const weekEnd = new Date('2026-04-20')
 
@@ -19,50 +59,54 @@ export default function ReportPage() {
       </div>
 
       {/* FIXER Weekly Log Stats */}
-      <div className="space-y-2">
-        <h2 className="text-base font-semibold text-[#F9FAFB]">FIXER Weekly Log</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151]">
-            <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Leads Responded</p>
-            <p className="text-3xl font-bold text-[#06B6D4]">0</p>
-          </div>
-          <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151]">
-            <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Follow-ups Sent</p>
-            <p className="text-3xl font-bold text-[#F9FAFB]">0</p>
-          </div>
-          <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151]">
-            <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Client Updates</p>
-            <p className="text-3xl font-bold text-[#F9FAFB]">0</p>
-          </div>
-          <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151]">
-            <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Reviews Requested</p>
-            <p className="text-3xl font-bold text-[#F9FAFB]">0</p>
+      {stats ? (
+        <div className="space-y-2">
+          <h2 className="text-base font-semibold text-[#F9FAFB]">FIXER Weekly Log</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151]">
+              <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Leads Responded</p>
+              <p className="text-3xl font-bold text-[#06B6D4]">{stats?.leadsResponded ?? 0}</p>
+            </div>
+            <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151]">
+              <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Follow-ups Sent</p>
+              <p className="text-3xl font-bold text-[#F9FAFB]">{stats?.followUpsSent ?? 0}</p>
+            </div>
+            <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151]">
+              <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Client Updates</p>
+              <p className="text-3xl font-bold text-[#F9FAFB]">{stats?.clientUpdates ?? 0}</p>
+            </div>
+            <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151]">
+              <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Reviews Requested</p>
+              <p className="text-3xl font-bold text-[#F9FAFB]">{stats?.reviewsRequested ?? 0}</p>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
       {/* Automation Performance */}
-      <div className="space-y-2">
-        <h2 className="text-base font-semibold text-[#F9FAFB]">Automation Performance</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151]">
-            <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Messages Sent</p>
-            <p className="text-3xl font-bold text-[#F9FAFB]">12</p>
-          </div>
-          <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151]">
-            <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Response Rate</p>
-            <p className="text-3xl font-bold text-[#06B6D4]">85%</p>
-          </div>
-          <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151]">
-            <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Avg Response Time</p>
-            <p className="text-3xl font-bold text-[#F9FAFB]">2.3h</p>
-          </div>
-          <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151]">
-            <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Time Saved</p>
-            <p className="text-3xl font-bold text-[#06B6D4]">8.5h</p>
+      {stats ? (
+        <div className="space-y-2">
+          <h2 className="text-base font-semibold text-[#F9FAFB]">Automation Performance</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151]">
+              <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Messages Sent</p>
+              <p className="text-3xl font-bold text-[#F9FAFB]">{stats?.messagesSent ?? 0}</p>
+            </div>
+            <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151]">
+              <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Response Rate</p>
+              <p className="text-3xl font-bold text-[#06B6D4]">{stats?.responseRate ?? '0%'}</p>
+            </div>
+            <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151]">
+              <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Avg Response Time</p>
+              <p className="text-3xl font-bold text-[#F9FAFB]">{stats?.avgResponseTime ?? '0h'}</p>
+            </div>
+            <div className="bg-[#1F2937] rounded-xl p-4 border border-[#374151]">
+              <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wide mb-2">Time Saved</p>
+              <p className="text-3xl font-bold text-[#06B6D4]">{stats?.timeSaved ?? '0h'}</p>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
       {/* Insights Section */}
       <div className="space-y-2">

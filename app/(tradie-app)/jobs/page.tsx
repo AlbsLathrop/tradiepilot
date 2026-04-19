@@ -32,10 +32,21 @@ export default function JobsPage() {
       try {
         setLoading(true)
         setError(null)
-        const res = await fetch(`/api/jobs?tradieConfigId=${session?.user?.tradieConfigId}`)
+        const tradieConfigId = session?.user?.tradieConfigId
+        if (!tradieConfigId) {
+          setError('No tradie config found')
+          setJobs([])
+          return
+        }
+        const res = await fetch(`/api/jobs?tradieConfigId=${tradieConfigId}`)
         if (!res.ok) throw new Error(`Failed to fetch jobs: ${res.status}`)
         const data = await res.json()
-        setJobs(Array.isArray(data) ? data : [])
+        if (!data || !Array.isArray(data)) {
+          console.warn('Invalid jobs data received:', data)
+          setJobs([])
+        } else {
+          setJobs(data)
+        }
       } catch (err) {
         console.error('Failed to fetch jobs:', err)
         setError(err instanceof Error ? err.message : 'Failed to load jobs')
@@ -184,46 +195,54 @@ export default function JobsPage() {
 
       {/* Job cards with safety check */}
       <div className="space-y-3">
-        {Array.isArray(filteredJobs) && filteredJobs.length > 0 ? (
-          filteredJobs.map(job => (
-            <Link
-              key={job.id}
-              href={`/jobs/${job.id}`}
-              className="block bg-[#1F2937] rounded-xl p-4 border border-[#374151] hover:border-[#06B6D4] transition cursor-pointer"
-            >
-              <div className="space-y-2">
-                <div className="flex justify-between items-start gap-2">
-                  <h3 className="text-base font-bold text-[#F9FAFB]">{job.clientName}</h3>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_COLORS[job.status]}`}>
-                    {job.status}
-                  </span>
-                </div>
-
-                <p className="text-sm text-[#9CA3AF]">
-                  {job.service} • {job.suburb}
-                </p>
-
-                <div className="flex gap-2 flex-wrap">
-                  {job.jobType && (
-                    <span className="px-2 py-1 rounded-full text-xs bg-blue-500/20 text-blue-400">
-                      {job.jobType}
-                    </span>
-                  )}
-                </div>
-
-                <div className="text-xs text-[#6B7280] space-y-0.5">
-                  {job.foreman && <p>Foreman: {job.foreman}</p>}
-                  {job.lastMessageSent && (
-                    <p>Last msg: {new Date(job.lastMessageSent).toLocaleDateString()}</p>
-                  )}
-                </div>
-              </div>
-            </Link>
-          ))
-        ) : (
+        {!filteredJobs || !Array.isArray(filteredJobs) ? (
+          <div className="bg-[#1F2937] rounded-xl p-6 border border-[#374151] text-center">
+            <p className="text-[#9CA3AF]">No jobs available</p>
+          </div>
+        ) : filteredJobs.length === 0 ? (
           <div className="bg-[#1F2937] rounded-xl p-6 border border-[#374151] text-center">
             <p className="text-[#9CA3AF]">No jobs match your filters</p>
           </div>
+        ) : (
+          filteredJobs.map(job => {
+            if (!job?.id) return null
+            const status = job?.status || 'UNKNOWN'
+            return (
+              <Link
+                key={job.id}
+                href={`/jobs/${job.id}`}
+                className="block bg-[#1F2937] rounded-xl p-4 border border-[#374151] hover:border-[#06B6D4] transition cursor-pointer"
+              >
+                <div className="space-y-2">
+                  <div className="flex justify-between items-start gap-2">
+                    <h3 className="text-base font-bold text-[#F9FAFB]">{job?.clientName || 'Unnamed Job'}</h3>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_COLORS[status] || 'bg-gray-500/20 text-gray-400'}`}>
+                      {status}
+                    </span>
+                  </div>
+
+                  <p className="text-sm text-[#9CA3AF]">
+                    {job?.service || 'Service TBD'} • {job?.suburb || 'Location TBD'}
+                  </p>
+
+                  {job?.jobType && (
+                    <div className="flex gap-2 flex-wrap">
+                      <span className="px-2 py-1 rounded-full text-xs bg-blue-500/20 text-blue-400">
+                        {job.jobType}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="text-xs text-[#6B7280] space-y-0.5">
+                    {job?.foreman && <p>Foreman: {job.foreman}</p>}
+                    {job?.lastMessageSent && (
+                      <p>Last msg: {new Date(job.lastMessageSent).toLocaleDateString()}</p>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            )
+          })
         )}
       </div>
     </div>

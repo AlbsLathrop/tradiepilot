@@ -93,7 +93,7 @@ export default async function DashboardPage() {
               ) : (
                 jobs.map((job) => (
                   <TableRow key={job.id} className="border-white/5 hover:bg-white/[0.02] h-9">
-                    <TableCell className="font-medium text-sm py-2">{job.customerName || job.name}</TableCell>
+                    <TableCell className="font-medium text-sm py-2">{job.clientName}</TableCell>
                     <TableCell className="py-2">
                       <Badge
                         variant="outline"
@@ -103,7 +103,7 @@ export default async function DashboardPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-[#F9FAFB]/70 text-sm py-2">{job.suburb}</TableCell>
-                    <TableCell className="text-[#F9FAFB]/70 text-sm py-2">{job.name}</TableCell>
+                    <TableCell className="text-[#F9FAFB]/70 text-sm py-2">{job.service}</TableCell>
                   </TableRow>
                 ))
               )}

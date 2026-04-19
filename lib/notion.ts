@@ -1,4 +1,4 @@
-import { Client } from '@notionhq/client'
+import { Client, isFullPage } from '@notionhq/client'
 import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints'
 import { NOTION_DB, JobStatus } from './constants'
 
@@ -9,6 +9,8 @@ type TitleProperty = { title: Array<{ plain_text: string }> }
 type SelectProperty = { select: { name: string } | null }
 type PhoneProperty = { phone_number: string | null }
 type DateProperty = { date: { start: string } | null }
+type NumberProperty = { number: number | null }
+type CheckboxProperty = { checkbox: boolean }
 
 function prop<T>(page: PageObjectResponse, key: string): T {
   return page.properties[key] as T
@@ -34,14 +36,31 @@ function date(page: PageObjectResponse, key: string): string | null {
   return prop<DateProperty>(page, key).date?.start ?? null
 }
 
+function checkbox(page: PageObjectResponse, key: string): boolean {
+  return prop<CheckboxProperty>(page, key).checkbox ?? false
+}
+
+function number(page: PageObjectResponse, key: string): number | null {
+  return prop<NumberProperty>(page, key).number ?? null
+}
+
 export interface Job {
   id: string
-  name: string
+  clientName: string
   status: JobStatus
   tradieConfigId: string
-  scheduledDate: string | null
+  service: string
   suburb: string
-  customerName: string
+  jobType: string
+  currentPhase: string
+  foreman: string
+  lastMessageSent: string | null
+  statusSortOrder: number | null
+  lastUpdated: string | null
+  notes: string
+  materialsStatus: string
+  nextAutoAction: string | null
+  clientPhone: string
 }
 
 export interface Lead {
@@ -68,12 +87,21 @@ export interface TradieConfig {
 function toJob(page: PageObjectResponse): Job {
   return {
     id: page.id,
-    name: title(page, 'Name'),
+    clientName: richText(page, 'Client Name'),
     status: select(page, 'Status') as JobStatus,
     tradieConfigId: richText(page, 'Tradie Config ID'),
-    scheduledDate: date(page, 'Scheduled Date'),
+    service: richText(page, 'Service'),
     suburb: richText(page, 'Suburb'),
-    customerName: richText(page, 'Customer Name'),
+    jobType: select(page, 'Job Type'),
+    currentPhase: select(page, 'Current Phase'),
+    foreman: richText(page, 'Foreman'),
+    lastMessageSent: date(page, 'Last Message Sent'),
+    statusSortOrder: number(page, 'Status Sort Order'),
+    lastUpdated: date(page, 'Last Updated'),
+    notes: richText(page, 'Notes'),
+    materialsStatus: select(page, 'Materials Status'),
+    nextAutoAction: richText(page, 'Next Auto Action'),
+    clientPhone: phone(page, 'Client Phone'),
   }
 }
 
@@ -102,25 +130,46 @@ function toTradieConfig(page: PageObjectResponse): TradieConfig {
   }
 }
 
-const ACTIVE_STATUSES: JobStatus[] = ['SCHEDULED', 'QUOTED', 'IN PROGRESS', 'RUNNING LATE', 'DAY DONE']
-
-export async function getActiveJobs(tradieConfigId?: string): Promise<Job[]> {
-  const filter = tradieConfigId
-    ? {
-        and: [
-          { or: ACTIVE_STATUSES.map((s) => ({ property: 'Status', select: { equals: s } })) },
-          { property: 'Tradie Config ID', rich_text: { equals: tradieConfigId } },
-        ],
-      }
-    : { or: ACTIVE_STATUSES.map((s) => ({ property: 'Status', select: { equals: s } })) }
-
+export async function getActiveJobs(): Promise<Job[]> {
   const res = await notion.databases.query({
     database_id: NOTION_DB.JOBS,
-    filter,
-    sorts: [{ property: 'Status Sort Order', direction: 'ascending' }],
+    filter: {
+      and: [
+        { property: 'Status', select: { does_not_equal: 'COMPLETE' } },
+        { property: 'Status', select: { does_not_equal: 'PAID' } },
+      ],
+    },
+    sorts: [
+      { property: 'Status Sort Order', direction: 'ascending' },
+      { property: 'Last Updated', direction: 'descending' },
+    ],
   })
 
   return (res.results as PageObjectResponse[]).map(toJob)
+}
+
+export async function getJobs(tradieConfigId: string): Promise<Job[]> {
+  const res = await notion.databases.query({
+    database_id: NOTION_DB.JOBS,
+    filter: {
+      and: [
+        { property: 'Status', select: { does_not_equal: 'COMPLETE' } },
+        { property: 'Status', select: { does_not_equal: 'PAID' } },
+        { property: 'Tradie Config ID', rich_text: { equals: tradieConfigId } },
+      ],
+    },
+    sorts: [
+      { property: 'Status Sort Order', direction: 'ascending' },
+      { property: 'Last Updated', direction: 'descending' },
+    ],
+  })
+
+  return (res.results as PageObjectResponse[]).map(toJob)
+}
+
+export async function getJob(jobId: string): Promise<Job | null> {
+  const res = await notion.pages.retrieve({ page_id: jobId })
+  return res && isFullPage(res) ? toJob(res as PageObjectResponse) : null
 }
 
 export async function getRecentLeads(limit: number): Promise<Lead[]> {
@@ -150,6 +199,33 @@ export async function updateJobStatus(jobId: string, status: JobStatus): Promise
     properties: {
       Status: { select: { name: status } },
     },
+  })
+}
+
+export async function updateJob(jobId: string, updates: Partial<{
+  status: JobStatus
+  currentPhase: string
+  notes: string
+  materialsStatus: string
+}>): Promise<void> {
+  const properties: Record<string, any> = {}
+
+  if (updates.status) {
+    properties['Status'] = { select: { name: updates.status } }
+  }
+  if (updates.currentPhase !== undefined) {
+    properties['Current Phase'] = { select: { name: updates.currentPhase } }
+  }
+  if (updates.notes !== undefined) {
+    properties['Notes'] = { rich_text: [{ text: { content: updates.notes } }] }
+  }
+  if (updates.materialsStatus !== undefined) {
+    properties['Materials Status'] = { select: { name: updates.materialsStatus } }
+  }
+
+  await notion.pages.update({
+    page_id: jobId,
+    properties,
   })
 }
 

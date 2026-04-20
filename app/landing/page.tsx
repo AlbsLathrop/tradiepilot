@@ -67,8 +67,8 @@ export default function LandingPage() {
               <h1 className="text-5xl font-black text-white mb-6">
                 Tradie management, simplified
               </h1>
-              <p className="text-base text-[#D1D5DB] leading-relaxed">
-                Cockpit automates your lead responses, quotes, job updates, and client follow-ups. Focus on the work. Let the system handle the rest.
+              <p className="text-base text-[#D1D5DB] leading-relaxed max-w-[550px]">
+                Cockpit automates your lead responses, quotes, job updates, and client follow-ups. More importantly: we automate all your communications with clients, foremen, and team members. Everyone stays updated and on the same page—without needing to call you and steal your time on the tools.
               </p>
             </div>
 
@@ -77,7 +77,7 @@ export default function LandingPage() {
               {[
                 'Instant lead responses (90 seconds)',
                 'Automatic quote follow-ups',
-                'Job status updates to clients',
+                'Job status updates (clients, foremen, your team)',
                 'Reviews & client reactivation',
               ].map((feature, i) => (
                 <div key={i} className="flex items-start gap-3">

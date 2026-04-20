@@ -52,7 +52,7 @@ export default async function HomePage() {
           </div>
           <div className="bg-[#1F2937] rounded-lg p-4 border border-slate-700 shadow-sm">
             <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wider mb-2">Open Quotes</p>
-            <p className="text-3xl font-bold text-[#06B6D4]">{stats?.openQuotes ?? 0}</p>
+            <p className="text-3xl font-bold text-[#F97316]">{stats?.openQuotes ?? 0}</p>
           </div>
           <div className="bg-[#1F2937] rounded-lg p-4 border border-slate-700 shadow-sm">
             <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wider mb-2">Reviews</p>
@@ -60,7 +60,7 @@ export default async function HomePage() {
           </div>
           <div className="bg-[#1F2937] rounded-lg p-4 border border-slate-700 shadow-sm">
             <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wider mb-2">Saved This Week</p>
-            <p className="text-3xl font-bold text-[#06B6D4]">{stats?.hoursSaved ?? 0}h</p>
+            <p className="text-3xl font-bold text-[#F97316]">{stats?.hoursSaved ?? 0}h</p>
           </div>
         </div>
 
@@ -69,20 +69,20 @@ export default async function HomePage() {
           <div className="grid grid-cols-3 gap-2">
             <Link
               href="/jobs/new"
-              className="flex flex-col items-center justify-center bg-[#06B6D4] text-[#111827] rounded-lg p-4 border border-slate-700 shadow-sm hover:bg-[#0891B2] transition min-h-12"
+              className="flex flex-col items-center justify-center bg-[#F97316] text-white rounded-lg p-4 border border-slate-700 shadow-sm hover:bg-[#C2580A] transition min-h-12"
             >
               <Briefcase size={20} className="mb-1" />
               <span className="text-xs font-semibold text-center">New Job</span>
             </Link>
             <Link
               href="/leads"
-              className="flex flex-col items-center justify-center bg-[#06B6D4] text-[#111827] rounded-lg p-4 border border-slate-700 shadow-sm hover:bg-[#0891B2] transition min-h-12"
+              className="flex flex-col items-center justify-center bg-[#F97316] text-white rounded-lg p-4 border border-slate-700 shadow-sm hover:bg-[#C2580A] transition min-h-12"
             >
               <Users size={20} className="mb-1" />
               <span className="text-xs font-semibold text-center">New Lead</span>
             </Link>
             <button
-              className="flex flex-col items-center justify-center bg-[#06B6D4] text-[#111827] rounded-lg p-4 border border-slate-700 shadow-sm hover:bg-[#0891B2] transition min-h-12"
+              className="flex flex-col items-center justify-center bg-[#F97316] text-white rounded-lg p-4 border border-slate-700 shadow-sm hover:bg-[#C2580A] transition min-h-12"
             >
               <MessageCircle size={20} className="mb-1" />
               <span className="text-xs font-semibold text-center">FIXER</span>

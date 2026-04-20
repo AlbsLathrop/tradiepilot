@@ -67,9 +67,9 @@ export default function LandingPage() {
                   </label>
                   <input
                     type="email"
-                    placeholder="joey@tradie.test"
+                    value="joey@tradie.test"
                     disabled
-                    className="w-full px-4 py-3 bg-[#111827] border border-[#374151] rounded-lg text-white text-base placeholder-[#6B7280] opacity-60 cursor-not-allowed"
+                    className="w-full bg-[#111827] border border-[#374151] text-white placeholder-[#6B7280] px-4 py-3 rounded-lg disabled:cursor-not-allowed disabled:opacity-70"
                   />
                 </div>
 
@@ -80,9 +80,9 @@ export default function LandingPage() {
                   </label>
                   <input
                     type="password"
-                    placeholder="••••••••"
+                    value="password"
                     disabled
-                    className="w-full px-4 py-3 bg-[#111827] border border-[#374151] rounded-lg text-white text-base placeholder-[#6B7280] opacity-60 cursor-not-allowed"
+                    className="w-full bg-[#111827] border border-[#374151] text-white placeholder-[#6B7280] px-4 py-3 rounded-lg disabled:cursor-not-allowed disabled:opacity-70"
                   />
                 </div>
 
@@ -98,8 +98,11 @@ export default function LandingPage() {
 
                 {/* Sign In Button */}
                 <button
-                  onClick={() => window.location.href = '/app/home'}
-                  className="w-full py-3 px-4 bg-[#F97316] text-white rounded-lg font-semibold hover:bg-[#C2580A] transition-all duration-200 ease text-base min-h-[48px] flex items-center justify-center"
+                  type="button"
+                  onClick={() => {
+                    window.location.href = '/app/home';
+                  }}
+                  className="w-full bg-[#F97316] hover:bg-[#C2580A] text-white font-semibold py-3 px-4 rounded-lg min-h-[48px] transition-all duration-200"
                 >
                   Sign In
                 </button>

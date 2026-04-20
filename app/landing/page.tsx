@@ -1,43 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Check } from 'lucide-react'
 
 export default function LandingPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-
-    try {
-      // Demo mode: allow joey@tradie.test
-      if (email === 'joey@tradie.test' && password) {
-        router.push('/app/home')
-        return
-      }
-
-      // In production, validate against your auth system
-      if (!email || !password) {
-        setError('Please enter both email and password')
-        return
-      }
-
-      // Placeholder for real auth API call
-      // const res = await fetch('/api/auth/signin', { ... })
-
-      setError('Invalid credentials')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <div className="min-h-screen bg-[#111827]">
@@ -93,7 +59,7 @@ export default function LandingPage() {
             <div className="bg-[#1F2937] border border-[#374151] rounded-xl p-10 shadow-[0_10px_40px_rgba(0,0,0,0.3)]">
               <h2 className="text-2xl font-bold text-white mb-6">Sign In</h2>
 
-              <form onSubmit={handleSignIn} className="space-y-5">
+              <div className="space-y-5">
                 {/* Email Input */}
                 <div>
                   <label className="block text-sm font-semibold text-[#D1D5DB] mb-1.5">
@@ -101,10 +67,9 @@ export default function LandingPage() {
                   </label>
                   <input
                     type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="joey@tradie.test"
-                    className="w-full px-4 py-3 bg-[#111827] border border-[#374151] rounded-lg text-white text-base placeholder-[#6B7280] focus:outline-none focus:border-[#F97316] focus:bg-[#0F0F0F] transition-all duration-200 ease"
+                    disabled
+                    className="w-full px-4 py-3 bg-[#111827] border border-[#374151] rounded-lg text-white text-base placeholder-[#6B7280] opacity-60 cursor-not-allowed"
                   />
                 </div>
 
@@ -115,10 +80,9 @@ export default function LandingPage() {
                   </label>
                   <input
                     type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full px-4 py-3 bg-[#111827] border border-[#374151] rounded-lg text-white text-base placeholder-[#6B7280] focus:outline-none focus:border-[#F97316] focus:bg-[#0F0F0F] transition-all duration-200 ease"
+                    disabled
+                    className="w-full px-4 py-3 bg-[#111827] border border-[#374151] rounded-lg text-white text-base placeholder-[#6B7280] opacity-60 cursor-not-allowed"
                   />
                 </div>
 
@@ -132,22 +96,14 @@ export default function LandingPage() {
                   </a>
                 </div>
 
-                {/* Error Message */}
-                {error && (
-                  <div className="p-3 bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-lg">
-                    <p className="text-sm text-[#EF4444]">{error}</p>
-                  </div>
-                )}
-
                 {/* Sign In Button */}
                 <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 px-4 bg-[#F97316] text-white rounded-lg font-semibold hover:bg-[#C2580A] disabled:opacity-50 transition-all duration-200 ease text-base min-h-12 flex items-center justify-center"
+                  onClick={() => window.location.href = '/app/home'}
+                  className="w-full py-3 px-4 bg-[#F97316] text-white rounded-lg font-semibold hover:bg-[#C2580A] transition-all duration-200 ease text-base min-h-[48px] flex items-center justify-center"
                 >
-                  {loading ? 'Signing in...' : 'Sign In'}
+                  Sign In
                 </button>
-              </form>
+              </div>
 
               {/* Demo Info */}
               <div className="mt-6 pt-6 border-t border-[#374151]">

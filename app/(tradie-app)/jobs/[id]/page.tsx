@@ -114,11 +114,11 @@ export default function JobDetailPage() {
   }
 
   return (
-    <div className="p-4 space-y-4 pb-24">
+    <div className="p-4 md:p-8 space-y-6 pb-24">
       {/* Back button */}
       <Link
         href="/jobs"
-        className="inline-flex items-center text-[#06B6D4] hover:text-[#0891B2] text-sm"
+        className="inline-flex items-center text-[#F97316] hover:text-[#C2580A] text-sm"
       >
         ← Back
       </Link>
@@ -155,7 +155,7 @@ export default function JobDetailPage() {
           </div>
           <div className="col-span-2">
             <p className="text-[#9CA3AF] text-xs">Phone</p>
-            <a href={`tel:${job.clientPhone}`} className="text-[#06B6D4] hover:text-[#0891B2]">
+            <a href={`tel:${job.clientPhone}`} className="text-[#F97316] hover:text-[#C2580A]">
               {job.clientPhone}
             </a>
           </div>
@@ -181,7 +181,7 @@ export default function JobDetailPage() {
               console.error('Webhook error:', err)
             }
           }}
-          className="w-full px-4 py-3 h-12 bg-[#111827] border border-[#06B6D4] rounded-lg text-[#F9FAFB] font-semibold text-base focus:outline-none focus:border-[#0891B2] appearance-none flex items-center"
+          className="w-full px-4 py-3 h-12 bg-[#111827] border border-[#374151] rounded-lg text-[#F9FAFB] font-semibold text-base focus:outline-none focus:border-[#F97316] appearance-none flex items-center"
         >
           {JOB_STATUSES.map(s => (
             <option key={s} value={s}>
@@ -202,7 +202,7 @@ export default function JobDetailPage() {
         <select
           value={currentPhase}
           onChange={e => setCurrentPhase(e.target.value)}
-          className="w-full px-3 py-3 h-12 bg-[#111827] border border-[#374151] rounded-lg text-[#F9FAFB] focus:outline-none focus:border-[#06B6D4] appearance-none flex items-center"
+          className="w-full px-3 py-3 h-12 bg-[#111827] border border-[#374151] rounded-lg text-[#F9FAFB] focus:outline-none focus:border-[#F97316] appearance-none flex items-center"
         >
           <option value="">Select a phase</option>
           {PHASES.map(phase => (
@@ -219,7 +219,7 @@ export default function JobDetailPage() {
         <textarea
           value={notes}
           onChange={e => setNotes(e.target.value)}
-          className="w-full px-3 py-3 bg-[#111827] border border-[#374151] rounded-lg text-[#F9FAFB] focus:outline-none focus:border-[#06B6D4] min-h-32 resize-none"
+          className="w-full px-3 py-3 bg-[#111827] border border-[#374151] rounded-lg text-[#F9FAFB] focus:outline-none focus:border-[#F97316] min-h-32 resize-none"
           placeholder="Add notes about this job..."
         />
       </div>
@@ -230,7 +230,7 @@ export default function JobDetailPage() {
         <select
           value={materialsStatus}
           onChange={e => setMaterialsStatus(e.target.value)}
-          className="w-full px-3 py-3 h-12 bg-[#111827] border border-[#374151] rounded-lg text-[#F9FAFB] focus:outline-none focus:border-[#06B6D4] appearance-none flex items-center"
+          className="w-full px-3 py-3 h-12 bg-[#111827] border border-[#374151] rounded-lg text-[#F9FAFB] focus:outline-none focus:border-[#F97316] appearance-none flex items-center"
         >
           <option value="">Select status</option>
           {MATERIAL_STATUSES.map(status => (
@@ -265,7 +265,7 @@ export default function JobDetailPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full px-4 py-3 h-12 bg-[#06B6D4] text-[#111827] rounded-lg font-semibold hover:bg-[#0891B2] disabled:opacity-50 transition flex items-center justify-center"
+          className="w-full px-4 py-3 h-12 bg-[#F97316] text-white rounded-lg font-semibold hover:bg-[#C2580A] disabled:opacity-50 transition-all duration-200 ease focus:ring-2 focus:ring-offset-2 focus:ring-[#F97316] flex items-center justify-center"
         >
           {saving ? 'Updating...' : 'Update Job'}
         </button>

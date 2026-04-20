@@ -6,11 +6,11 @@ import { Plus, Phone, MessageSquare } from 'lucide-react'
 
 const LEAD_STATUSES = ['NEW', 'QUALIFIED', 'PENDING_DECLINE', 'DECLINED', 'COLD']
 const STATUS_COLORS: Record<string, string> = {
-  NEW: 'bg-cyan-500/20 text-cyan-400',
-  QUALIFIED: 'bg-green-500/20 text-green-400',
-  PENDING_DECLINE: 'bg-yellow-500/20 text-yellow-400',
-  DECLINED: 'bg-red-500/20 text-red-400',
-  COLD: 'bg-gray-500/20 text-gray-400',
+  NEW: 'bg-[#F97316] text-white',
+  QUALIFIED: 'bg-[#10B981] text-white',
+  PENDING_DECLINE: 'bg-[#FBBF24] text-[#000]',
+  DECLINED: 'bg-[#EF4444] text-white',
+  COLD: 'bg-[#6B7280] text-white',
 }
 
 interface Lead {
@@ -61,7 +61,7 @@ export default function LeadsPage() {
 
   return (
     <div className="min-h-screen bg-[#111827]">
-      <div className="px-4 py-6 space-y-4 pb-24">
+      <div className="px-4 md:px-8 py-6 space-y-6 pb-24">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -70,20 +70,20 @@ export default function LeadsPage() {
           </div>
           <Link
             href="/leads/new"
-            className="inline-flex items-center justify-center w-12 h-12 bg-[#06B6D4] text-[#111827] rounded-lg hover:bg-[#0891B2] transition"
+            className="inline-flex items-center justify-center w-12 h-12 bg-[#F97316] text-white rounded-lg hover:bg-[#C2580A] transition"
           >
             <Plus size={20} />
           </Link>
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
+        <div className="flex gap-0 overflow-x-auto border-b border-[#374151] -mx-4 px-4">
           <button
             onClick={() => setSelectedStatus(null)}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
+            className={`px-4 py-3 text-sm font-semibold transition-all duration-200 ease whitespace-nowrap border-b-2 ${
               selectedStatus === null
-                ? 'bg-[#06B6D4] text-[#111827]'
-                : 'bg-[#1F2937] text-[#F9FAFB] border border-slate-700'
+                ? 'border-[#F97316] text-white'
+                : 'border-transparent text-[#D1D5DB] hover:text-[#F9FAFB]'
             }`}
           >
             All
@@ -92,10 +92,10 @@ export default function LeadsPage() {
             <button
               key={status}
               onClick={() => setSelectedStatus(status)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
+              className={`px-4 py-3 text-sm font-semibold transition-all duration-200 ease whitespace-nowrap border-b-2 ${
                 selectedStatus === status
-                  ? 'bg-[#06B6D4] text-[#111827]'
-                  : 'bg-[#1F2937] text-[#F9FAFB] border border-slate-700'
+                  ? 'border-[#F97316] text-white'
+                  : 'border-transparent text-[#D1D5DB] hover:text-[#F9FAFB]'
               }`}
             >
               {status.replace('_', ' ')}
@@ -115,19 +115,19 @@ export default function LeadsPage() {
               return (
                 <div
                   key={lead.id}
-                  className="bg-[#1F2937] rounded-lg p-4 border border-slate-700 space-y-3"
+                  className="bg-[#1F2937] rounded-lg p-5 border border-[#374151] space-y-3 hover:shadow-[0_4px_12px_rgba(249,115,22,0.1)] transition-all duration-200 ease"
                 >
                   <div className="flex justify-between items-start gap-3">
                     <Link
                       href={`/leads/${lead.id}`}
-                      className="flex-1 hover:text-[#06B6D4] transition"
+                      className="flex-1 hover:text-[#F97316] transition"
                     >
                       <h3 className="text-sm font-semibold text-[#F9FAFB]">{lead?.name || 'Unnamed'}</h3>
                       <p className="text-xs text-[#9CA3AF] mt-1">
                         {lead?.service || 'Service'} • {lead?.suburb || 'Location'}
                       </p>
                     </Link>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_COLORS[status]}`}>
+                    <span className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${STATUS_COLORS[status]}`}>
                       {status.replace('_', ' ')}
                     </span>
                   </div>
@@ -139,13 +139,13 @@ export default function LeadsPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => window.location.href = `tel:${lead.phone}`}
-                        className="flex-1 inline-flex items-center justify-center gap-2 h-12 bg-[#06B6D4] text-[#111827] rounded-lg py-2 text-xs font-semibold hover:bg-[#0891B2] transition"
+                        className="flex-1 inline-flex items-center justify-center gap-2 h-10 bg-[#2A2A2A] border border-[#F97316] text-[#F97316] rounded-lg py-2 text-xs font-semibold hover:bg-[#F97316] hover:text-white transition-all duration-200 ease focus:ring-2 focus:ring-offset-2 focus:ring-[#F97316]"
                       >
                         <Phone size={14} />
                         Call
                       </button>
                       <button
-                        className="flex-1 inline-flex items-center justify-center gap-2 h-12 bg-[#1F2937] text-[#F9FAFB] border border-slate-600 rounded-lg py-2 text-xs font-semibold hover:bg-slate-700 transition"
+                        className="flex-1 inline-flex items-center justify-center gap-2 h-10 bg-[#2A2A2A] border border-[#F97316] text-[#F97316] rounded-lg py-2 text-xs font-semibold hover:bg-[#F97316] hover:text-white transition-all duration-200 ease focus:ring-2 focus:ring-offset-2 focus:ring-[#F97316]"
                       >
                         <MessageSquare size={14} />
                         Text

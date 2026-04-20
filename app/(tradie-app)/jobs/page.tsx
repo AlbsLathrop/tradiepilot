@@ -83,7 +83,7 @@ export default function JobsPage() {
 
   return (
     <div className="min-h-screen bg-[#111827]">
-      <div className="px-4 py-6 space-y-4 pb-24">
+      <div className="px-4 md:px-8 py-6 space-y-6 pb-24">
         {/* Header */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -93,20 +93,20 @@ export default function JobsPage() {
             </div>
             <Link
               href="/jobs/new"
-              className="inline-flex items-center justify-center w-12 h-12 bg-[#06B6D4] text-[#111827] rounded-lg hover:bg-[#0891B2] transition"
+              className="inline-flex items-center justify-center w-12 h-12 bg-[#F97316] text-white rounded-lg hover:bg-[#C2580A] transition-all duration-200 ease focus:ring-2 focus:ring-offset-2 focus:ring-[#F97316]"
             >
               <Plus size={20} />
             </Link>
           </div>
 
           {/* Status Filter Tabs */}
-          <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
+          <div className="flex gap-0 overflow-x-auto border-b border-[#374151] -mx-4 px-4">
             <button
               onClick={() => setSelectedStatus(null)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
+              className={`px-4 py-3 text-sm font-semibold transition-all duration-200 ease whitespace-nowrap border-b-2 ${
                 selectedStatus === null
-                  ? 'bg-[#06B6D4] text-[#111827]'
-                  : 'bg-[#1F2937] text-[#F9FAFB] border border-slate-700'
+                  ? 'border-[#F97316] text-white'
+                  : 'border-transparent text-[#D1D5DB] hover:text-[#F9FAFB]'
               }`}
             >
               All
@@ -115,10 +115,10 @@ export default function JobsPage() {
               <button
                 key={status}
                 onClick={() => setSelectedStatus(status)}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
+                className={`px-4 py-3 text-sm font-semibold transition-all duration-200 ease whitespace-nowrap border-b-2 ${
                   selectedStatus === status
-                    ? 'bg-[#06B6D4] text-[#111827]'
-                    : 'bg-[#1F2937] text-[#F9FAFB] border border-slate-700'
+                    ? 'border-[#F97316] text-white'
+                    : 'border-transparent text-[#D1D5DB] hover:text-[#F9FAFB]'
                 }`}
               >
                 {status}
@@ -141,7 +141,7 @@ export default function JobsPage() {
                 <Link
                   key={job.id}
                   href={`/jobs/${job.id}`}
-                  className="block bg-[#1F2937] rounded-lg p-4 border border-slate-700 hover:border-[#06B6D4] transition"
+                  className="block bg-[#1F2937] rounded-lg p-5 border border-[#374151] hover:bg-[#111827] hover:shadow-[0_4px_12px_rgba(249,115,22,0.1)] hover:border-l-4 hover:border-[#F97316] transition-all duration-200 ease"
                 >
                   <div className="space-y-2">
                     <div className="flex justify-between items-start gap-3">

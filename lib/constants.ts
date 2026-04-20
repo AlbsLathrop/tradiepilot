@@ -22,24 +22,24 @@ export const JOB_STATUSES = [
 export type JobStatus = typeof JOB_STATUSES[number]
 
 export const STATUS_COLORS: Record<string, string> = {
-  'LEAD':           'bg-gray-500/20 text-gray-400',
+  'LEAD':           'bg-orange-500/20 text-[#F97316]',
   'QUOTED':         'bg-blue-500/20 text-blue-400',
-  'SCHEDULED':      'bg-blue-500/20 text-blue-400',
-  'IN PROGRESS':    'bg-cyan-500/20 text-cyan-400',
-  'RUNNING LATE':   'bg-orange-500/20 text-orange-400',
+  'SCHEDULED':      'bg-gray-500/20 text-[#9CA3AF]',
+  'IN PROGRESS':    'bg-orange-500/20 text-[#F97316]',
+  'RUNNING LATE':   'bg-yellow-500/20 text-[#FBBF24]',
   'DAY DONE':       'bg-purple-500/20 text-purple-400',
-  'COMPLETE':       'bg-green-500/20 text-green-400',
-  'INVOICED':       'bg-yellow-500/20 text-yellow-400',
+  'COMPLETE':       'bg-green-500/20 text-[#10B981]',
+  'INVOICED':       'bg-cyan-500/20 text-[#06B6D4]',
   'PAID':           'bg-emerald-500/20 text-emerald-400',
-  'Qualified':      'bg-green-500/20 text-green-400',
+  'Qualified':      'bg-green-500/20 text-[#10B981]',
   'Disqualified':   'bg-red-500/20 text-red-400',
-  'Pending Decline':'bg-orange-500/20 text-orange-400',
-  'Declined':       'bg-gray-500/20 text-gray-400',
+  'Pending Decline':'bg-orange-500/20 text-[#F97316]',
+  'Declined':       'bg-red-500/20 text-red-400',
   'Handed Off':     'bg-blue-500/20 text-blue-400',
-  'Waiting':        'bg-gray-500/20 text-gray-400',
-  'NEW':            'bg-gray-500/20 text-gray-400',
-  'WON':            'bg-green-500/20 text-green-400',
-  'COLD':           'bg-gray-500/20 text-gray-400',
+  'Waiting':        'bg-slate-500/20 text-slate-400',
+  'NEW':            'bg-orange-500/20 text-[#F97316]',
+  'WON':            'bg-green-500/20 text-[#10B981]',
+  'COLD':           'bg-slate-500/20 text-slate-400',
 }
 
 export const ORBIT_MESSAGES: Record<string, string> = {

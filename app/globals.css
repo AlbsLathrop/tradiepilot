@@ -48,25 +48,41 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* JobFlow Custom Colors — separate from shadcn oklch tokens */
+/* Cockpit Color System */
 :root {
-  --bg-base: #0f111a;
-  --bg-surface: #161929;
-  --bg-elevated: #1d2235;
-  --bg-input: #1a1f30;
-  --border-subtle: #252a3d;
-  --border-default: #2e3452;
-  --border-active: #3d4570;
-  --gold: #f5c518;
-  --gold-dim: #f5c51822;
-  --luna: #f5c518;
-  --chase: #3b82f6;
-  --orbit: #22c55e;
-  --anchor: #f97316;
-  --fixer: #a855f7;
-  --text-primary: #e8eaf6;
-  --text-secondary: #8892b0;
-  --text-muted: #4a5280;
+  /* Primary */
+  --orange: #F97316;
+  --orange-dark: #C2580A;
+  --orange-light: #FFF0E6;
+  --orange-mid: #FDBA74;
+
+  /* Backgrounds */
+  --bg-primary: #111827;
+  --bg-secondary: #1F2937;
+  --bg-tertiary: #0F0F0F;
+
+  /* Borders & Dividers */
+  --border-default: #374151;
+  --border-subtle: #1F2937;
+
+  /* Text */
+  --text-primary: #F9FAFB;
+  --text-secondary: #D1D5DB;
+  --text-tertiary: #9CA3AF;
+  --text-muted: #6B7280;
+
+  /* Status Colors */
+  --status-new: #F97316;
+  --status-qualified: #10B981;
+  --status-pending: #FBBF24;
+  --status-declined: #EF4444;
+  --status-cold: #6B7280;
+
+  /* Semantic */
+  --success: #10B981;
+  --warning: #FBBF24;
+  --error: #EF4444;
+  --info: #06B6D4;
 }
 
 :root {

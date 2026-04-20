@@ -1,6 +1,5 @@
 import { getServerSession } from 'next-auth';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { MessageCircle, Briefcase, Users } from 'lucide-react';
 
 interface Stats {
@@ -26,11 +25,11 @@ async function getStats(tradieConfigId?: string): Promise<Stats> {
 export default async function HomePage() {
   const session = await getServerSession();
 
-  if (!session) {
-    redirect('/');
-  }
+  // if (!session) {
+  //   redirect('/');
+  // }
 
-  const stats = await getStats(session.user?.tradieConfigId);
+  const stats = await getStats(session?.user?.tradieConfigId);
   const firstName = session?.user?.name?.split(' ')[0] || 'Tradie';
 
   return (

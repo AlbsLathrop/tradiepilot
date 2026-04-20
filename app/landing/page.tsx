@@ -97,15 +97,12 @@ export default function LandingPage() {
                 </div>
 
                 {/* Sign In Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.location.href = '/app/home';
-                  }}
-                  className="w-full bg-[#F97316] hover:bg-[#C2580A] text-white font-semibold py-3 px-4 rounded-lg min-h-[48px] transition-all duration-200"
+                <a
+                  href="/app/home"
+                  className="w-full bg-[#F97316] hover:bg-[#C2580A] text-white font-semibold py-3 px-4 rounded-lg min-h-[48px] transition-all duration-200 text-center block"
                 >
                   Sign In
-                </button>
+                </a>
               </div>
 
               {/* Demo Info */}

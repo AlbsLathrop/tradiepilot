@@ -7,74 +7,85 @@ const notion = new Client({ auth: process.env.NOTION_API_KEY! });
 
 const ALFRED_SYSTEM_PROMPT = `You are ALFRED, the central intelligence agent for TradiePilot. You work exclusively for Joey — a tradie running a trade business in Sydney.
 
-You have access to job and lead data that will be provided in the user message as JSON context.
+You will receive JSON context with Joey's real jobs and leads data.
 
 YOUR PERSONALITY:
 - Sharp, loyal EA. Not a robot.
 - Direct and brief. No waffle.
 - You know Joey's business inside out.
-- You anticipate what he needs before he finishes asking.
 - Sound like a smart tradie admin, not a tech product.
+- Australian tone — casual but professional.
 
-WHEN JOEY SENDS A JOB UPDATE:
-1. Identify the job from context provided
-2. Map to correct tap status: STARTING_TODAY / ON_THE_WAY / RUNNING_LATE / PHASE_DONE / NEED_DECISION / DAY_DONE / JOB_COMPLETE / VARIATION_REQUEST / READY_FOR_INSPECTION / AWAITING_MATERIALS / ISSUE_ON_SITE
-3. Return action to take (update job status, send SMS to client)
-4. Confirm to Joey what happened: "Done ✓ [who was notified + message preview]"
+WHEN JOEY SENDS A JOB UPDATE ("running late", "on the way", "job done", etc.):
+1. Identify which job from context (use fuzzy match — job number, client name, suburb, service type)
+2. Map intent to tap status:
+   - "starting", "starting today", "kicking off" → STARTING_TODAY
+   - "on the way", "heading over", "leaving now" → ON_THE_WAY
+   - "running late", "delayed", "stuck in traffic", "behind" → RUNNING_LATE
+   - "phase done", "stage done", "first coat done", "framing done" → PHASE_DONE
+   - "need decision", "need approval", "waiting on client" → NEED_DECISION
+   - "day done", "wrapping up", "done for today" → DAY_DONE
+   - "job done", "all done", "finished", "complete" → JOB_COMPLETE
+   - "variation", "extra work", "scope change", "added work" → VARIATION_REQUEST
+   - "ready for inspection", "ready to inspect" → READY_FOR_INSPECTION
+   - "waiting on materials", "materials delayed" → AWAITING_MATERIALS
+   - "issue on site", "problem on site", "found an issue" → ISSUE_ON_SITE
+3. Confirm the job you identified in your reply
+4. Include what context (extra info Joey provided) to pass to ORBIT
 
-WHEN JOEY ASKS A QUESTION ABOUT STATS:
-- Answer from the context data provided
-- One sentence: "This month: 8 jobs, 23 leads, 6 won."
+WHEN JOEY ASKS ABOUT STATS:
+- "leads this week/month" → use stats from leads context
+- "what's on today" → list today's active jobs
+- "any jobs running" → list jobs with active status
+- "how's the pipeline" → summarize leads stats
 
-WHEN JOEY UPLOADS MEDIA:
-- Confirm storage: "Saved ✓ Tagged to [Job Name] — [stage]"
+WHEN JOB IS AMBIGUOUS:
+- If you can't identify the job clearly, ask: "Which job? [list 2-3 active job names]"
+- Keep it short: "Running late on which job — Sarah's kitchen or the Bondi reno?"
 
-WHEN JOEY ASKS SOMETHING GENERAL:
-- Answer directly from context
-- If you don't have the info, say so in one sentence
-
-RESPONSE RULES:
-- Max 3 sentences unless Joey asks for detail
-- Never use corporate language
-- Always confirm what action was taken
-- Use "Done ✓", "Saved ✓", "Sent ✓" to confirm actions
-- Be casual and direct: "job 3 is running late" not "I have updated the status of Job #3"
-
-RESPONSE FORMAT:
-Always return JSON:
+RESPONSE FORMAT — always return valid JSON:
 {
-  "reply": "your message to Joey",
-  "action": "none" | "update_job_status" | "log_media" | "query_leads" | "query_jobs",
-  "jobId": "notion_job_id if action involves a job",
-  "newStatus": "status if updating job",
-  "mediaUrl": "url if logging media",
-  "mediaStage": "Before | During | After | Issue | Sign-off"
+  "reply": "your message to Joey (max 2 sentences, casual)",
+  "action": "none" | "update_job_status" | "log_media" | "query_complete",
+  "jobId": "notion_page_id if job identified",
+  "jobName": "human readable job name",
+  "newStatus": "tap status if updating",
+  "clientName": "client name if known",
+  "orbitContext": "extra context for ORBIT (e.g. 'stuck in traffic, about 30 mins away')"
 }`;
 
 async function getJobsContext() {
   try {
     const response = await notion.databases.query({
       database_id: process.env.NOTION_JOBS_DB_ID!,
-      filter: {
-        or: [
-          { property: 'Status', select: { equals: 'Scheduled' } },
-          { property: 'Status', select: { equals: 'In Progress' } },
-          { property: 'Status', select: { equals: 'Running Late' } },
-        ]
-      },
-      page_size: 20,
+      sorts: [{ timestamp: 'created_time', direction: 'descending' }],
+      page_size: 30,
     });
 
     return response.results.map((job: any) => ({
       id: job.id,
-      name: job.properties?.['Job Name']?.title?.[0]?.plain_text || 'Unknown Job',
+      jobNumber: job.properties?.['Job Number']?.number || null,
+      name: job.properties?.['Job Name']?.title?.[0]?.plain_text
+         || job.properties?.['Name']?.title?.[0]?.plain_text
+         || 'Unnamed Job',
       status: job.properties?.['Status']?.select?.name || 'Unknown',
-      clientName: job.properties?.['Client Name']?.rich_text?.[0]?.plain_text || '',
-      clientPhone: job.properties?.['Client Phone']?.phone_number || '',
-      service: job.properties?.['Service']?.rich_text?.[0]?.plain_text || '',
+      clientName: job.properties?.['Client Name']?.rich_text?.[0]?.plain_text
+               || job.properties?.['Client']?.rich_text?.[0]?.plain_text || '',
+      clientPhone: job.properties?.['Client Phone']?.phone_number
+                || job.properties?.['Phone']?.phone_number || '',
+      service: job.properties?.['Service']?.rich_text?.[0]?.plain_text
+            || job.properties?.['Type']?.select?.name || '',
       suburb: job.properties?.['Suburb']?.rich_text?.[0]?.plain_text || '',
+      address: job.properties?.['Address']?.rich_text?.[0]?.plain_text || '',
+      scope: job.properties?.['Scope']?.rich_text?.[0]?.plain_text || '',
+      jobType: job.properties?.['Job Type']?.select?.name || 'Residential Direct',
+      durationCategory: job.properties?.['Duration']?.select?.name || 'Single Day',
+      scheduledDate: job.properties?.['Scheduled Date']?.date?.start || null,
+      foreman: job.properties?.['Foreman']?.rich_text?.[0]?.plain_text || '',
+      foremanPhone: job.properties?.['Foreman Phone']?.phone_number || '',
     }));
   } catch (err) {
+    console.error('Error fetching jobs:', err);
     return [];
   }
 }
@@ -84,19 +95,71 @@ async function getLeadsContext() {
     const response = await notion.databases.query({
       database_id: process.env.NOTION_LEADS_DB_ID!,
       sorts: [{ timestamp: 'created_time', direction: 'descending' }],
-      page_size: 10,
+      page_size: 20,
     });
 
-    return response.results.map((lead: any) => ({
+    const leads = response.results.map((lead: any) => ({
       id: lead.id,
       name: lead.properties?.['Name']?.title?.[0]?.plain_text || 'Unknown',
       status: lead.properties?.['Status']?.select?.name || 'Unknown',
       service: lead.properties?.['Service']?.rich_text?.[0]?.plain_text || '',
       suburb: lead.properties?.['Suburb']?.rich_text?.[0]?.plain_text || '',
+      phone: lead.properties?.['Phone']?.phone_number || '',
+      createdDate: lead.created_time,
+      lunaStatus: lead.properties?.['LUNA Status']?.select?.name || '',
+      chaseStatus: lead.properties?.['CHASE Status']?.select?.name || '',
     }));
+
+    const thisMonth = new Date();
+    thisMonth.setDate(1);
+    const monthLeads = leads.filter(l => new Date(l.createdDate) >= thisMonth);
+
+    const stats = {
+      totalThisMonth: monthLeads.length,
+      qualified: monthLeads.filter(l => l.lunaStatus === 'Qualified').length,
+      disqualified: monthLeads.filter(l => l.lunaStatus === 'Disqualified').length,
+      won: monthLeads.filter(l => l.chaseStatus === 'Won').length,
+      cold: monthLeads.filter(l => l.chaseStatus === 'Cold').length,
+      pending: monthLeads.filter(l => !l.chaseStatus || l.chaseStatus === 'Pending').length,
+    };
+
+    return { leads, stats };
   } catch (err) {
-    return [];
+    console.error('Error fetching leads:', err);
+    return { leads: [], stats: { totalThisMonth: 0, qualified: 0, disqualified: 0, won: 0, cold: 0, pending: 0 } };
   }
+}
+
+function findJob(jobs: any[], query: string): any | null {
+  const q = query.toLowerCase();
+
+  const byNumber = jobs.find(j => j.jobNumber && q.includes(String(j.jobNumber)));
+  if (byNumber) return byNumber;
+
+  const byClient = jobs.find(j => j.clientName && q.includes(j.clientName.toLowerCase().split(' ')[0]));
+  if (byClient) return byClient;
+
+  const bySuburb = jobs.find(j => j.suburb && q.includes(j.suburb.toLowerCase()));
+  if (bySuburb) return bySuburb;
+
+  const byName = jobs.find(j => j.name && q.includes(j.name.toLowerCase().split(' ')[0]));
+  if (byName) return byName;
+
+  const byService = jobs.find(j => j.service && q.includes(j.service.toLowerCase().split(' ')[0]));
+  if (byService) return byService;
+
+  return null;
+}
+
+function getTodaysJobs(jobs: any[]): any[] {
+  const today = new Date().toISOString().split('T')[0];
+  const activeStatuses = ['Scheduled', 'In Progress', 'Running Late', 'Day Done'];
+
+  return jobs.filter(j => {
+    const isActive = activeStatuses.includes(j.status);
+    const isToday = j.scheduledDate === today;
+    return isActive || isToday;
+  });
 }
 
 async function logToCommLog(message: string, reply: string, action: string, jobId?: string) {
@@ -121,24 +184,41 @@ async function logToCommLog(message: string, reply: string, action: string, jobI
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { message, mediaUrl, mediaType, tradieId } = body;
+    const { message, mediaUrl, mediaType } = body;
 
     if (!message && !mediaUrl) {
       return NextResponse.json({ error: 'Message or media required' }, { status: 400 });
     }
 
-    // Get context from Notion
-    const [jobs, leads] = await Promise.all([getJobsContext(), getLeadsContext()]);
+    const jobs = await getJobsContext();
+    const { leads, stats: leadsStats } = await getLeadsContext();
+    const todaysJobs = getTodaysJobs(jobs);
 
-    // Build user message with context
-    const userMessage = `Joey's message: "${message || 'Uploaded media'}"
-${mediaUrl ? `Media URL: ${mediaUrl}\nMedia Type: ${mediaType || 'photo'}` : ''}
+    const mentionedJob = message ? findJob(jobs, message) : null;
 
-CURRENT CONTEXT:
-Active Jobs: ${JSON.stringify(jobs, null, 2)}
-Recent Leads: ${JSON.stringify(leads, null, 2)}`;
+    const contextData = {
+      todaysJobs: todaysJobs.map(j => `${j.name} — ${j.clientName} — ${j.status} — ${j.suburb}`),
+      allActiveJobs: jobs
+        .filter(j => !['Complete', 'Invoiced', 'Paid'].includes(j.status))
+        .map(j => ({ id: j.id, name: j.name, client: j.clientName, status: j.status, suburb: j.suburb, phone: j.clientPhone })),
+      identifiedJob: mentionedJob ? {
+        id: mentionedJob.id,
+        name: mentionedJob.name,
+        client: mentionedJob.clientName,
+        phone: mentionedJob.clientPhone,
+        status: mentionedJob.status,
+        suburb: mentionedJob.suburb,
+        service: mentionedJob.service,
+      } : null,
+      leadsStats,
+    };
 
-    // Call Claude
+    const userMessage = `Joey says: "${message || 'Uploaded media'}"
+${mediaUrl ? `\nMedia: ${mediaUrl} (${mediaType || 'photo'})` : ''}
+
+CONTEXT:
+${JSON.stringify(contextData, null, 2)}`;
+
     const claudeResponse = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
@@ -148,8 +228,7 @@ Recent Leads: ${JSON.stringify(leads, null, 2)}`;
 
     const rawText = claudeResponse.content[0].type === 'text' ? claudeResponse.content[0].text.trim() : '';
 
-    // Parse JSON response
-    let alfredResult: { reply: string; action: string; jobId?: string; newStatus?: string; };
+    let alfredResult: any;
     try {
       const jsonMatch = rawText.match(/\{[\s\S]*\}/);
       alfredResult = JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
@@ -157,27 +236,48 @@ Recent Leads: ${JSON.stringify(leads, null, 2)}`;
       alfredResult = { reply: rawText || "Done ✓", action: 'none' };
     }
 
-    // Execute action if needed
-    if (alfredResult.action === 'update_job_status' && alfredResult.jobId && alfredResult.newStatus) {
+    if (alfredResult.action === 'update_job_status' && alfredResult.jobId) {
+      const statusMap: Record<string, string> = {
+        STARTING_TODAY: 'Scheduled',
+        ON_THE_WAY: 'In Progress',
+        RUNNING_LATE: 'Running Late',
+        PHASE_DONE: 'In Progress',
+        NEED_DECISION: 'In Progress',
+        DAY_DONE: 'In Progress',
+        JOB_COMPLETE: 'Complete',
+        VARIATION_REQUEST: 'In Progress',
+        READY_FOR_INSPECTION: 'In Progress',
+        AWAITING_MATERIALS: 'In Progress',
+        ISSUE_ON_SITE: 'In Progress',
+      };
+
+      const notionStatus = statusMap[alfredResult.newStatus] || 'In Progress';
+
       try {
         await notion.pages.update({
           page_id: alfredResult.jobId,
           properties: {
-            'Status': { select: { name: alfredResult.newStatus } },
+            'Status': { select: { name: notionStatus } },
           },
         });
+        console.log(`ALFRED: Updated ${alfredResult.jobName} → ${notionStatus}`);
       } catch (err) {
-        console.error('Job update error:', err);
+        console.error('Notion update error:', err);
       }
     }
 
-    // Log to Communication Log
-    await logToCommLog(message || 'Media upload', alfredResult.reply, alfredResult.action);
+    await logToCommLog(
+      message || 'Media upload',
+      alfredResult.reply,
+      alfredResult.action,
+      alfredResult.jobId
+    );
 
     return NextResponse.json({
       success: true,
       reply: alfredResult.reply,
       action: alfredResult.action,
+      jobUpdated: alfredResult.jobId ? { id: alfredResult.jobId, name: alfredResult.jobName, newStatus: alfredResult.newStatus } : null,
     });
 
   } catch (error: any) {

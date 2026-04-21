@@ -108,14 +108,19 @@ export default function ChatPage() {
       formData.append('jobName', 'Active Job');
 
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
 
       const uploadRes = await fetch('/api/alfred/media', {
         method: 'POST',
         body: formData,
         signal: controller.signal,
       });
-      clearTimeout(timeout);
+      clearTimeout(timeoutId);
+
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json();
+        throw new Error(err.error || 'Upload failed');
+      }
 
       const uploadData = await uploadRes.json();
 
@@ -148,9 +153,15 @@ export default function ChatPage() {
           }
         ]);
       }
-    } catch (err) {
+    } catch (err: any) {
+      const errorMsg = err.name === 'AbortError'
+        ? 'Upload timed out. Try a smaller photo.'
+        : `Upload failed: ${err.message}`;
+
       setMessages(prev => prev.map(m =>
-        m.id === previewMsg.id ? { ...m, content: 'Upload failed. Try again.' } : m
+        m.id === previewMsg.id
+          ? { ...m, content: `❌ ${errorMsg}` }
+          : m
       ));
     } finally {
       setUploading(false);

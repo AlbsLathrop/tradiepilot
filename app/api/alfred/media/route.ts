@@ -3,6 +3,15 @@ import { put } from '@vercel/blob';
 import Anthropic from '@anthropic-ai/sdk';
 import { Client } from '@notionhq/client';
 
+export const runtime = 'nodejs';
+export const maxDuration = 30;
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 const notion = new Client({ auth: process.env.NOTION_API_KEY! });
 
@@ -78,6 +87,8 @@ async function saveToMediaDB(data: {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('BLOB TOKEN present:', !!process.env.BLOB_READ_WRITE_TOKEN);
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const jobId = formData.get('jobId') as string || '';

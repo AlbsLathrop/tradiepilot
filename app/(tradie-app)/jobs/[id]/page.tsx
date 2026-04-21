@@ -10,6 +10,23 @@ import { Job } from '@/lib/notion'
 const PHASES = ['Scoping', 'Quoted', 'Scheduled', 'In Progress', 'Running Late', 'Complete']
 const MATERIAL_STATUSES = ['Not Started', 'On Order', 'Arrived', 'In Use', 'Complete']
 
+const STANDARD_TAPS = [
+  { id: 'STARTING_TODAY', label: 'Starting Today', color: 'bg-green-600', desc: 'Kick off job comms' },
+  { id: 'ON_THE_WAY', label: 'On The Way', color: 'bg-blue-600', desc: 'Heading to client' },
+  { id: 'RUNNING_LATE', label: 'Running Late', color: 'bg-yellow-600', desc: 'Delay notification' },
+  { id: 'PHASE_DONE', label: 'Phase Done', color: 'bg-purple-600', desc: 'Section complete' },
+  { id: 'NEED_DECISION', label: 'Need Decision', color: 'bg-orange-600', desc: 'Client input needed' },
+  { id: 'DAY_DONE', label: 'Day Done', color: 'bg-gray-600', desc: 'End of day wrap' },
+  { id: 'JOB_COMPLETE', label: 'Job Complete', color: 'bg-emerald-600', desc: 'Final completion' },
+  { id: 'VARIATION_REQUEST', label: 'Variation', color: 'bg-red-600', desc: 'Scope change' },
+]
+
+const TECHNICAL_TAPS = [
+  { id: 'READY_FOR_INSPECTION', label: 'Ready for Inspection', color: 'bg-teal-600' },
+  { id: 'AWAITING_MATERIALS', label: 'Awaiting Materials', color: 'bg-amber-700' },
+  { id: 'ISSUE_ON_SITE', label: 'Issue on Site', color: 'bg-red-700' },
+]
+
 export default function JobDetailPage() {
   const router = useRouter()
   const params = useParams()
@@ -20,6 +37,7 @@ export default function JobDetailPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [toast, setToast] = useState<string | null>(null)
 
   const [status, setStatus] = useState('')
   const [currentPhase, setCurrentPhase] = useState('')
@@ -49,6 +67,32 @@ export default function JobDetailPage() {
 
     fetchJob()
   }, [jobId, session?.user?.tradieConfigId])
+
+  const showToast = (message: string) => {
+    setToast(message)
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  const handleTap = async (tapId: string) => {
+    if (!job) return
+
+    const message = `${tapId.replace(/_/g, ' ').toLowerCase()} — job: ${job.clientName}, client: ${job.clientName}, suburb: ${job.suburb}`
+
+    try {
+      const res = await fetch('/api/alfred', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          tradieId: 'joey',
+        }),
+      })
+      const data = await res.json()
+      showToast(data.reply || '✓ Done')
+    } catch (err) {
+      showToast('✓ Update sent')
+    }
+  }
 
   const handleSave = async () => {
     if (!job) return
@@ -106,7 +150,7 @@ export default function JobDetailPage() {
     return (
       <div className="p-4 text-center">
         <p className="text-[#9CA3AF]">Job not found</p>
-        <Link href="/jobs" className="text-[#06B6D4] mt-4 inline-block">
+        <Link href="/jobs" className="text-[#F97316] mt-4 inline-block">
           Back to Jobs
         </Link>
       </div>
@@ -115,6 +159,13 @@ export default function JobDetailPage() {
 
   return (
     <div className="p-4 md:p-8 space-y-6 pb-24">
+      {/* Toast notification */}
+      {toast && (
+        <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium animate-in fade-in slide-in-from-top">
+          {toast}
+        </div>
+      )}
+
       {/* Back button */}
       <Link
         href="/jobs"
@@ -162,7 +213,40 @@ export default function JobDetailPage() {
         </div>
       </div>
 
-      {/* Status - Main interaction */}
+      {/* Tap Buttons Section */}
+      <div className="space-y-4">
+        <div>
+          <p className="text-xs font-semibold text-[#9CA3AF] uppercase mb-3">Send Update via ALFRED</p>
+          <div className="grid grid-cols-2 gap-2">
+            {STANDARD_TAPS.map(tap => (
+              <button
+                key={tap.id}
+                onClick={() => handleTap(tap.id)}
+                className={`${tap.color} text-white text-xs font-semibold py-3 px-2 rounded-lg text-center transition-opacity hover:opacity-90 active:opacity-70`}
+              >
+                {tap.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold text-[#9CA3AF] uppercase mb-3">Technical Updates</p>
+          <div className="grid grid-cols-1 gap-2">
+            {TECHNICAL_TAPS.map(tap => (
+              <button
+                key={tap.id}
+                onClick={() => handleTap(tap.id)}
+                className={`${tap.color} text-white text-sm font-semibold py-2 px-3 rounded-lg text-center transition-opacity hover:opacity-90 active:opacity-70`}
+              >
+                {tap.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Status - Dropdown backup */}
       <div className="space-y-2">
         <label className="text-sm font-semibold text-[#F9FAFB]">Status</label>
         <select

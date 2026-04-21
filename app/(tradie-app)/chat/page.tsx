@@ -9,6 +9,7 @@ interface Message {
   content: string;
   timestamp: Date;
   action?: string;
+  mediaUrl?: string;
 }
 
 interface Job {
@@ -30,11 +31,13 @@ export default function ChatPage() {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [quickChips, setQuickChips] = useState([
     "What's on today?",
     "How many leads this week?",
   ]);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -59,6 +62,71 @@ export default function ChatPage() {
 
     loadDynamicChips();
   }, []);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+
+    // Show preview message
+    const previewMsg: Message = {
+      id: Date.now().toString(),
+      role: 'joey',
+      content: `📎 Uploading ${file.type.startsWith('video/') ? 'video' : 'photo'}...`,
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, previewMsg]);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('jobName', 'Active Job');
+
+      const uploadRes = await fetch('/api/alfred/media', {
+        method: 'POST',
+        body: formData,
+      });
+      const uploadData = await uploadRes.json();
+
+      if (uploadData.success) {
+        // Send media to ALFRED for context
+        const alfredRes = await fetch('/api/alfred', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `Uploaded a ${uploadData.mediaType.toLowerCase()}: ${uploadData.description}`,
+            mediaUrl: uploadData.mediaUrl,
+            mediaType: uploadData.mediaType,
+          }),
+        });
+        const alfredData = await alfredRes.json();
+
+        // Update preview with ALFRED's response
+        setMessages(prev => [
+          ...prev.filter(m => m.id !== previewMsg.id),
+          {
+            ...previewMsg,
+            content: `📷 ${file.name}`,
+            mediaUrl: uploadData.mediaUrl,
+          },
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'alfred',
+            content: alfredData.reply || uploadData.message,
+            timestamp: new Date(),
+          }
+        ]);
+      }
+    } catch (err) {
+      setMessages(prev => prev.map(m =>
+        m.id === previewMsg.id ? { ...m, content: 'Upload failed. Try again.' } : m
+      ));
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
@@ -133,13 +201,22 @@ export default function ChatPage() {
               </div>
             )}
             <div
-              className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+              className={`max-w-[80%] ${
                 msg.role === 'joey'
                   ? 'bg-[#F97316] text-white rounded-br-sm'
                   : 'bg-[#1F2937] text-[#F9FAFB] rounded-bl-sm border border-[#374151]'
               }`}
             >
-              {msg.content}
+              {msg.mediaUrl && (
+                <img
+                  src={msg.mediaUrl}
+                  alt="Uploaded media"
+                  className="w-full rounded-t-2xl max-h-64 object-cover"
+                />
+              )}
+              <div className="px-4 py-3 rounded-2xl text-sm leading-relaxed">
+                {msg.content}
+              </div>
             </div>
           </div>
         ))}
@@ -180,7 +257,19 @@ export default function ChatPage() {
       {/* Input */}
       <div className="px-4 py-4 bg-[#0F0F0F] border-t border-[#374151]">
         <div className="flex items-center gap-2 bg-[#1F2937] border border-[#374151] rounded-2xl px-3 py-2">
-          <button className="text-[#9CA3AF] hover:text-[#F97316] transition-colors p-1">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            className="hidden"
+            onChange={handleFileUpload}
+            disabled={uploading}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="text-[#9CA3AF] hover:text-[#F97316] disabled:opacity-40 transition-colors p-1"
+          >
             <Paperclip size={18} />
           </button>
           <input
@@ -190,13 +279,14 @@ export default function ChatPage() {
             onKeyDown={e => e.key === 'Enter' && sendMessage(input)}
             placeholder="Message ALFRED..."
             className="flex-1 bg-transparent text-white text-sm placeholder-[#6B7280] outline-none"
+            disabled={uploading}
           />
-          <button className="text-[#9CA3AF] hover:text-[#F97316] transition-colors p-1">
+          <button className="text-[#9CA3AF] hover:text-[#F97316] transition-colors p-1" disabled>
             <Mic size={18} />
           </button>
           <button
             onClick={() => sendMessage(input)}
-            disabled={!input.trim() || loading}
+            disabled={!input.trim() || loading || uploading}
             className="bg-[#F97316] hover:bg-[#C2580A] disabled:opacity-40 text-white p-1.5 rounded-full transition-all"
           >
             <Send size={16} />

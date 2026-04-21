@@ -21,14 +21,29 @@ interface Job {
 }
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (typeof window === 'undefined') return [{
       id: '1',
       role: 'alfred',
       content: "G'day Joey. I'm ALFRED — your TradiePilot agent. Tell me about a job update, ask about your leads, or anything else about the business.",
       timestamp: new Date(),
-    }
-  ]);
+    }];
+
+    try {
+      const saved = localStorage.getItem('alfred_chat_history');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }));
+      }
+    } catch {}
+
+    return [{
+      id: '1',
+      role: 'alfred',
+      content: "G'day Joey. I'm ALFRED — your TradiePilot agent. Tell me about a job update, ask about your leads, or anything else about the business.",
+      timestamp: new Date(),
+    }];
+  });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -41,6 +56,15 @@ export default function ChatPage() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      try {
+        const toSave = messages.slice(-100);
+        localStorage.setItem('alfred_chat_history', JSON.stringify(toSave));
+      } catch {}
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -185,13 +209,27 @@ export default function ChatPage() {
         <div className="w-10 h-10 rounded-full bg-[#F97316] flex items-center justify-center text-white font-bold text-lg">
           A
         </div>
-        <div>
+        <div className="flex-1">
           <p className="text-white font-bold text-base">ALFRED</p>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-green-400"></div>
             <p className="text-[#9CA3AF] text-xs">Your TradiePilot agent</p>
           </div>
         </div>
+        <button
+          onClick={() => {
+            localStorage.removeItem('alfred_chat_history');
+            setMessages([{
+              id: Date.now().toString(),
+              role: 'alfred',
+              content: "Chat cleared. What do you need?",
+              timestamp: new Date(),
+            }]);
+          }}
+          className="text-[#6B7280] hover:text-[#9CA3AF] text-xs"
+        >
+          Clear
+        </button>
       </div>
 
       {/* Messages */}

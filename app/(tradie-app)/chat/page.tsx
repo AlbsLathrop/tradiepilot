@@ -11,11 +11,13 @@ interface Message {
   action?: string;
 }
 
-const QUICK_CHIPS = [
-  "What's on today?",
-  "How many leads this week?",
-  "Job update",
-];
+interface Job {
+  id: string;
+  name: string;
+  status: string;
+  clientName: string;
+  suburb: string;
+}
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([
@@ -28,11 +30,35 @@ export default function ChatPage() {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [quickChips, setQuickChips] = useState([
+    "What's on today?",
+    "How many leads this week?",
+  ]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    const loadDynamicChips = async () => {
+      try {
+        const res = await fetch('/api/alfred/context');
+        const data = await res.json();
+
+        const baseChips = ["What's on today?", "How many leads this week?"];
+        if (data.todaysJobs?.length > 0) {
+          const job = data.todaysJobs[0];
+          baseChips.push(`${job.name} — send update`);
+        }
+        setQuickChips(baseChips);
+      } catch {
+        // Keep defaults if fetch fails
+      }
+    };
+
+    loadDynamicChips();
+  }, []);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
@@ -139,7 +165,7 @@ export default function ChatPage() {
       {/* Quick chips */}
       {messages.length === 1 && (
         <div className="px-4 pb-2 flex gap-2 overflow-x-auto">
-          {QUICK_CHIPS.map(chip => (
+          {quickChips.map(chip => (
             <button
               key={chip}
               onClick={() => sendMessage(chip)}

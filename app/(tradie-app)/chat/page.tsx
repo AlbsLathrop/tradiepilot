@@ -83,10 +83,16 @@ export default function ChatPage() {
       formData.append('file', file);
       formData.append('jobName', 'Active Job');
 
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
       const uploadRes = await fetch('/api/alfred/media', {
         method: 'POST',
         body: formData,
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
+
       const uploadData = await uploadRes.json();
 
       if (uploadData.success) {

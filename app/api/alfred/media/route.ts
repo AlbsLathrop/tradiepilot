@@ -88,6 +88,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
+    const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ error: 'File too large. Max 10MB.' }, { status: 400 });
+    }
+
     // Determine media type
     const isVideo = file.type.startsWith('video/');
     const mediaType = isVideo ? 'Video' : 'Photo';

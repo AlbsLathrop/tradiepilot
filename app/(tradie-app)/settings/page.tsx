@@ -75,6 +75,18 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* Reports */}
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-[#F9FAFB] mb-3">Reports</h2>
+
+          <a
+            href="/report"
+            className="flex items-center justify-center gap-3 w-full h-11 bg-[#F97316] text-white rounded-lg py-3 px-4 hover:bg-[#C2580A] transition-all duration-200 ease font-semibold text-sm focus:ring-2 focus:ring-offset-2 focus:ring-[#F97316]"
+          >
+            <span>View Weekly Report</span>
+          </a>
+        </div>
+
         {/* Account Actions */}
         <div className="space-y-3">
           <h2 className="text-sm font-semibold text-[#F9FAFB] mb-3">Account</h2>

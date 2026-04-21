@@ -6,7 +6,7 @@ import {
   Home,
   Briefcase,
   UserPlus,
-  BarChart3,
+  MessageSquare,
   Settings,
 } from 'lucide-react';
 
@@ -14,7 +14,7 @@ const tabs = [
   { href: '/home', label: 'Home', icon: Home },
   { href: '/jobs', label: 'Jobs', icon: Briefcase },
   { href: '/leads', label: 'Leads', icon: UserPlus },
-  { href: '/report', label: 'Report', icon: BarChart3 },
+  { href: '/chat', label: 'Chat', icon: MessageSquare },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -31,7 +31,7 @@ export function BottomNav() {
               key={href}
               href={href}
               className={`flex flex-col items-center justify-center flex-1 transition-colors ${
-                isActive ? 'text-[#06B6D4]' : 'text-[#9CA3AF] hover:text-[#D1D5DB]'
+                isActive ? 'text-[#F97316]' : 'text-[#9CA3AF] hover:text-[#D1D5DB]'
               }`}
             >
               <Icon size={24} />

@@ -264,6 +264,33 @@ ${JSON.stringify(contextData, null, 2)}`;
       } catch (err) {
         console.error('Notion update error:', err);
       }
+
+      if (alfredResult.newStatus === 'JOB_COMPLETE') {
+        try {
+          await notion.pages.update({
+            page_id: alfredResult.jobId,
+            properties: {
+              'Completion Date': {
+                date: { start: new Date().toISOString().split('T')[0] }
+              },
+            },
+          });
+        } catch (err) {
+          console.error('Completion date error:', err);
+        }
+
+        fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/api/alfred/milestone`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jobId: alfredResult.jobId,
+            jobName: alfredResult.jobName || 'Job',
+            milestoneType: 'JOB_COMPLETE',
+            description: `Job marked complete via ALFRED. ${alfredResult.orbitContext || ''}`.trim(),
+            loggedBy: 'ALFRED',
+          }),
+        }).catch(err => console.error('Milestone log error:', err));
+      }
     }
 
     await logToCommLog(

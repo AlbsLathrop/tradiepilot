@@ -39,6 +39,14 @@ WHEN JOEY ASKS ABOUT STATS:
 - "any jobs running" → list jobs with active status
 - "how's the pipeline" → summarize leads stats
 
+WHEN JOEY ASKS ABOUT A JOB'S HISTORY:
+- "what happened on Sarah's job?"
+- "give me a summary of the Bondi kitchen"
+- "what's the status on Emma's deck?"
+→ Read the JOB BRAIN context provided below
+→ Summarize in 3-4 sentences: what was done, current status, any issues, what's next
+→ Sound like you know the job personally
+
 WHEN JOB IS AMBIGUOUS:
 - If you can't identify the job clearly, ask: "Which job? [list 2-3 active job names]"
 - Keep it short: "Running late on which job — Sarah's kitchen or the Bondi reno?"
@@ -236,6 +244,29 @@ export async function POST(request: NextRequest) {
 
     const mentionedJob = message ? findJob(jobs, message) : null;
 
+    // Read brain summary for identified job
+    let brainContext = '';
+    if (mentionedJob) {
+      try {
+        if (process.env.NOTION_JOB_BRAIN_DB_ID) {
+          const brainQuery = await notion.databases.query({
+            database_id: process.env.NOTION_JOB_BRAIN_DB_ID,
+            filter: {
+              property: 'Job ID',
+              rich_text: { equals: mentionedJob.id },
+            },
+            page_size: 1,
+          });
+          if (brainQuery.results.length > 0) {
+            const brain = brainQuery.results[0] as any;
+            brainContext = brain.properties['Brain Summary']?.rich_text?.[0]?.plain_text || '';
+          }
+        }
+      } catch (err) {
+        console.error('Brain read error:', err);
+      }
+    }
+
     const contextData = {
       todaysJobs: todaysJobs.map(j => `${j.name} — ${j.clientName} — ${j.status} — ${j.suburb}`),
       allActiveJobs: jobs
@@ -255,6 +286,7 @@ export async function POST(request: NextRequest) {
 
     const userMessage = `Joey says: "${message || 'Uploaded media'}"
 ${mediaUrl ? `\nMedia: ${mediaUrl} (${mediaType || 'photo'})` : ''}
+${brainContext ? `\nJOB BRAIN for ${mentionedJob?.name}:\n${brainContext}` : ''}
 
 CONTEXT:
 ${JSON.stringify(contextData, null, 2)}`;
@@ -301,6 +333,14 @@ ${JSON.stringify(contextData, null, 2)}`;
           },
         });
         console.log(`ALFRED: Updated ${alfredResult.jobName} → ${notionStatus}`);
+
+        // Auto-trigger brain update (fire and forget)
+        const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3001';
+        fetch(`${baseUrl}/api/brain/update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId: alfredResult.jobId, tradieConfigId }),
+        }).catch(err => console.error('Brain update error:', err));
       } catch (err) {
         console.error('Notion update error:', err);
       }

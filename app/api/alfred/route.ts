@@ -54,10 +54,14 @@ RESPONSE FORMAT — always return valid JSON:
   "orbitContext": "extra context for ORBIT (e.g. 'stuck in traffic, about 30 mins away')"
 }`;
 
-async function getJobsContext() {
+async function getJobsContext(tradieConfigId: string) {
   try {
     const response = await notion.databases.query({
       database_id: process.env.NOTION_JOBS_DB_ID!,
+      filter: {
+        property: 'Tradie Config ID',
+        rich_text: { equals: tradieConfigId },
+      },
       sorts: [{ timestamp: 'created_time', direction: 'descending' }],
       page_size: 30,
     });
@@ -90,10 +94,14 @@ async function getJobsContext() {
   }
 }
 
-async function getLeadsContext() {
+async function getLeadsContext(tradieConfigId: string) {
   try {
     const response = await notion.databases.query({
       database_id: process.env.NOTION_LEADS_DB_ID!,
+      filter: {
+        property: 'Tradie Config ID',
+        rich_text: { equals: tradieConfigId },
+      },
       sorts: [{ timestamp: 'created_time', direction: 'descending' }],
       page_size: 20,
     });
@@ -199,36 +207,32 @@ async function logToCommLog(message: string, reply: string, action: string, jobI
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { message, mediaUrl, mediaType } = body;
+    const { message, mediaUrl, mediaType, tradieConfigId = 'joey-tradie' } = body;
 
     if (!message && !mediaUrl) {
       return NextResponse.json({ error: 'Message or media required' }, { status: 400 });
     }
 
-    const jobs = await getJobsContext();
-    const { leads, stats: leadsStats } = await getLeadsContext();
-    const todaysJobs = getTodaysJobs(jobs);
-
     // Route config commands to FIXER
     if (message && isConfigCommand(message)) {
-      const fixerRes = await fetch(
-        `${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/api/fixer`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message, tradieConfigId: 'joey-tradie' }),
-        }
-      );
+      const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3001';
+      const fixerRes = await fetch(`${baseUrl}/api/fixer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, tradieConfigId }),
+      });
       const fixerData = await fixerRes.json();
-
       await logToCommLog(message, fixerData.reply || 'Config updated', 'fixer_config');
-
       return NextResponse.json({
         success: true,
         reply: fixerData.reply || 'Done ✓',
         action: 'fixer_config',
       });
     }
+
+    const jobs = await getJobsContext(tradieConfigId);
+    const { leads, stats: leadsStats } = await getLeadsContext(tradieConfigId);
+    const todaysJobs = getTodaysJobs(jobs);
 
     const mentionedJob = message ? findJob(jobs, message) : null;
 

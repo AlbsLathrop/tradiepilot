@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { Send, Paperclip, Mic } from 'lucide-react';
+import { getTradieConfigId } from '@/lib/tradie-config';
 
 interface Message {
   id: string;
@@ -21,6 +23,15 @@ interface Job {
 }
 
 export default function ChatPage() {
+  const { data: session } = useSession();
+  const [tradieConfigId, setTradieConfigId] = useState('joey-tradie');
+
+  useEffect(() => {
+    if (session?.user?.email) {
+      setTradieConfigId(getTradieConfigId(session.user.email));
+    }
+  }, [session]);
+
   const [messages, setMessages] = useState<Message[]>(() => {
     if (typeof window === 'undefined') return [{
       id: '1',
@@ -154,7 +165,7 @@ export default function ChatPage() {
       const alfredRes = await fetch('/api/alfred', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: transcribeData.transcript }),
+        body: JSON.stringify({ message: transcribeData.transcript, tradieConfigId }),
       });
       const alfredData = await alfredRes.json();
 
@@ -222,6 +233,7 @@ export default function ChatPage() {
             message: `Uploaded a ${uploadData.mediaType.toLowerCase()}: ${uploadData.description}`,
             mediaUrl: uploadData.mediaUrl,
             mediaType: uploadData.mediaType,
+            tradieConfigId,
           }),
         });
         const alfredData = await alfredRes.json();
@@ -276,7 +288,7 @@ export default function ChatPage() {
       const res = await fetch('/api/alfred', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, tradieConfigId }),
       });
 
       const data = await res.json();

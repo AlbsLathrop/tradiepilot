@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
 
     // Upload to Vercel Blob
     const filename = `tradiepilot/${jobId || 'general'}/${Date.now()}-${file.name}`;
-    const blob = await put(filename, file, { access: 'public' });
+    const blob = await put(filename, file, { access: 'private' });
 
     // Auto-describe (photos only — skip video for now)
     let description = `${mediaType} uploaded for ${jobName}`;
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
       description,
       stage,
       mediaDbId,
-      message: `Saved ✓ ${description}`,
+      message: `📎 Saved ✓ ${description} — tagged as ${stage}`,
     });
 
   } catch (error: any) {

@@ -162,6 +162,21 @@ function getTodaysJobs(jobs: any[]): any[] {
   });
 }
 
+function isConfigCommand(message: string): boolean {
+  const configKeywords = [
+    'make my messages', 'change my', 'update my', 'set my',
+    'more casual', 'more formal', 'more professional',
+    'add suburb', 'add to my service area', 'remove from service area',
+    'min job', 'minimum job', 'minimum value',
+    'business name', 'my name is',
+    'stop sending', 'suppress', 'dont send', "don't send",
+    'change follow up', 'change review', 'update review',
+    'my services', 'i also do', 'i no longer do',
+  ];
+  const lower = message.toLowerCase();
+  return configKeywords.some(kw => lower.includes(kw));
+}
+
 async function logToCommLog(message: string, reply: string, action: string, jobId?: string) {
   try {
     if (!process.env.NOTION_COMMUNICATION_LOG_DB_ID) return;
@@ -193,6 +208,27 @@ export async function POST(request: NextRequest) {
     const jobs = await getJobsContext();
     const { leads, stats: leadsStats } = await getLeadsContext();
     const todaysJobs = getTodaysJobs(jobs);
+
+    // Route config commands to FIXER
+    if (message && isConfigCommand(message)) {
+      const fixerRes = await fetch(
+        `${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/api/fixer`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, tradieConfigId: 'joey-tradie' }),
+        }
+      );
+      const fixerData = await fixerRes.json();
+
+      await logToCommLog(message, fixerData.reply || 'Config updated', 'fixer_config');
+
+      return NextResponse.json({
+        success: true,
+        reply: fixerData.reply || 'Done ✓',
+        action: 'fixer_config',
+      });
+    }
 
     const mentionedJob = message ? findJob(jobs, message) : null;
 

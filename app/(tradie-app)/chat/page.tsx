@@ -47,12 +47,15 @@ export default function ChatPage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [recording, setRecording] = useState(false);
   const [quickChips, setQuickChips] = useState([
     "What's on today?",
     "How many leads this week?",
   ]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -86,6 +89,92 @@ export default function ChatPage() {
 
     loadDynamicChips();
   }, []);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        stream.getTracks().forEach(t => t.stop());
+        await handleVoiceNote(audioBlob);
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setRecording(true);
+    } catch (err) {
+      console.error('Mic error:', err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && recording) {
+      mediaRecorderRef.current.stop();
+      setRecording(false);
+    }
+  };
+
+  const handleVoiceNote = async (audioBlob: Blob) => {
+    const voiceMsg: Message = {
+      id: Date.now().toString(),
+      role: 'joey',
+      content: '🎤 Transcribing...',
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, voiceMsg]);
+
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'voice.webm');
+
+      const transcribeRes = await fetch('/api/alfred/transcribe', {
+        method: 'POST',
+        body: formData,
+      });
+      const transcribeData = await transcribeRes.json();
+
+      if (!transcribeData.transcript) throw new Error('No transcript');
+
+      // Update bubble with real transcript
+      setMessages(prev => prev.map(m =>
+        m.id === voiceMsg.id
+          ? { ...m, content: `🎤 "${transcribeData.transcript}"` }
+          : m
+      ));
+
+      // Send to ALFRED
+      setLoading(true);
+      const alfredRes = await fetch('/api/alfred', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: transcribeData.transcript }),
+      });
+      const alfredData = await alfredRes.json();
+
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'alfred',
+        content: alfredData.reply || 'Done ✓',
+        timestamp: new Date(),
+      }]);
+
+    } catch (err: any) {
+      setMessages(prev => prev.map(m =>
+        m.id === voiceMsg.id
+          ? { ...m, content: '🎤 Could not transcribe. Try again.' }
+          : m
+      ));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -336,7 +425,17 @@ export default function ChatPage() {
             className="flex-1 bg-transparent text-white text-sm placeholder-[#6B7280] outline-none"
             disabled={uploading}
           />
-          <button className="text-[#9CA3AF] hover:text-[#F97316] transition-colors p-1" disabled>
+          <button
+            onMouseDown={startRecording}
+            onMouseUp={stopRecording}
+            onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
+            onTouchEnd={(e) => { e.preventDefault(); stopRecording(); }}
+            className={`p-1 transition-colors select-none ${
+              recording
+                ? 'text-red-500 animate-pulse scale-125'
+                : 'text-[#9CA3AF] hover:text-[#F97316]'
+            }`}
+          >
             <Mic size={18} />
           </button>
           <button

@@ -298,28 +298,36 @@ CONTEXT:
 ${JSON.stringify(contextData, null, 2)}`;
 
     type MessageContent = { type: 'image'; source: { type: 'url'; url: string } } | { type: 'text'; text: string };
-    const messageContent: MessageContent[] = [];
 
-    if (mediaUrl) {
-      messageContent.push({
-        type: 'image' as const,
-        source: {
-          type: 'url' as const,
-          url: mediaUrl,
-        },
-      });
-    }
-
-    messageContent.push({
-      type: 'text' as const,
-      text: textContent,
-    });
+    const claudeMessages: any[] = mediaUrl ? [
+      {
+        role: 'user' as const,
+        content: [
+          {
+            type: 'image' as const,
+            source: {
+              type: 'url' as const,
+              url: mediaUrl,
+            },
+          },
+          {
+            type: 'text' as const,
+            text: textContent,
+          },
+        ],
+      },
+    ] : [
+      {
+        role: 'user' as const,
+        content: textContent,
+      },
+    ];
 
     const claudeResponse = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
       system: ALFRED_SYSTEM_PROMPT,
-      messages: [{ role: 'user' as const, content: messageContent }],
+      messages: claudeMessages,
     });
 
     const rawText = claudeResponse.content[0].type === 'text' ? claudeResponse.content[0].text.trim() : '';

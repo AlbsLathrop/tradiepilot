@@ -87,7 +87,7 @@ export interface TradieConfig {
 function toJob(page: PageObjectResponse): Job {
   return {
     id: page.id,
-    clientName: richText(page, 'Client Name'),
+    clientName: title(page, 'Client Name'),
     status: select(page, 'Status') as JobStatus,
     tradieConfigId: richText(page, 'Tradie Config ID'),
     service: richText(page, 'Service'),
@@ -152,20 +152,14 @@ export async function getJobs(tradieConfigId: string): Promise<Job[]> {
   const res = await notion.databases.query({
     database_id: NOTION_DB.JOBS,
     filter: {
-      and: [
-        { property: 'Status', select: { does_not_equal: 'COMPLETE' } },
-        { property: 'Status', select: { does_not_equal: 'PAID' } },
-        { property: 'Tradie Config ID', rich_text: { equals: tradieConfigId } },
-      ],
+      property: 'Tradie Config ID',
+      rich_text: { equals: tradieConfigId || 'joey-tradie' },
     },
     sorts: [
-      { property: 'Status Sort Order', direction: 'ascending' },
-      { property: 'Last Updated', direction: 'descending' },
+      { timestamp: 'last_edited_time', direction: 'descending' },
     ],
+    page_size: 30,
   })
-
-  console.log('Raw Notion jobs for', tradieConfigId, ':', JSON.stringify(res.results.slice(0, 2), null, 2))
-  console.log('Total jobs found:', res.results.length)
 
   return (res.results as PageObjectResponse[]).map(toJob)
 }

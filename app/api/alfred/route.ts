@@ -226,6 +226,31 @@ async function logToCommLog(message: string, reply: string, action: string, jobI
   }
 }
 
+async function summarizeConversation(messages: any[]): Promise<string> {
+  try {
+    const conversationText = messages
+      .map(m => `${m.role === 'user' ? 'Joey' : 'ALFRED'}: ${m.content}`)
+      .join('\n');
+
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 200,
+      messages: [
+        {
+          role: 'user',
+          content: `Summarize this conversation in 2-3 sentences. Focus on: what jobs were discussed, what updates were made, what decisions were taken. Be concise.\n\n${conversationText}`,
+        },
+      ],
+    });
+
+    const summaryText = response.content[0].type === 'text' ? response.content[0].text : '';
+    return summaryText;
+  } catch (err) {
+    console.error('Summarization error:', err);
+    return '';
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -306,10 +331,30 @@ ${JSON.stringify(contextData, null, 2)}`;
 
     type MessageContent = { type: 'image'; source: { type: 'url'; url: string } } | { type: 'text'; text: string };
 
-    const historyMessages = conversationHistory.map((m: any) => ({
+    let historyMessages = conversationHistory.map((m: any) => ({
       role: m.role as 'user' | 'assistant',
       content: m.content,
     }));
+
+    // Implement rolling summary: if > 30 messages, summarize older ones
+    if (historyMessages.length > 30) {
+      const olderMessages = historyMessages.slice(0, -30);
+      const recentMessages = historyMessages.slice(-30);
+
+      const summary = await summarizeConversation(olderMessages);
+
+      if (summary) {
+        console.log('[ALFRED] Summarized', olderMessages.length, 'messages:', summary.slice(0, 100) + '...');
+        historyMessages = [
+          { role: 'user' as const, content: `[CONVERSATION SUMMARY]: ${summary}` },
+          { role: 'assistant' as const, content: 'Got it, continuing.' },
+          ...recentMessages,
+        ];
+      } else {
+        // If summarization fails, just keep last 30
+        historyMessages = recentMessages;
+      }
+    }
 
     const claudeMessages: any[] = mediaUrl ? [
       ...historyMessages,

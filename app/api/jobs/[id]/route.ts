@@ -10,26 +10,38 @@ export async function GET(
   const session = await getServerSession()
   const { id } = await params
 
+  console.log('[GET /api/jobs/[id]] Fetching job:', { id, tradieConfigId: session?.user?.tradieConfigId })
+
   if (!session?.user?.tradieConfigId) {
+    console.error('[GET /api/jobs/[id]] No tradie config ID in session')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
     const job = await getJob(id)
+    console.log('[GET /api/jobs/[id]] Job retrieved:', { id, found: !!job })
 
     if (!job) {
+      console.error('[GET /api/jobs/[id]] Job not found:', id)
       return NextResponse.json({ error: 'Job not found' }, { status: 404 })
     }
 
     // Verify ownership
     if (job.tradieConfigId !== session.user.tradieConfigId) {
+      console.error('[GET /api/jobs/[id]] Ownership verification failed:', {
+        jobTradie: job.tradieConfigId,
+        sessionTradie: session.user.tradieConfigId,
+      })
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     return NextResponse.json(job)
   } catch (error) {
-    console.error('Failed to fetch job:', error)
-    return NextResponse.json({ error: 'Failed to fetch job' }, { status: 500 })
+    console.error('[GET /api/jobs/[id]] Error:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch job', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    )
   }
 }
 

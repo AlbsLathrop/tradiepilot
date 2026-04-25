@@ -45,21 +45,34 @@ export default function JobDetailPage() {
   const [materialsStatus, setMaterialsStatus] = useState('')
 
   useEffect(() => {
-    if (!session?.user?.tradieConfigId) return
+    if (!session?.user?.tradieConfigId) {
+      setLoading(false)
+      setError('Not authenticated')
+      console.error('No tradie config ID in session', session)
+      return
+    }
 
     const fetchJob = async () => {
       try {
+        console.log('Fetching job:', jobId)
         const res = await fetch(`/api/jobs/${jobId}`)
-        if (!res.ok) throw new Error('Failed to fetch job')
+        console.log('API response status:', res.status)
+        if (!res.ok) {
+          const errorData = await res.json()
+          throw new Error(`API error (${res.status}): ${errorData.error}`)
+        }
         const data = await res.json()
+        console.log('Job data received:', data)
         setJob(data)
-        setStatus(data.status)
-        setCurrentPhase(data.currentPhase)
-        setNotes(data.notes)
-        setMaterialsStatus(data.materialsStatus)
+        setStatus(data.status || '')
+        setCurrentPhase(data.currentPhase || '')
+        setNotes(data.notes || '')
+        setMaterialsStatus(data.materialsStatus || '')
+        setError('')
       } catch (err) {
-        setError('Failed to load job')
-        console.error(err)
+        const message = err instanceof Error ? err.message : 'Unknown error'
+        console.error('Failed to load job:', message)
+        setError(`Failed to load job: ${message}`)
       } finally {
         setLoading(false)
       }

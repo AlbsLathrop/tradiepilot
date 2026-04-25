@@ -12,6 +12,7 @@ interface Message {
   timestamp: Date;
   action?: string;
   mediaUrl?: string;
+  mediaType?: string;
 }
 
 interface Job {
@@ -245,6 +246,7 @@ export default function ChatPage() {
             ...previewMsg,
             content: `📷 ${file.name}`,
             mediaUrl: uploadData.mediaUrl,
+            mediaType: uploadData.mediaType,
           },
           {
             id: (Date.now() + 1).toString(),
@@ -364,15 +366,28 @@ export default function ChatPage() {
               }`}
             >
               {msg.mediaUrl && (
-                <img
-                  src={msg.mediaUrl}
-                  alt="Uploaded media"
-                  className="w-full rounded-t-2xl max-h-64 object-cover"
-                />
+                <div className="w-full rounded-t-2xl overflow-hidden">
+                  {msg.mediaType === 'Video' ? (
+                    <video
+                      src={msg.mediaUrl}
+                      controls
+                      className="w-full max-h-64 bg-black"
+                    />
+                  ) : (
+                    <img
+                      src={msg.mediaUrl}
+                      alt="Job photo"
+                      className="w-full max-h-64 object-cover cursor-pointer"
+                      onClick={() => window.open(msg.mediaUrl, '_blank')}
+                    />
+                  )}
+                </div>
               )}
-              <div className="px-4 py-3 rounded-2xl text-sm leading-relaxed">
-                {msg.content}
-              </div>
+              {msg.content && (
+                <div className="px-4 py-3 rounded-2xl text-sm leading-relaxed">
+                  {msg.content}
+                </div>
+              )}
             </div>
           </div>
         ))}

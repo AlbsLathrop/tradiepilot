@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
 
     // Upload to Vercel Blob
     const filename = `tradiepilot/${jobId || 'general'}/${Date.now()}-${file.name}`;
-    const blob = await put(filename, file, { access: 'private' });
+    const blob = await put(filename, file, { access: 'public' });
 
     // Auto-describe (photos only — skip video for now)
     let description = `${mediaType} uploaded for ${jobName}`;

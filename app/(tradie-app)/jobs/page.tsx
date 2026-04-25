@@ -26,7 +26,7 @@ export default function JobsPage() {
       try {
         setLoading(true)
         setError(null)
-        const tradieConfigId = session?.user?.tradieConfigId || 'demo-tradie-id'
+        const tradieConfigId = session?.user?.tradieConfigId || 'joey-tradie'
         const res = await fetch(`/api/jobs?tradieConfigId=${tradieConfigId}`)
         if (!res.ok) {
           if (res.status === 401) {

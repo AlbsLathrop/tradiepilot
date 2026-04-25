@@ -284,18 +284,32 @@ export async function POST(request: NextRequest) {
       leadsStats,
     };
 
-    const userMessage = `Joey says: "${message || 'Uploaded media'}"
-${mediaUrl ? `\nMedia: ${mediaUrl} (${mediaType || 'photo'})` : ''}
+    const textContent = `Joey says: "${message || 'Uploaded media'}"
 ${brainContext ? `\nJOB BRAIN for ${mentionedJob?.name}:\n${brainContext}` : ''}
 
 CONTEXT:
 ${JSON.stringify(contextData, null, 2)}`;
 
+    const messageContent: any[] = [];
+    if (mediaUrl) {
+      messageContent.push({
+        type: 'image',
+        source: {
+          type: 'url',
+          url: mediaUrl,
+        },
+      });
+    }
+    messageContent.push({
+      type: 'text',
+      text: textContent,
+    });
+
     const claudeResponse = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
       system: ALFRED_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userMessage }],
+      messages: [{ role: 'user', content: messageContent }],
     });
 
     const rawText = claudeResponse.content[0].type === 'text' ? claudeResponse.content[0].text.trim() : '';

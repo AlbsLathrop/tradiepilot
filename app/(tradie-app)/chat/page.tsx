@@ -289,7 +289,7 @@ export default function ChatPage() {
     try {
       const recentMessages = messages
         .filter(m => m.content && !m.content.includes('Transcribing') && !m.content.includes('Uploading') && !m.content.includes('Downloading'))
-        .slice(-6)
+        .slice(-50)
         .map(m => ({
           role: m.role === 'joey' ? 'user' : 'assistant',
           content: m.content,

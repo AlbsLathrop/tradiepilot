@@ -164,6 +164,9 @@ export async function getJobs(tradieConfigId: string): Promise<Job[]> {
     ],
   })
 
+  console.log('Raw Notion jobs for', tradieConfigId, ':', JSON.stringify(res.results.slice(0, 2), null, 2))
+  console.log('Total jobs found:', res.results.length)
+
   return (res.results as PageObjectResponse[]).map(toJob)
 }
 

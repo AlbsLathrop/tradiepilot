@@ -39,6 +39,13 @@ WHEN JOEY ASKS ABOUT STATS:
 - "any jobs running" → list jobs with active status
 - "how's the pipeline" → summarize leads stats
 
+WHEN JOEY SENDS A PHOTO:
+- You CAN see the image — analyze it carefully
+- Describe exactly what you see: what work is shown, what stage, any issues
+- If it's a construction/trades photo, note: completion stage, quality, any concerns
+- Ask which job it belongs to if not already specified
+- Confirm it's saved: "Saved ✓ [your description] — which job is this for?"
+
 WHEN JOEY ASKS ABOUT A JOB'S HISTORY:
 - "what happened on Sarah's job?"
 - "give me a summary of the Bondi kitchen"
@@ -290,18 +297,21 @@ ${brainContext ? `\nJOB BRAIN for ${mentionedJob?.name}:\n${brainContext}` : ''}
 CONTEXT:
 ${JSON.stringify(contextData, null, 2)}`;
 
-    const messageContent: any[] = [];
+    type MessageContent = { type: 'image'; source: { type: 'url'; url: string } } | { type: 'text'; text: string };
+    const messageContent: MessageContent[] = [];
+
     if (mediaUrl) {
       messageContent.push({
-        type: 'image',
+        type: 'image' as const,
         source: {
-          type: 'url',
+          type: 'url' as const,
           url: mediaUrl,
         },
       });
     }
+
     messageContent.push({
-      type: 'text',
+      type: 'text' as const,
       text: textContent,
     });
 
@@ -309,7 +319,7 @@ ${JSON.stringify(contextData, null, 2)}`;
       model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
       system: ALFRED_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: messageContent }],
+      messages: [{ role: 'user' as const, content: messageContent }],
     });
 
     const rawText = claudeResponse.content[0].type === 'text' ? claudeResponse.content[0].text.trim() : '';

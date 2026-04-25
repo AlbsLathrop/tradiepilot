@@ -108,9 +108,12 @@ export async function POST(request: NextRequest) {
     const isVideo = file.type.startsWith('video/');
     const mediaType = isVideo ? 'Video' : 'Photo';
 
-    // Upload to Vercel Blob
+    // Upload to Vercel Blob (public for Claude Vision + inline display)
     const filename = `tradiepilot/${jobId || 'general'}/${Date.now()}-${file.name}`;
-    const blob = await put(filename, file, { access: 'public' });
+    const blob = await put(filename, file, {
+      access: 'public',
+      token: process.env.BLOBTRADIEPILOT_READ_WRITE_TOKEN,
+    });
 
     // Auto-describe (photos only — skip video for now)
     let description = `${mediaType} uploaded for ${jobName}`;

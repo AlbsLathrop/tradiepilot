@@ -359,14 +359,14 @@ export default function ChatPage() {
               </div>
             )}
             <div
-              className={`max-w-[80%] ${
+              className={`max-w-[80%] overflow-hidden ${
                 msg.role === 'joey'
-                  ? 'bg-[#F97316] text-white rounded-br-sm'
-                  : 'bg-[#1F2937] text-[#F9FAFB] rounded-bl-sm border border-[#374151]'
+                  ? 'bg-[#F97316] text-white rounded-br-sm rounded-tl-2xl rounded-tr-2xl'
+                  : 'bg-[#1F2937] text-[#F9FAFB] rounded-bl-sm rounded-tl-2xl rounded-tr-2xl border border-[#374151]'
               }`}
             >
               {msg.mediaUrl && (
-                <div className="w-full rounded-t-2xl overflow-hidden">
+                <div className="-mx-4 -mt-3 mb-2">
                   {msg.mediaType === 'Video' ? (
                     <video
                       src={msg.mediaUrl}
@@ -377,17 +377,16 @@ export default function ChatPage() {
                     <img
                       src={msg.mediaUrl}
                       alt="Job photo"
-                      className="w-full max-h-64 object-cover cursor-pointer"
+                      className="w-full max-h-64 object-cover cursor-pointer hover:opacity-80 transition-opacity"
                       onClick={() => window.open(msg.mediaUrl, '_blank')}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
                     />
                   )}
                 </div>
               )}
-              {msg.content && (
-                <div className="px-4 py-3 rounded-2xl text-sm leading-relaxed">
-                  {msg.content}
-                </div>
-              )}
+              {msg.content && <div className="px-4 py-3 text-sm leading-relaxed">{msg.content}</div>}
             </div>
           </div>
         ))}

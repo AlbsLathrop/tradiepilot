@@ -85,23 +85,32 @@ export interface TradieConfig {
 }
 
 function toJob(page: PageObjectResponse): Job {
-  return {
-    id: page.id,
-    clientName: title(page, 'Client Name'),
-    status: select(page, 'Status') as JobStatus,
-    tradieConfigId: richText(page, 'Tradie Config ID'),
-    service: richText(page, 'Service'),
-    suburb: richText(page, 'Suburb'),
-    jobType: select(page, 'Job Type'),
-    currentPhase: select(page, 'Current Phase'),
-    foreman: richText(page, 'Foreman'),
-    lastMessageSent: date(page, 'Last Message Sent'),
-    statusSortOrder: number(page, 'Status Sort Order'),
-    lastUpdated: date(page, 'Last Updated'),
-    notes: richText(page, 'Notes'),
-    materialsStatus: select(page, 'Materials Status'),
-    nextAutoAction: richText(page, 'Next Auto Action'),
-    clientPhone: phone(page, 'Client Phone'),
+  try {
+    return {
+      id: page.id,
+      clientName: title(page, 'Client Name'),
+      status: select(page, 'Status') as JobStatus,
+      tradieConfigId: richText(page, 'Tradie Config ID'),
+      service: richText(page, 'Service'),
+      suburb: richText(page, 'Suburb'),
+      jobType: select(page, 'Job Type'),
+      currentPhase: select(page, 'Current Phase'),
+      foreman: richText(page, 'Foreman'),
+      lastMessageSent: date(page, 'Last Message Sent'),
+      statusSortOrder: number(page, 'Status Sort Order'),
+      lastUpdated: date(page, 'Last Updated'),
+      notes: richText(page, 'Notes'),
+      materialsStatus: select(page, 'Materials Status'),
+      nextAutoAction: richText(page, 'Next Auto Action'),
+      clientPhone: phone(page, 'Client Phone'),
+    }
+  } catch (error) {
+    console.error('[toJob] Error parsing job page:', {
+      pageId: page.id,
+      error: error instanceof Error ? error.message : String(error),
+      availableProperties: Object.keys(page.properties),
+    })
+    throw error
   }
 }
 
@@ -165,8 +174,26 @@ export async function getJobs(tradieConfigId: string): Promise<Job[]> {
 }
 
 export async function getJob(jobId: string): Promise<Job | null> {
-  const res = await notion.pages.retrieve({ page_id: jobId })
-  return res && isFullPage(res) ? toJob(res as PageObjectResponse) : null
+  try {
+    console.log('[getJob] Fetching page:', { jobId })
+    const res = await notion.pages.retrieve({ page_id: jobId })
+
+    if (!isFullPage(res)) {
+      console.error('[getJob] Page is not a full page:', { jobId, objectType: res.object })
+      return null
+    }
+
+    const job = toJob(res as PageObjectResponse)
+    console.log('[getJob] Successfully parsed job:', { jobId, clientName: job.clientName })
+    return job
+  } catch (error) {
+    console.error('[getJob] Notion API error:', {
+      jobId,
+      error: error instanceof Error ? error.message : String(error),
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+    })
+    return null
+  }
 }
 
 export async function getRecentLeads(limit: number): Promise<Lead[]> {

@@ -287,10 +287,22 @@ export default function ChatPage() {
     setLoading(true);
 
     try {
+      const recentMessages = messages
+        .filter(m => m.content && !m.content.includes('Transcribing') && !m.content.includes('Uploading') && !m.content.includes('Downloading'))
+        .slice(-6)
+        .map(m => ({
+          role: m.role === 'joey' ? 'user' : 'assistant',
+          content: m.content,
+        }));
+
       const res = await fetch('/api/alfred', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, tradieConfigId }),
+        body: JSON.stringify({
+          message: text,
+          tradieConfigId,
+          conversationHistory: recentMessages,
+        }),
       });
 
       const data = await res.json();

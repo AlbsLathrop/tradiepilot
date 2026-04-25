@@ -33,6 +33,12 @@ WHEN JOEY SENDS A JOB UPDATE ("running late", "on the way", "job done", etc.):
 3. Confirm the job you identified in your reply
 4. Include what context (extra info Joey provided) to pass to ORBIT
 
+WHEN JOEY WANTS TO UPDATE JOB DETAILS:
+- "change the Paddington job service to interior painting", "update notes on Sarah's job", etc.
+- Return action: "update_job_details"
+- Include: jobId (from identified job), updates object with fields to change
+- Fields you can update: Service, Notes, Status, Scope
+
 WHEN JOEY ASKS ABOUT STATS:
 - "leads this week/month" → use stats from leads context
 - "what's on today" → list today's active jobs
@@ -40,8 +46,8 @@ WHEN JOEY ASKS ABOUT STATS:
 - "how's the pipeline" → summarize leads stats
 
 WHEN JOEY SENDS A PHOTO:
-- You CAN see the image — analyze it carefully
-- Describe exactly what you see: what work is shown, what stage, any issues
+- You CAN directly see and analyze any photos Joey sends
+- Describe exactly what you see in detail: what work is shown, what stage, any issues
 - If it's a construction/trades photo, note: completion stage, quality, any concerns
 - Ask which job it belongs to if not already specified
 - Confirm it's saved: "Saved ✓ [your description] — which job is this for?"
@@ -61,11 +67,12 @@ WHEN JOB IS AMBIGUOUS:
 RESPONSE FORMAT — always return valid JSON:
 {
   "reply": "your message to Joey (max 2 sentences, casual)",
-  "action": "none" | "update_job_status" | "log_media" | "query_complete",
+  "action": "none" | "update_job_status" | "update_job_details" | "log_media" | "query_complete",
   "jobId": "notion_page_id if job identified",
   "jobName": "human readable job name",
   "newStatus": "tap status if updating",
   "clientName": "client name if known",
+  "updates": { "Service": "value", "Notes": "value", "Status": "value", "Scope": "value" },
   "orbitContext": "extra context for ORBIT (e.g. 'stuck in traffic, about 30 mins away')"
 }`;
 
@@ -222,7 +229,7 @@ async function logToCommLog(message: string, reply: string, action: string, jobI
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { message, mediaUrl, mediaType, tradieConfigId = 'joey-tradie' } = body;
+    const { message, mediaUrl, mediaType, tradieConfigId = 'joey-tradie', conversationHistory = [] } = body;
 
     if (!message && !mediaUrl) {
       return NextResponse.json({ error: 'Message or media required' }, { status: 400 });
@@ -299,7 +306,13 @@ ${JSON.stringify(contextData, null, 2)}`;
 
     type MessageContent = { type: 'image'; source: { type: 'url'; url: string } } | { type: 'text'; text: string };
 
+    const historyMessages = conversationHistory.map((m: any) => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+    }));
+
     const claudeMessages: any[] = mediaUrl ? [
+      ...historyMessages,
       {
         role: 'user' as const,
         content: [
@@ -317,6 +330,7 @@ ${JSON.stringify(contextData, null, 2)}`;
         ],
       },
     ] : [
+      ...historyMessages,
       {
         role: 'user' as const,
         content: textContent,
@@ -402,6 +416,36 @@ ${JSON.stringify(contextData, null, 2)}`;
             loggedBy: 'ALFRED',
           }),
         }).catch(err => console.error('Milestone log error:', err));
+      }
+    }
+
+    if (alfredResult.action === 'update_job_details' && alfredResult.jobId) {
+      try {
+        const updates: any = {};
+        const raw = alfredResult.updates || {};
+
+        if (raw.Status) {
+          updates['Status'] = { select: { name: raw.Status } };
+        }
+        if (raw.Service) {
+          updates['Service'] = { rich_text: [{ text: { content: raw.Service } }] };
+        }
+        if (raw.Notes) {
+          updates['Notes'] = { rich_text: [{ text: { content: raw.Notes } }] };
+        }
+        if (raw.Scope) {
+          updates['Scope'] = { rich_text: [{ text: { content: raw.Scope } }] };
+        }
+
+        if (Object.keys(updates).length > 0) {
+          await notion.pages.update({
+            page_id: alfredResult.jobId,
+            properties: updates,
+          });
+          console.log(`ALFRED: Updated job ${alfredResult.jobId}`, updates);
+        }
+      } catch (err) {
+        console.error('Job update error:', err);
       }
     }
 

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { getJob, updateJob } from '@/lib/notion'
-import { JobStatus } from '@/lib/constants'
+import { Client } from '@notionhq/client'
+import { NOTION_DB } from '@/lib/constants'
+
+const notion = new Client({ auth: process.env.NOTION_API_KEY })
 
 export async function GET(
   req: NextRequest,
@@ -10,32 +12,67 @@ export async function GET(
   const session = await getServerSession()
   const { id } = await params
 
-  console.log('[GET /api/jobs/[id]] Fetching job:', { id, tradieConfigId: session?.user?.tradieConfigId })
-
   if (!session?.user?.tradieConfigId) {
-    console.error('[GET /api/jobs/[id]] No tradie config ID in session')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
-    const job = await getJob(id)
-    console.log('[GET /api/jobs/[id]] Job retrieved:', { id, found: !!job })
+    // Fetch job page directly
+    const page = await notion.pages.retrieve({ page_id: id }) as any
+    const props = page.properties
 
-    if (!job) {
-      console.error('[GET /api/jobs/[id]] Job not found:', id)
-      return NextResponse.json({ error: 'Job not found' }, { status: 404 })
-    }
-
+    const tradieConfigId = props['Tradie Config ID']?.rich_text?.[0]?.plain_text ?? ''
+    
     // Verify ownership
-    if (job.tradieConfigId !== session.user.tradieConfigId) {
-      console.error('[GET /api/jobs/[id]] Ownership verification failed:', {
-        jobTradie: job.tradieConfigId,
-        sessionTradie: session.user.tradieConfigId,
-      })
+    if (tradieConfigId && tradieConfigId !== session.user.tradieConfigId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    return NextResponse.json(job)
+    const job = {
+      id: page.id,
+      clientName: props['Client Name']?.title?.[0]?.plain_text ?? 'Unknown',
+      status: props['Status']?.select?.name ?? '',
+      address: props['Address']?.rich_text?.[0]?.plain_text ?? '',
+      suburb: props['Suburb']?.rich_text?.[0]?.plain_text ?? '',
+      clientPhone: props['Client Phone']?.phone_number ?? '',
+      scope: props['Scope']?.rich_text?.[0]?.plain_text ?? '',
+      service: props['Service']?.rich_text?.[0]?.plain_text ?? '',
+      jobType: props['Job Type']?.select?.name ?? '',
+      durationCategory: props['Duration Category']?.select?.name ?? '',
+      currentPhase: props['Current Phase']?.select?.name ?? '',
+      materialsStatus: props['Materials Status']?.select?.name ?? '',
+      foremanName: props['Foreman Name']?.rich_text?.[0]?.plain_text ?? '',
+      foremanPhone: props['Foreman Phone']?.phone_number ?? '',
+      leadingHand: props['Leading Hand']?.rich_text?.[0]?.plain_text ?? '',
+      leadingHandPhone: props['Leading Hand Phone']?.phone_number ?? '',
+      notes: props['Notes']?.rich_text?.[0]?.plain_text ?? '',
+      productsUsed: props['Products Used']?.rich_text?.[0]?.plain_text ?? '',
+      siteAccessNotes: props['Site Access Notes']?.rich_text?.[0]?.plain_text ?? '',
+      nextAutoAction: props['Next Auto Action']?.rich_text?.[0]?.plain_text ?? '',
+      estimatedCompletion: props['Estimated Completion']?.date?.start ?? null,
+      completionDate: props['Completion Date']?.date?.start ?? null,
+      lastMessageSent: props['Last Message Sent']?.date?.start ?? null,
+      tradieConfigId,
+    }
+
+    // Fetch last 3 communications
+    const commsRes = await notion.databases.query({
+      database_id: NOTION_DB.COMMS,
+      filter: {
+        property: 'Job ID',
+        rich_text: { equals: id }
+      },
+      sorts: [{ property: 'Timestamp', direction: 'descending' }],
+      page_size: 3,
+    })
+
+    const communications = (commsRes.results as any[]).map(comm => ({
+      sender: comm.properties['Sender']?.select?.name ?? 'ALFRED',
+      message: comm.properties['Message']?.rich_text?.[0]?.plain_text ?? '',
+      timestamp: comm.properties['Timestamp']?.date?.start ?? '',
+    }))
+
+    return NextResponse.json({ job, communications })
   } catch (error) {
     console.error('[GET /api/jobs/[id]] Error:', error)
     return NextResponse.json(
@@ -57,27 +94,24 @@ export async function PATCH(
   }
 
   try {
-    // Verify ownership
-    const job = await getJob(id)
-    if (!job || job.tradieConfigId !== session.user.tradieConfigId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
     const body = await req.json()
 
-    const updates: Partial<{
-      status: JobStatus
-      currentPhase: string
-      notes: string
-      materialsStatus: string
-    }> = {}
+    const updates: Record<string, any> = {}
 
-    if (body.status) updates.status = body.status
-    if (body.currentPhase !== undefined) updates.currentPhase = body.currentPhase
-    if (body.notes !== undefined) updates.notes = body.notes
-    if (body.materialsStatus !== undefined) updates.materialsStatus = body.materialsStatus
+    if (body.currentPhase) {
+      updates['Current Phase'] = { select: { name: body.currentPhase } }
+    }
+    if (body.notes !== undefined) {
+      updates['Notes'] = { rich_text: [{ text: { content: body.notes } }] }
+    }
+    if (body.materialsStatus !== undefined) {
+      updates['Materials Status'] = { select: { name: body.materialsStatus } }
+    }
 
-    await updateJob(id, updates)
+    await notion.pages.update({
+      page_id: id,
+      properties: updates,
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -98,14 +132,12 @@ export async function DELETE(
   }
 
   try {
-    // Verify ownership
-    const job = await getJob(id)
-    if (!job || job.tradieConfigId !== session.user.tradieConfigId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
+    // Archive the page instead of hard delete
+    await notion.pages.update({
+      page_id: id,
+      archived: true,
+    })
 
-    // For now, just return success. Actual deletion requires Notion API.
-    // In production, you'd archive or mark as deleted instead of hard delete.
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Failed to delete job:', error)

@@ -12,6 +12,9 @@ export async function GET(
   const session = await getServerSession()
   const { id } = await params
 
+  console.log('Job ID received:', id)
+  console.log('NOTION_API_KEY exists:', !!process.env.NOTION_API_KEY)
+
   if (!session?.user?.tradieConfigId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -73,12 +76,13 @@ export async function GET(
     }))
 
     return NextResponse.json({ job, communications })
-  } catch (error) {
-    console.error('[GET /api/jobs/[id]] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch job', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
+  } catch (error: any) {
+    console.error('NOTION ERROR:', JSON.stringify(error))
+    return NextResponse.json({
+      error: error?.message ?? 'Unknown error',
+      code: error?.code,
+      id
+    }, { status: 500 })
   }
 }
 

@@ -189,8 +189,16 @@ export default function JobDetailPage() {
 
       {/* Error message */}
       {error && (
-        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-red-400 text-sm">
-          {error}
+        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-red-400 text-sm space-y-1">
+          <div>{error}</div>
+          {error.includes('Failed to load job:') && (
+            <details className="text-xs mt-2 cursor-pointer">
+              <summary>Details</summary>
+              <pre className="text-xs mt-1 overflow-auto max-h-32 bg-red-900/30 p-2 rounded">
+                {error}
+              </pre>
+            </details>
+          )}
         </div>
       )}
 

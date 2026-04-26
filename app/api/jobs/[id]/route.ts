@@ -9,11 +9,12 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession()
   const { id } = await params
 
-  console.log('Job ID received:', id)
-  console.log('NOTION_API_KEY exists:', !!process.env.NOTION_API_KEY)
+  console.log('NOTION_API_KEY set:', !!process.env.NOTION_API_KEY)
+  console.log('Received ID:', id)
+
+  const session = await getServerSession()
 
   if (!session?.user?.tradieConfigId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -79,9 +80,11 @@ export async function GET(
   } catch (error: any) {
     console.error('NOTION ERROR:', JSON.stringify(error))
     return NextResponse.json({
-      error: error?.message,
+      error: error?.message ?? 'unknown',
+      code: error?.code,
       notionKeyExists: !!process.env.NOTION_API_KEY,
-      receivedId: id
+      receivedId: id,
+      stack: error?.stack?.split('\n')[0]
     }, { status: 500 })
   }
 }

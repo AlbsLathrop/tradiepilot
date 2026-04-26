@@ -46,6 +46,7 @@ export default function JobDetailPage() {
   const [notes, setNotes] = useState('')
   const [materialsStatus, setMaterialsStatus] = useState('')
   const [errorData, setErrorData] = useState<any>(null)
+  const [debugData, setDebugData] = useState<any>(null)
 
   useEffect(() => {
     if (!session?.user?.tradieConfigId) {
@@ -64,10 +65,12 @@ export default function JobDetailPage() {
           const apiErrorData = await res.json()
           console.error('API error response:', apiErrorData)
           setErrorData(apiErrorData)
+          setDebugData(apiErrorData)
           throw new Error(`API error (${res.status}): ${apiErrorData.error || apiErrorData.debug?.error || 'Unknown'}`)
         }
         const data = await res.json()
         console.log('Job data received:', data)
+        setDebugData(data)
         setJob(data.job)
         setStatus(data.job.status || '')
         setCurrentPhase(data.job.currentPhase || '')
@@ -169,11 +172,9 @@ export default function JobDetailPage() {
 
   if (!job) {
     return (
-      <div className="p-4 text-center">
-        <p className="text-[#9CA3AF]">Job not found</p>
-        <Link href="/jobs" className="text-[#F97316] mt-4 inline-block">
-          Back to Jobs
-        </Link>
+      <div style={{color:'white', padding:'20px'}}>
+        <p>ID: {jobId}</p>
+        <p>Raw response: {JSON.stringify(debugData)}</p>
       </div>
     )
   }

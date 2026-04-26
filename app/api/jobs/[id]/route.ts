@@ -79,13 +79,9 @@ export async function GET(
   } catch (error: any) {
     console.error('NOTION ERROR:', JSON.stringify(error))
     return NextResponse.json({
-      debug: {
-        id,
-        notionKeyExists: !!process.env.NOTION_API_KEY,
-        error: error?.message,
-        code: error?.code,
-        status: error?.status
-      }
+      error: error?.message,
+      notionKeyExists: !!process.env.NOTION_API_KEY,
+      receivedId: id
     }, { status: 500 })
   }
 }

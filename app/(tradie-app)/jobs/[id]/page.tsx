@@ -33,6 +33,8 @@ export default function JobDetailPage() {
   const { data: session } = useSession()
   const jobId = params.id as string
 
+  console.log('Fetching job ID:', jobId)
+
   const [job, setJob] = useState<Job | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -43,6 +45,7 @@ export default function JobDetailPage() {
   const [currentPhase, setCurrentPhase] = useState('')
   const [notes, setNotes] = useState('')
   const [materialsStatus, setMaterialsStatus] = useState('')
+  const [errorData, setErrorData] = useState<any>(null)
 
   useEffect(() => {
     if (!session?.user?.tradieConfigId) {
@@ -58,21 +61,26 @@ export default function JobDetailPage() {
         const res = await fetch(`/api/jobs/${jobId}`)
         console.log('API response status:', res.status)
         if (!res.ok) {
-          const errorData = await res.json()
-          throw new Error(`API error (${res.status}): ${errorData.error}`)
+          const apiErrorData = await res.json()
+          console.error('API error response:', apiErrorData)
+          setErrorData(apiErrorData)
+          throw new Error(`API error (${res.status}): ${apiErrorData.error || apiErrorData.debug?.error || 'Unknown'}`)
         }
         const data = await res.json()
         console.log('Job data received:', data)
-        setJob(data)
-        setStatus(data.status || '')
-        setCurrentPhase(data.currentPhase || '')
-        setNotes(data.notes || '')
-        setMaterialsStatus(data.materialsStatus || '')
+        setJob(data.job)
+        setStatus(data.job.status || '')
+        setCurrentPhase(data.job.currentPhase || '')
+        setNotes(data.job.notes || '')
+        setMaterialsStatus(data.job.materialsStatus || '')
         setError('')
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error'
         console.error('Failed to load job:', message)
         setError(`Failed to load job: ${message}`)
+        if (!errorData) {
+          setErrorData(err instanceof Error ? { message: err.message } : err)
+        }
       } finally {
         setLoading(false)
       }
@@ -189,16 +197,12 @@ export default function JobDetailPage() {
 
       {/* Error message */}
       {error && (
-        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-red-400 text-sm space-y-1">
-          <div>{error}</div>
-          {error.includes('Failed to load job:') && (
-            <details className="text-xs mt-2 cursor-pointer">
-              <summary>Details</summary>
-              <pre className="text-xs mt-1 overflow-auto max-h-32 bg-red-900/30 p-2 rounded">
-                {error}
-              </pre>
-            </details>
-          )}
+        <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-red-400 text-sm space-y-2">
+          <p style={{color:'red', fontWeight: 'bold'}}>DEBUG ERROR:</p>
+          <pre className="bg-red-900/50 p-2 rounded overflow-auto text-xs">
+            {JSON.stringify(errorData || { error }, null, 2)}
+          </pre>
+          <p className="text-xs">{error}</p>
         </div>
       )}
 

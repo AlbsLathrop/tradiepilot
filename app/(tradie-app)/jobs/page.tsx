@@ -31,6 +31,7 @@ interface Job {
   jobType: string
   lastMessageSent: string | null
   jobValue: number | null
+  tradieConfigId: string
   milestones: Milestone[]
 }
 

@@ -269,12 +269,20 @@ async function summarizeConversation(messages: any[]): Promise<string> {
       .join('\n');
 
     const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 200,
       messages: [
         {
           role: 'user',
-          content: `Summarize this conversation in 2-3 sentences. Focus on: what jobs were discussed, what updates were made, what decisions were taken. Be concise.\n\n${conversationText}`,
+          content: `Summarize this conversation in 2-3 sentences. Focus on:
+- Which jobs were discussed
+- What updates were made
+- What decisions were taken
+- Any issues flagged
+Be concise — this is context for an AI assistant.
+
+Conversation:
+${conversationText}`,
         },
       ],
     });

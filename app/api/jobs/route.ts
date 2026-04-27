@@ -36,6 +36,8 @@ export async function GET() {
         siteAccessNotes: p['Site Access Notes']?.rich_text?.[0]?.plain_text ?? '',
         estimatedCompletion: p['Estimated Completion']?.date?.start ?? null,
         tradieConfigId: p['Tradie Config ID']?.rich_text?.[0]?.plain_text ?? '',
+        lastMessageSent: p['Last Message Sent']?.date?.start ?? null,
+        jobValue: p['Job Value']?.number ?? null,
       }
     })
 

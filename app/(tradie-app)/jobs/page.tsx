@@ -19,6 +19,8 @@ interface Job {
   currentPhase: string
   estimatedCompletion: string | null
   jobType: string
+  lastMessageSent: string | null
+  jobValue: number | null
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -157,8 +159,21 @@ export default function JobsPage() {
                   <p className="text-gray-400 text-sm mt-0.5 truncate">
                     {[job.service, job.suburb].filter(Boolean).join(' • ')}
                   </p>
+                  {job.lastMessageSent && (
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Last contact: {Math.floor(
+                        (Date.now() - new Date(job.lastMessageSent).getTime())
+                        / (1000 * 60 * 60 * 24)
+                      )} days ago
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 ml-3 shrink-0">
+                  {job.jobValue && (
+                    <span className="text-gray-400 text-xs mr-2">
+                      ${job.jobValue.toLocaleString()}
+                    </span>
+                  )}
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${statusClass}`}>
                     {job.status}
                   </span>
@@ -194,7 +209,19 @@ export default function JobsPage() {
                         </a>
                       </div>
                     )}
-                    {job.address && <InfoRow label="Address" value={job.address} />}
+                    {job.address && (
+                      <div className="flex items-start justify-between gap-4">
+                        <span className="text-gray-400 text-sm shrink-0">Address</span>
+                        <a
+                          href={`https://maps.apple.com/?q=${encodeURIComponent(job.address)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#F97316] text-sm text-right hover:underline"
+                        >
+                          {job.address} 📍
+                        </a>
+                      </div>
+                    )}
                     {job.siteAccessNotes && (
                       <div className="mt-1 bg-orange-500/10 border border-orange-500/30 rounded-lg p-2">
                         <p className="text-orange-400 text-xs font-bold">⚠️ Site Access</p>
@@ -228,6 +255,16 @@ export default function JobsPage() {
                       <p className="text-gray-300 text-sm leading-relaxed">{job.notes}</p>
                     </div>
                   )}
+
+                  {/* Ask ALFRED Button */}
+                  <a
+                    href={`/chat?context=${encodeURIComponent(
+                      `Tell me everything about the ${job.clientName} job in ${job.suburb}`
+                    )}`}
+                    className="w-full block bg-[#1F2937] border border-[#F97316] text-[#F97316] text-sm font-bold py-3 rounded-xl text-center mb-4"
+                  >
+                    🧠 Ask ALFRED about this job
+                  </a>
 
                   {/* Quick Actions */}
                   <div>

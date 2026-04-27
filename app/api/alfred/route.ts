@@ -226,6 +226,42 @@ async function logToCommLog(message: string, reply: string, action: string, jobI
   }
 }
 
+async function getMilestonesForJob(jobId: string): Promise<string> {
+  if (!jobId || !process.env.NOTION_MILESTONE_LOG_DB_ID) return '';
+
+  try {
+    const res = await notion.databases.query({
+      database_id: process.env.NOTION_MILESTONE_LOG_DB_ID,
+      page_size: 10,
+      sorts: [{ timestamp: 'created_time', direction: 'descending' }],
+    });
+
+    const milestones = (res.results as any[])
+      .filter(m => {
+        const mJobId = m.properties['Job ID']?.rich_text?.[0]?.plain_text ?? '';
+        return mJobId === jobId ||
+               mJobId.replace(/-/g, '') === jobId.replace(/-/g, '');
+      })
+      .map(m => {
+        const title = m.properties['Title']?.title?.[0]?.plain_text ?? '';
+        const desc = m.properties['Description']?.rich_text?.[0]?.plain_text ?? '';
+        const type = m.properties['Milestone Type']?.select?.name ?? '';
+        const by = m.properties['Logged By']?.select?.name ?? '';
+        const date = new Date(m.created_time).toLocaleDateString('en-AU', {
+          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+        });
+        return `[${date}] ${type} — ${title}: ${desc} (by ${by})`;
+      })
+      .join('\n');
+
+    return milestones
+      ? `\nJOB HISTORY / MILESTONE LOG:\n${milestones}\n`
+      : '';
+  } catch {
+    return '';
+  }
+}
+
 async function summarizeConversation(messages: any[]): Promise<string> {
   try {
     const conversationText = messages
@@ -283,8 +319,9 @@ export async function POST(request: NextRequest) {
 
     const mentionedJob = message ? findJob(jobs, message) : null;
 
-    // Read brain summary for identified job
+    // Read brain summary and milestones for identified job
     let brainContext = '';
+    let milestoneContext = '';
     if (mentionedJob) {
       try {
         if (process.env.NOTION_JOB_BRAIN_DB_ID) {
@@ -304,6 +341,9 @@ export async function POST(request: NextRequest) {
       } catch (err) {
         console.error('Brain read error:', err);
       }
+
+      // Fetch milestone log for this job
+      milestoneContext = await getMilestonesForJob(mentionedJob.id);
     }
 
     const contextData = {
@@ -325,7 +365,7 @@ export async function POST(request: NextRequest) {
 
     const textContent = `Joey says: "${message || 'Uploaded media'}"
 ${brainContext ? `\nJOB BRAIN for ${mentionedJob?.name}:\n${brainContext}` : ''}
-
+${milestoneContext}
 CONTEXT:
 ${JSON.stringify(contextData, null, 2)}`;
 

@@ -6,10 +6,11 @@ import JobDetailView from './job-detail-view'
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
 
 interface JobPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default async function JobDetailPage({ params }: JobPageProps) {
+  const { id } = await params
   const session = await getServerSession()
 
   if (!session?.user?.tradieConfigId) {
@@ -24,7 +25,7 @@ export default async function JobDetailPage({ params }: JobPageProps) {
   }
 
   try {
-    const page = await notion.pages.retrieve({ page_id: params.id }) as any
+    const page = await notion.pages.retrieve({ page_id: id }) as any
     const props = page.properties
 
     const tradieConfigId = props['Tradie Config ID']?.rich_text?.[0]?.plain_text ?? ''
@@ -66,13 +67,13 @@ export default async function JobDetailPage({ params }: JobPageProps) {
       lastMessageSent: props['Last Message Sent']?.date?.start ?? null,
     }
 
-    return <JobDetailView job={job} jobId={params.id} />
+    return <JobDetailView job={job} jobId={id} />
   } catch (error: any) {
     return (
       <div style={{ color: 'white', padding: '20px' }}>
         <p>Error: {error?.message}</p>
         <p>Code: {error?.code}</p>
-        <p>ID: {params.id}</p>
+        <p>ID: {id}</p>
         <Link href="/jobs" className="text-[#F97316] mt-4 inline-block">
           Back to Jobs
         </Link>

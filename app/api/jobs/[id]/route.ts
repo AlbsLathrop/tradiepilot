@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { Client } from '@notionhq/client'
 import { NOTION_DB } from '@/lib/constants'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
 
@@ -14,7 +15,7 @@ export async function GET(
   console.log('NOTION_API_KEY set:', !!process.env.NOTION_API_KEY)
   console.log('Received ID:', id)
 
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
 
   if (!session?.user?.tradieConfigId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -93,7 +94,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
   const { id } = await params
 
   if (!session?.user?.tradieConfigId) {
@@ -131,7 +132,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
   const { id } = await params
 
   if (!session?.user?.tradieConfigId) {

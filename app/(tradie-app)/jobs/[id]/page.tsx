@@ -1,6 +1,7 @@
 import { Client } from '@notionhq/client'
 import Link from 'next/link'
 import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import JobDetailView from './job-detail-view'
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
@@ -11,7 +12,7 @@ interface JobPageProps {
 
 export default async function JobDetailPage({ params }: JobPageProps) {
   const { id } = await params
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
 
   if (!session?.user?.tradieConfigId) {
     return (

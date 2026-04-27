@@ -36,7 +36,7 @@ export async function GET() {
         lastMessageSent: p['Last Message Sent']?.date?.start ?? null,
         jobValue: p['Job Value']?.number ?? null,
         tradieConfigId: p['Tradie Config ID']?.rich_text?.[0]?.plain_text ?? '',
-        milestones: [] as Array<{ jobId: string; event: string; note: string; date: string; type: string }>
+        milestones: [] as Array<{ jobId: string; event: string; note: string; date: string; type: string; loggedBy?: string; clientNotified?: boolean }>
       }
     })
 
@@ -53,7 +53,7 @@ export async function GET() {
           const mp = m.properties
           const event = mp['Title']?.title?.[0]?.plain_text ?? ''
           const note = mp['Description']?.rich_text?.[0]?.plain_text ?? ''
-          const date = mp['Date']?.created_time ?? ''
+          const date = (m as any).created_time ?? ''
           const jobId = mp['Job ID']?.rich_text?.[0]?.plain_text ?? ''
           const type = mp['Milestone Type']?.select?.name ?? 'UPDATE'
           const loggedBy = mp['Logged By']?.select?.name ?? ''

@@ -36,7 +36,7 @@ export async function GET() {
         lastMessageSent: p['Last Message Sent']?.date?.start ?? null,
         jobValue: p['Job Value']?.number ?? null,
         tradieConfigId: p['Tradie Config ID']?.rich_text?.[0]?.plain_text ?? '',
-        milestones: [] // populated below
+        milestones: [] as Array<{ jobId: string; event: string; note: string; date: string; type: string }>
       }
     })
 

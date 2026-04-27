@@ -8,6 +8,8 @@ interface Milestone {
   note: string
   date: string
   type: string
+  loggedBy?: string
+  clientNotified?: boolean
 }
 
 interface Job {
@@ -279,9 +281,9 @@ export default function JobsPage() {
 
                   {/* Ask ALFRED Button */}
                   <a
-                    href={`/chat?context=${encodeURIComponent(
-                      `Tell me everything about the ${job.clientName} job in ${job.suburb}`
-                    )}`}
+                    href={`/chat?message=${encodeURIComponent(
+                      `Give me a full update on the ${job.clientName} job in ${job.suburb}. What's the current status, what happened last, and what's coming up next?`
+                    )}&jobId=${job.id}`}
                     className="w-full block bg-[#1F2937] border border-[#F97316] text-[#F97316] text-sm font-bold py-3 rounded-xl text-center mb-4"
                   >
                     🧠 Ask ALFRED about this job
@@ -309,25 +311,32 @@ export default function JobsPage() {
                             >
                               <div className="flex items-center justify-between mb-1">
                                 <span className="text-white text-xs font-semibold">{m.event}</span>
-                                <span className="text-gray-500 text-xs">
-                                  {m.date
-                                    ? new Date(m.date).toLocaleDateString('en-AU', {
-                                      day: 'numeric',
-                                      month: 'short',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })
-                                    : ''}
-                                </span>
+                                <div className="flex items-center gap-1">
+                                  {m.clientNotified && (
+                                    <span className="text-green-400 text-[10px]">✓ Client notified</span>
+                                  )}
+                                  <span className="text-gray-500 text-xs">
+                                    {new Date(m.date).toLocaleDateString('en-AU', {
+                                      day: 'numeric', month: 'short'
+                                    })}
+                                  </span>
+                                </div>
                               </div>
                               {m.note && (
                                 <p className="text-gray-400 text-xs leading-relaxed">{m.note}</p>
                               )}
-                              {m.type && (
-                                <span className="text-[10px] text-orange-400 font-bold uppercase mt-1 inline-block">
-                                  {m.type}
-                                </span>
-                              )}
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                  m.type === 'ISSUE_FOUND' ? 'bg-red-500/20 text-red-400' :
+                                  m.type === 'ISSUE_RESOLVED' ? 'bg-green-500/20 text-green-400' :
+                                  m.type === 'PHASE_COMPLETE' ? 'bg-purple-500/20 text-purple-400' :
+                                  m.type === 'VARIATION_APPROVED' ? 'bg-orange-500/20 text-orange-400' :
+                                  'bg-gray-500/20 text-gray-400'
+                                }`}>{m.type}</span>
+                                {m.loggedBy && (
+                                  <span className="text-gray-500 text-[10px]">by {m.loggedBy}</span>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>

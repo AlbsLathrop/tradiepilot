@@ -102,6 +102,18 @@ export default function ChatPage() {
     loadDynamicChips();
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const preloadedMessage = params.get('message');
+    if (preloadedMessage) {
+      setInput(preloadedMessage);
+      setTimeout(() => {
+        sendMessage(preloadedMessage);
+        window.history.replaceState({}, '', '/chat');
+      }, 300);
+    }
+  }, []);
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });

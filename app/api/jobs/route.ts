@@ -51,26 +51,15 @@ export async function GET() {
 
         const milestones = (milestonesRes.results as any[]).map(m => {
           const mp = m.properties
-          // Try multiple possible property names
-          const event =
-            mp['Event']?.title?.[0]?.plain_text ??
-            mp['Milestone']?.title?.[0]?.plain_text ??
-            mp['Name']?.title?.[0]?.plain_text ?? ''
-          const note =
-            mp['Note']?.rich_text?.[0]?.plain_text ??
-            mp['Notes']?.rich_text?.[0]?.plain_text ??
-            mp['Description']?.rich_text?.[0]?.plain_text ?? ''
-          const date =
-            mp['Date']?.date?.start ??
-            mp['Timestamp']?.date?.start ??
-            mp['Created']?.date?.start ?? ''
-          const jobId =
-            mp['Job ID']?.rich_text?.[0]?.plain_text ??
-            mp['Job']?.relation?.[0]?.id ?? ''
-          const type =
-            mp['Type']?.select?.name ?? 'UPDATE'
+          const event = mp['Title']?.title?.[0]?.plain_text ?? ''
+          const note = mp['Description']?.rich_text?.[0]?.plain_text ?? ''
+          const date = mp['Date']?.created_time ?? ''
+          const jobId = mp['Job ID']?.rich_text?.[0]?.plain_text ?? ''
+          const type = mp['Milestone Type']?.select?.name ?? 'UPDATE'
+          const loggedBy = mp['Logged By']?.select?.name ?? ''
+          const clientNotified = mp['Client Notified']?.checkbox ?? false
 
-          return { jobId, event, note, date, type }
+          return { jobId, event, note, date, type, loggedBy, clientNotified }
         })
 
         // Group by jobId and attach to jobs

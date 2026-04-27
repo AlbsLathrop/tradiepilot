@@ -60,6 +60,8 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
   const [quickChips, setQuickChips] = useState([
     "What's on today?",
     "How many leads this week?",
@@ -200,105 +202,74 @@ export default function ChatPage() {
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setPendingFile(file);
+    setPendingPreviewUrl(URL.createObjectURL(file));
+    e.target.value = '';
+  };
 
-    setUploading(true);
-
-    // Show preview message
-    const previewMsg: Message = {
-      id: Date.now().toString(),
-      role: 'joey',
-      content: `📎 Uploading ${file.type.startsWith('video/') ? 'video' : 'photo'}...`,
-      timestamp: new Date(),
-    };
-    setMessages(prev => [...prev, previewMsg]);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('jobName', 'Active Job');
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000);
-
-      const uploadRes = await fetch('/api/alfred/media', {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (!uploadRes.ok) {
-        const err = await uploadRes.json();
-        throw new Error(err.error || 'Upload failed');
-      }
-
-      const uploadData = await uploadRes.json();
-
-      if (uploadData.success) {
-        // Send media to ALFRED for context
-        const alfredRes = await fetch('/api/alfred', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: `Uploaded a ${uploadData.mediaType.toLowerCase()}: ${uploadData.description}`,
-            mediaUrl: uploadData.mediaUrl,
-            mediaType: uploadData.mediaType,
-            tradieConfigId,
-          }),
-        });
-        const alfredData = await alfredRes.json();
-
-        // Update preview with ALFRED's response
-        setMessages(prev => [
-          ...prev.filter(m => m.id !== previewMsg.id),
-          {
-            ...previewMsg,
-            content: `📷 ${file.name}`,
-            mediaUrl: uploadData.mediaUrl,
-            mediaType: uploadData.mediaType,
-          },
-          {
-            id: (Date.now() + 1).toString(),
-            role: 'alfred',
-            content: alfredData.reply || uploadData.message,
-            timestamp: new Date(),
-          }
-        ]);
-      }
-    } catch (err: any) {
-      const errorMsg = err.name === 'AbortError'
-        ? 'Upload timed out. Try a smaller photo.'
-        : `Upload failed: ${err.message}`;
-
-      setMessages(prev => prev.map(m =>
-        m.id === previewMsg.id
-          ? { ...m, content: `❌ ${errorMsg}` }
-          : m
-      ));
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+  const clearPendingFile = () => {
+    if (pendingPreviewUrl) {
+      URL.revokeObjectURL(pendingPreviewUrl);
     }
+    setPendingFile(null);
+    setPendingPreviewUrl(null);
   };
 
   const sendMessage = async (text: string) => {
-    if (!text.trim() || loading) return;
+    if ((!text.trim() && !pendingFile) || loading || uploading) return;
 
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      role: 'joey',
-      content: text,
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
     setLoading(true);
+    if (pendingFile) setUploading(true);
+
+    let mediaUrl: string | undefined;
+    let mediaType: string | undefined;
 
     try {
+      // Upload file if pending
+      if (pendingFile) {
+        const formData = new FormData();
+        formData.append('file', pendingFile);
+        formData.append('jobName', 'Active Job');
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+        const uploadRes = await fetch('/api/alfred/media', {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (!uploadRes.ok) {
+          const err = await uploadRes.json();
+          throw new Error(err.error || 'Upload failed');
+        }
+
+        const uploadData = await uploadRes.json();
+        if (!uploadData.success) throw new Error('Upload returned no URL');
+
+        mediaUrl = uploadData.mediaUrl;
+        mediaType = uploadData.mediaType;
+      }
+
+      // Create user message with optional media
+      const userMsg: Message = {
+        id: Date.now().toString(),
+        role: 'joey',
+        content: text || `📎 ${pendingFile?.name || 'File'}`,
+        timestamp: new Date(),
+        ...(mediaUrl && { mediaUrl, mediaType }),
+      };
+
+      setMessages(prev => [...prev, userMsg]);
+      setInput('');
+      clearPendingFile();
+
+      // Send to ALFRED
       const recentMessages = messages
         .filter(m => m.content && !m.content.includes('Transcribing') && !m.content.includes('Uploading') && !m.content.includes('Downloading'))
         .slice(-50)
@@ -307,14 +278,21 @@ export default function ChatPage() {
           content: m.content,
         }));
 
+      const alfredPayload: any = {
+        message: text || (mediaType ? `Shared a ${mediaType.toLowerCase()}` : 'File sent'),
+        tradieConfigId,
+        conversationHistory: recentMessages,
+      };
+
+      if (mediaUrl) {
+        alfredPayload.mediaUrl = mediaUrl;
+        alfredPayload.mediaType = mediaType;
+      }
+
       const res = await fetch('/api/alfred', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: text,
-          tradieConfigId,
-          conversationHistory: recentMessages,
-        }),
+        body: JSON.stringify(alfredPayload),
       });
 
       const data = await res.json();
@@ -328,15 +306,20 @@ export default function ChatPage() {
       };
 
       setMessages(prev => [...prev, alfredMsg]);
-    } catch (err) {
+    } catch (err: any) {
+      const errorMsg = err.name === 'AbortError'
+        ? 'Upload timed out. Try a smaller file.'
+        : `Error: ${err.message}`;
+
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'alfred',
-        content: "Something went wrong. Try again.",
+        content: errorMsg,
         timestamp: new Date(),
       }]);
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   };
 
@@ -450,18 +433,38 @@ export default function ChatPage() {
 
       {/* Input */}
       <div className="px-4 py-4 bg-[#0F0F0F] border-t border-[#374151]">
+        {/* File preview */}
+        {pendingFile && (
+          <div className="pb-3 flex items-center gap-3">
+            <div className="relative">
+              <img
+                src={pendingPreviewUrl!}
+                alt="attachment preview"
+                className="w-16 h-16 rounded-lg object-cover border-2 border-[#F97316]"
+              />
+              <button
+                onClick={clearPendingFile}
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center font-bold hover:bg-red-600 transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            <span className="text-[#9CA3AF] text-xs flex-1 truncate">{pendingFile.name}</span>
+          </div>
+        )}
+
         <div className="flex items-center gap-2 bg-[#1F2937] border border-[#374151] rounded-2xl px-3 py-2">
           <input
             ref={fileInputRef}
             type="file"
             accept="image/*,video/*"
             className="hidden"
-            onChange={handleFileUpload}
+            onChange={handleFileSelect}
             disabled={uploading}
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
+            disabled={uploading || !!pendingFile}
             className="text-[#9CA3AF] hover:text-[#F97316] disabled:opacity-40 transition-colors p-1"
           >
             <Paperclip size={18} />
@@ -485,15 +488,20 @@ export default function ChatPage() {
                 ? 'text-red-500 animate-pulse scale-125'
                 : 'text-[#9CA3AF] hover:text-[#F97316]'
             }`}
+            disabled={uploading}
           >
             <Mic size={18} />
           </button>
           <button
             onClick={() => sendMessage(input)}
-            disabled={!input.trim() || loading || uploading}
+            disabled={(!input.trim() && !pendingFile) || loading || uploading}
             className="bg-[#F97316] hover:bg-[#C2580A] disabled:opacity-40 text-white p-1.5 rounded-full transition-all"
           >
-            <Send size={16} />
+            {uploading ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Send size={16} />
+            )}
           </button>
         </div>
       </div>

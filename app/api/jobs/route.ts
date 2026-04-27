@@ -12,9 +12,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const jobs = await getJobs(tradieConfigId)
-    return NextResponse.json(jobs || [])
+    return NextResponse.json({ jobs: jobs || [] })
   } catch (error) {
     console.error('Failed to fetch jobs:', error)
-    return NextResponse.json([], { status: 200 })
+    return NextResponse.json({ jobs: [] }, { status: 200 })
   }
 }

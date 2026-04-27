@@ -1,165 +1,271 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
-import Link from 'next/link'
-import { STATUS_COLORS } from '@/lib/constants'
-import { Job } from '@/lib/notion'
-import { Plus, Filter } from 'lucide-react'
 
-interface ApiJob extends Job {
+interface Job {
   id: string
+  clientName: string
+  status: string
+  suburb: string
+  service: string
+  scope: string
+  address: string
+  clientPhone: string
+  foreman: string
+  foremanPhone: string
+  notes: string
+  siteAccessNotes: string
+  materialsStatus: string
+  currentPhase: string
+  estimatedCompletion: string | null
+  jobType: string
 }
 
-const STATUS_OPTIONS = ['SCHEDULED', 'IN PROGRESS', 'RUNNING LATE', 'COMPLETE', 'INVOICED']
+const STATUS_COLORS: Record<string, string> = {
+  'IN PROGRESS': 'bg-orange-500 text-white',
+  'RUNNING LATE': 'bg-red-500 text-white',
+  'SCHEDULED': 'bg-purple-500 text-white',
+  'COMPLETE': 'bg-green-500 text-white',
+  'INVOICED': 'bg-teal-500 text-white',
+  'DAY DONE': 'bg-blue-500 text-white',
+}
+
+const QUICK_ACTIONS = [
+  'STARTING TODAY',
+  'ON THE WAY',
+  'RUNNING LATE',
+  'PHASE DONE',
+  'NEED DECISION',
+  'DAY DONE',
+  'JOB COMPLETE',
+  'VARIATION REQUEST',
+]
 
 export default function JobsPage() {
-  const { data: session } = useSession()
-  const [jobs, setJobs] = useState<ApiJob[]>([])
-  const [filteredJobs, setFilteredJobs] = useState<ApiJob[]>([])
+  const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState('All')
+  const [toast, setToast] = useState<string | null>(null)
+
+  const tabs = ['All', 'SCHEDULED', 'IN PROGRESS', 'RUNNING LATE', 'COMPLETE', 'INVOICED']
 
   useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const tradieConfigId = session?.user?.tradieConfigId || 'joey-tradie'
-        const res = await fetch(`/api/jobs?tradieConfigId=${tradieConfigId}`)
-        if (!res.ok) {
-          if (res.status === 401) {
-            setError('Please log in to view jobs')
-          } else {
-            setError(`Error ${res.status}`)
-          }
-          setJobs([])
-          return
-        }
-        const data = await res.json()
-        if (!Array.isArray(data)) {
-          setJobs([])
-        } else {
-          setJobs(data)
-        }
-      } catch (err) {
-        console.error('Failed to fetch jobs:', err)
-        setError('Unable to load jobs. Using demo mode.')
-        setJobs([])
-      } finally {
+    fetch('/api/jobs')
+      .then(r => r.json())
+      .then(data => {
+        setJobs(data.jobs ?? [])
         setLoading(false)
-      }
-    }
+      })
+      .catch(() => setLoading(false))
+  }, [])
 
-    fetchJobs()
-  }, [session?.user?.tradieConfigId])
+  const filteredJobs = activeTab === 'All'
+    ? jobs
+    : jobs.filter(j => j.status === activeTab)
 
-  useEffect(() => {
-    let filtered = selectedStatus ? jobs.filter(j => j?.status === selectedStatus) : jobs
-    setFilteredJobs(filtered)
-  }, [jobs, selectedStatus])
-
-  if (loading) {
-    return (
-      <div className="px-4 py-6 space-y-4 pb-24">
-        <div className="h-8 bg-[#1F2937] rounded w-32 animate-pulse" />
-        {[1, 2, 3].map(i => (
-          <div key={i} className="h-20 bg-[#1F2937] rounded-lg animate-pulse" />
-        ))}
-      </div>
-    )
+  const handleToggle = (id: string) => {
+    setExpandedId(prev => prev === id ? null : id)
   }
 
-  if (error && jobs.length === 0) {
-    return (
-      <div className="px-4 py-6 pb-24">
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
-          <p className="text-sm text-amber-400">{error}</p>
-        </div>
-      </div>
-    )
+  const handleAction = async (job: Job, action: string) => {
+    setToast(`Sending "${action}" for ${job.clientName}...`)
+    try {
+      await fetch('/api/alfred', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `${action} — ${job.clientName}, ${job.suburb}`,
+          tradieConfigId: 'joey-tradie',
+        }),
+      })
+      setToast(`✓ ${action} sent for ${job.clientName}`)
+    } catch {
+      setToast('Failed to send action')
+    }
+    setTimeout(() => setToast(null), 3000)
   }
 
   return (
-    <div className="min-h-screen bg-[#111827]">
-      <div className="px-4 md:px-8 py-6 space-y-6 pb-24">
-        {/* Header */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-[#F9FAFB]">Jobs</h1>
-              <p className="text-[#9CA3AF] text-sm">Your active projects</p>
-            </div>
-            <Link
-              href="/jobs/new"
-              className="inline-flex items-center justify-center w-12 h-12 bg-[#F97316] text-white rounded-lg hover:bg-[#C2580A] transition-all duration-200 ease focus:ring-2 focus:ring-offset-2 focus:ring-[#F97316]"
-            >
-              <Plus size={20} />
-            </Link>
-          </div>
+    <div className="min-h-screen bg-[#0F0F0F] text-white pb-24">
 
-          {/* Status Filter Tabs */}
-          <div className="flex gap-0 overflow-x-auto border-b border-[#374151] -mx-4 px-4">
-            <button
-              onClick={() => setSelectedStatus(null)}
-              className={`px-4 py-3 text-sm font-semibold transition-all duration-200 ease whitespace-nowrap border-b-2 ${
-                selectedStatus === null
-                  ? 'border-[#F97316] text-white'
-                  : 'border-transparent text-[#D1D5DB] hover:text-[#F9FAFB]'
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-4 left-4 right-4 z-50 bg-[#F97316] text-white text-center py-3 px-4 rounded-xl text-sm font-medium shadow-lg">
+          {toast}
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="px-4 pt-6 pb-2 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Jobs</h1>
+          <p className="text-gray-400 text-sm">Your active projects</p>
+        </div>
+        <button className="w-10 h-10 bg-[#F97316] rounded-full flex items-center justify-center text-white text-xl font-bold">
+          +
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide">
+        {tabs.map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+              activeTab === tab
+                ? 'bg-[#F97316] text-white'
+                : 'bg-[#1F2937] text-gray-400'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Job Cards */}
+      <div className="px-4 space-y-3 mt-2">
+        {loading && (
+          <>
+            {[1,2,3].map(i => (
+              <div key={i} className="bg-[#111827] rounded-xl h-20 animate-pulse" />
+            ))}
+          </>
+        )}
+
+        {!loading && filteredJobs.map(job => {
+          const isOpen = expandedId === job.id
+          const statusClass = STATUS_COLORS[job.status] ?? 'bg-gray-600 text-white'
+
+          return (
+            <div
+              key={job.id}
+              className={`bg-[#111827] rounded-xl overflow-hidden transition-all duration-200 ${
+                isOpen ? 'ring-2 ring-[#F97316]' : ''
               }`}
             >
-              All
-            </button>
-            {STATUS_OPTIONS.map(status => (
+              {/* Card Header — always visible, tap to toggle */}
               <button
-                key={status}
-                onClick={() => setSelectedStatus(status)}
-                className={`px-4 py-3 text-sm font-semibold transition-all duration-200 ease whitespace-nowrap border-b-2 ${
-                  selectedStatus === status
-                    ? 'border-[#F97316] text-white'
-                    : 'border-transparent text-[#D1D5DB] hover:text-[#F9FAFB]'
-                }`}
+                onClick={() => handleToggle(job.id)}
+                className="w-full px-4 py-4 flex items-center justify-between text-left"
               >
-                {status}
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-semibold text-base truncate">
+                    {job.clientName}
+                  </p>
+                  <p className="text-gray-400 text-sm mt-0.5 truncate">
+                    {[job.service, job.suburb].filter(Boolean).join(' • ')}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 ml-3 shrink-0">
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${statusClass}`}>
+                    {job.status}
+                  </span>
+                  <span className="text-gray-500 text-sm">
+                    {isOpen ? '▲' : '▼'}
+                  </span>
+                </div>
               </button>
-            ))}
-          </div>
-        </div>
 
-        {/* Jobs List */}
-        <div className="space-y-3">
-          {!filteredJobs || filteredJobs.length === 0 ? (
-            <div className="bg-[#1F2937] rounded-lg p-8 border border-slate-700 text-center">
-              <p className="text-[#9CA3AF] text-sm">{selectedStatus ? 'No jobs with this status' : 'No jobs assigned yet'}</p>
-            </div>
-          ) : (
-            filteredJobs.map(job => {
-              if (!job?.id) return null
-              const status = job?.status || 'UNKNOWN'
-              return (
-                <Link
-                  key={job.id}
-                  href={`/jobs/${job.id}`}
-                  className="block bg-[#1F2937] rounded-lg p-5 border border-[#374151] hover:bg-[#111827] hover:shadow-[0_4px_12px_rgba(249,115,22,0.1)] hover:border-l-4 hover:border-[#F97316] transition-all duration-200 ease"
-                >
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-start gap-3">
-                      <h3 className="text-sm font-semibold text-[#F9FAFB]">{job?.clientName || 'Unnamed'}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_COLORS[status] || 'bg-gray-500/10 text-gray-400'}`}>
-                        {status}
-                      </span>
-                    </div>
-                    <p className="text-xs text-[#9CA3AF]">
-                      {job?.service || 'Service'} • {job?.suburb || 'Location'}
-                    </p>
+              {/* Expanded Detail */}
+              {isOpen && (
+                <div className="px-4 pb-4 space-y-4 border-t border-[#1F2937]">
+
+                  {/* Job Info */}
+                  <div className="pt-3 space-y-2">
+                    {job.scope && <InfoRow label="Scope" value={job.scope} />}
+                    {job.jobType && <InfoRow label="Type" value={job.jobType} />}
+                    {job.currentPhase && <InfoRow label="Phase" value={job.currentPhase} />}
+                    {job.materialsStatus && <InfoRow label="Materials" value={job.materialsStatus} />}
+                    {job.estimatedCompletion && (
+                      <InfoRow label="Est. Completion" value={job.estimatedCompletion} />
+                    )}
                   </div>
-                </Link>
-              )
-            })
-          )}
-        </div>
+
+                  {/* Client & Site */}
+                  <div className="bg-[#0F0F0F] rounded-lg p-3 space-y-2">
+                    <p className="text-[#F97316] text-xs font-bold uppercase">Client & Site</p>
+                    {job.clientPhone && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400 text-sm">Phone</span>
+                        <a href={`tel:${job.clientPhone}`} className="text-[#F97316] text-sm font-medium">
+                          {job.clientPhone}
+                        </a>
+                      </div>
+                    )}
+                    {job.address && <InfoRow label="Address" value={job.address} />}
+                    {job.siteAccessNotes && (
+                      <div className="mt-1 bg-orange-500/10 border border-orange-500/30 rounded-lg p-2">
+                        <p className="text-orange-400 text-xs font-bold">⚠️ Site Access</p>
+                        <p className="text-gray-300 text-xs mt-1">{job.siteAccessNotes}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Team */}
+                  {(job.foreman || job.foremanPhone) && (
+                    <div className="bg-[#0F0F0F] rounded-lg p-3 space-y-2">
+                      <p className="text-[#F97316] text-xs font-bold uppercase">Team</p>
+                      {job.foreman && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-400 text-sm">Foreman</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-white text-sm">{job.foreman}</span>
+                            {job.foremanPhone && (
+                              <a href={`tel:${job.foremanPhone}`} className="text-[#F97316]">📞</a>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  {job.notes && (
+                    <div className="bg-[#0F0F0F] rounded-lg p-3">
+                      <p className="text-[#F97316] text-xs font-bold uppercase mb-1">Notes</p>
+                      <p className="text-gray-300 text-sm leading-relaxed">{job.notes}</p>
+                    </div>
+                  )}
+
+                  {/* Quick Actions */}
+                  <div>
+                    <p className="text-[#F97316] text-xs font-bold uppercase mb-2">Quick Actions</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {QUICK_ACTIONS.map(action => (
+                        <button
+                          key={action}
+                          onClick={() => handleAction(job, action)}
+                          className="bg-[#F97316] text-white text-xs font-bold py-3 px-2 rounded-lg active:opacity-70 text-center"
+                        >
+                          {action}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+        {!loading && filteredJobs.length === 0 && (
+          <div className="text-center py-12 text-gray-500">
+            No jobs with status "{activeTab}"
+          </div>
+        )}
       </div>
+    </div>
+  )
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <span className="text-gray-400 text-sm shrink-0">{label}</span>
+      <span className="text-white text-sm text-right">{value}</span>
     </div>
   )
 }

@@ -54,6 +54,7 @@ export interface Job {
   jobType: string
   currentPhase: string
   foreman: string
+  foremanPhone: string
   lastMessageSent: string | null
   statusSortOrder: number | null
   lastUpdated: string | null
@@ -61,6 +62,10 @@ export interface Job {
   materialsStatus: string
   nextAutoAction: string | null
   clientPhone: string
+  scope: string
+  address: string
+  siteAccessNotes: string
+  estimatedCompletion: string | null
 }
 
 export interface Lead {
@@ -95,7 +100,8 @@ function toJob(page: PageObjectResponse): Job {
       suburb: richText(page, 'Suburb'),
       jobType: select(page, 'Job Type'),
       currentPhase: select(page, 'Current Phase'),
-      foreman: richText(page, 'Foreman'),
+      foreman: richText(page, 'Foreman Name'),
+      foremanPhone: phone(page, 'Foreman Phone'),
       lastMessageSent: date(page, 'Last Message Sent'),
       statusSortOrder: number(page, 'Status Sort Order'),
       lastUpdated: date(page, 'Last Updated'),
@@ -103,6 +109,10 @@ function toJob(page: PageObjectResponse): Job {
       materialsStatus: select(page, 'Materials Status'),
       nextAutoAction: richText(page, 'Next Auto Action'),
       clientPhone: phone(page, 'Client Phone'),
+      scope: richText(page, 'Scope'),
+      address: richText(page, 'Address'),
+      siteAccessNotes: richText(page, 'Site Access Notes'),
+      estimatedCompletion: date(page, 'Estimated Completion'),
     }
   } catch (error) {
     console.error('[toJob] Error parsing job page:', {

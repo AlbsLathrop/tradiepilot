@@ -279,6 +279,81 @@ export default function JobsPage() {
                     </div>
                   )}
 
+                  {/* Job Log */}
+                  {job.milestones && job.milestones.length > 0 && (
+                    <div className="border-t border-[#1F2937] pt-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setOpenLogId(openLogId === job.id ? null : job.id)
+                        }}
+                        className="w-full flex items-center justify-between py-2"
+                      >
+                        <span className="text-[#F97316] text-xs font-bold uppercase">
+                          📋 Job Log ({job.milestones.length} entries)
+                        </span>
+                        <span className="text-gray-500 text-xs">
+                          {openLogId === job.id ? '▲' : '▼'}
+                        </span>
+                      </button>
+
+                      {openLogId === job.id && (
+                        <div className="space-y-2 mt-2">
+                          {job.milestones.map((m: any, i: number) => (
+                            <div
+                              key={i}
+                              className="bg-[#0F0F0F] rounded-lg p-3 border-l-2 border-[#F97316]"
+                            >
+                              <div className="flex items-start justify-between gap-2 mb-1">
+                                <span className="text-white text-xs font-semibold leading-tight">
+                                  {m.event}
+                                </span>
+                                <span className="text-gray-500 text-[10px] shrink-0">
+                                  {m.date ? new Date(m.date).toLocaleDateString('en-AU', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                  }) : ''}
+                                </span>
+                              </div>
+                              {m.note && (
+                                <p className="text-gray-400 text-xs leading-relaxed mb-1">
+                                  {m.note}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-2">
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                  m.type === 'ISSUE_FOUND'
+                                    ? 'bg-red-500/20 text-red-400'
+                                    : m.type === 'ISSUE_RESOLVED'
+                                      ? 'bg-green-500/20 text-green-400'
+                                      : m.type === 'PHASE_COMPLETE'
+                                        ? 'bg-purple-500/20 text-purple-400'
+                                        : m.type === 'VARIATION_APPROVED'
+                                          ? 'bg-orange-500/20 text-orange-400'
+                                          : m.type === 'JOB_STARTED'
+                                            ? 'bg-blue-500/20 text-blue-400'
+                                            : 'bg-gray-500/20 text-gray-400'
+                                }`}>
+                                  {m.type}
+                                </span>
+                                {m.loggedBy && (
+                                  <span className="text-gray-500 text-[10px]">
+                                    by {m.loggedBy}
+                                  </span>
+                                )}
+                                {m.clientNotified && (
+                                  <span className="text-green-400 text-[10px]">
+                                    ✓ notified
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Ask ALFRED Button */}
                   <a
                     href={`/chat?message=${encodeURIComponent(
@@ -288,61 +363,6 @@ export default function JobsPage() {
                   >
                     🧠 Ask ALFRED about this job
                   </a>
-
-                  {/* Job Log */}
-                  {job.milestones && job.milestones.length > 0 && (
-                    <div>
-                      <button
-                        onClick={() => setOpenLogId(
-                          openLogId === job.id ? null : job.id
-                        )}
-                        className="w-full flex items-center justify-between text-[#F97316] text-xs font-bold uppercase py-2"
-                      >
-                        <span>📋 Job Log ({job.milestones.length} entries)</span>
-                        <span>{openLogId === job.id ? '▲' : '▼'}</span>
-                      </button>
-
-                      {openLogId === job.id && (
-                        <div className="space-y-2 mt-1 mb-4">
-                          {job.milestones.map((m, i) => (
-                            <div
-                              key={i}
-                              className="bg-[#0F0F0F] rounded-lg p-3 border-l-2 border-[#F97316]"
-                            >
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-white text-xs font-semibold">{m.event}</span>
-                                <div className="flex items-center gap-1">
-                                  {m.clientNotified && (
-                                    <span className="text-green-400 text-[10px]">✓ Client notified</span>
-                                  )}
-                                  <span className="text-gray-500 text-xs">
-                                    {new Date(m.date).toLocaleDateString('en-AU', {
-                                      day: 'numeric', month: 'short'
-                                    })}
-                                  </span>
-                                </div>
-                              </div>
-                              {m.note && (
-                                <p className="text-gray-400 text-xs leading-relaxed">{m.note}</p>
-                              )}
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                                  m.type === 'ISSUE_FOUND' ? 'bg-red-500/20 text-red-400' :
-                                  m.type === 'ISSUE_RESOLVED' ? 'bg-green-500/20 text-green-400' :
-                                  m.type === 'PHASE_COMPLETE' ? 'bg-purple-500/20 text-purple-400' :
-                                  m.type === 'VARIATION_APPROVED' ? 'bg-orange-500/20 text-orange-400' :
-                                  'bg-gray-500/20 text-gray-400'
-                                }`}>{m.type}</span>
-                                {m.loggedBy && (
-                                  <span className="text-gray-500 text-[10px]">by {m.loggedBy}</span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
 
                   {/* Quick Actions */}
                   <div>

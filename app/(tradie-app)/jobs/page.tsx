@@ -2,6 +2,14 @@
 
 import { useState, useEffect } from 'react'
 
+interface Milestone {
+  jobId: string
+  event: string
+  note: string
+  date: string
+  type: string
+}
+
 interface Job {
   id: string
   clientName: string
@@ -21,6 +29,7 @@ interface Job {
   jobType: string
   lastMessageSent: string | null
   jobValue: number | null
+  milestones: Milestone[]
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -49,6 +58,7 @@ export default function JobsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('All')
   const [toast, setToast] = useState<string | null>(null)
+  const [openLogId, setOpenLogId] = useState<string | null>(null)
 
   const tabs = ['All', 'SCHEDULED', 'IN PROGRESS', 'RUNNING LATE', 'COMPLETE', 'INVOICED']
 
@@ -159,14 +169,25 @@ export default function JobsPage() {
                   <p className="text-gray-400 text-sm mt-0.5 truncate">
                     {[job.service, job.suburb].filter(Boolean).join(' • ')}
                   </p>
-                  {job.lastMessageSent && (
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Last contact: {Math.floor(
-                        (Date.now() - new Date(job.lastMessageSent).getTime())
-                        / (1000 * 60 * 60 * 24)
-                      )} days ago
-                    </p>
-                  )}
+                  {job.lastMessageSent && (() => {
+                    const days = Math.floor(
+                      (Date.now() - new Date(job.lastMessageSent).getTime())
+                      / (1000 * 60 * 60 * 24)
+                    )
+                    return (
+                      <p className={`text-xs mt-0.5 ${
+                        days > 7
+                          ? 'text-red-400'
+                          : days > 3
+                            ? 'text-yellow-400'
+                            : 'text-gray-500'
+                      }`}>
+                        {days === 0
+                          ? 'Contacted today'
+                          : `Last contact: ${days}d ago`}
+                      </p>
+                    )
+                  })()}
                 </div>
                 <div className="flex items-center gap-2 ml-3 shrink-0">
                   {job.jobValue && (
@@ -265,6 +286,54 @@ export default function JobsPage() {
                   >
                     🧠 Ask ALFRED about this job
                   </a>
+
+                  {/* Job Log */}
+                  {job.milestones && job.milestones.length > 0 && (
+                    <div>
+                      <button
+                        onClick={() => setOpenLogId(
+                          openLogId === job.id ? null : job.id
+                        )}
+                        className="w-full flex items-center justify-between text-[#F97316] text-xs font-bold uppercase py-2"
+                      >
+                        <span>📋 Job Log ({job.milestones.length} entries)</span>
+                        <span>{openLogId === job.id ? '▲' : '▼'}</span>
+                      </button>
+
+                      {openLogId === job.id && (
+                        <div className="space-y-2 mt-1 mb-4">
+                          {job.milestones.map((m, i) => (
+                            <div
+                              key={i}
+                              className="bg-[#0F0F0F] rounded-lg p-3 border-l-2 border-[#F97316]"
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-white text-xs font-semibold">{m.event}</span>
+                                <span className="text-gray-500 text-xs">
+                                  {m.date
+                                    ? new Date(m.date).toLocaleDateString('en-AU', {
+                                      day: 'numeric',
+                                      month: 'short',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })
+                                    : ''}
+                                </span>
+                              </div>
+                              {m.note && (
+                                <p className="text-gray-400 text-xs leading-relaxed">{m.note}</p>
+                              )}
+                              {m.type && (
+                                <span className="text-[10px] text-orange-400 font-bold uppercase mt-1 inline-block">
+                                  {m.type}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Quick Actions */}
                   <div>

@@ -16,6 +16,32 @@ export async function GET() {
       sorts: [{ property: 'Last Updated', direction: 'descending' }],
     })
 
+    const milestonesRes = await notion.databases.query({
+      database_id: process.env.NOTION_MILESTONE_LOG_DB_ID!,
+      filter: {
+        property: 'Tradie Config ID',
+        rich_text: { equals: 'joey-tradie' }
+      },
+      sorts: [{ property: 'Date', direction: 'descending' }],
+    })
+
+    const milestones = (milestonesRes.results as any[]).map(m => ({
+      jobId: m.properties['Job ID']?.rich_text?.[0]?.plain_text ?? '',
+      event: m.properties['Event']?.title?.[0]?.plain_text ??
+             m.properties['Milestone']?.title?.[0]?.plain_text ?? '',
+      note: m.properties['Note']?.rich_text?.[0]?.plain_text ??
+            m.properties['Notes']?.rich_text?.[0]?.plain_text ?? '',
+      date: m.properties['Date']?.date?.start ??
+            m.properties['Timestamp']?.date?.start ?? '',
+      type: m.properties['Type']?.select?.name ?? 'UPDATE',
+    }))
+
+    const milestonesByJob: Record<string, any[]> = {}
+    milestones.forEach(m => {
+      if (!milestonesByJob[m.jobId]) milestonesByJob[m.jobId] = []
+      milestonesByJob[m.jobId].push(m)
+    })
+
     const jobs = (response.results as any[]).map(page => {
       const p = page.properties
       return {
@@ -38,6 +64,7 @@ export async function GET() {
         tradieConfigId: p['Tradie Config ID']?.rich_text?.[0]?.plain_text ?? '',
         lastMessageSent: p['Last Message Sent']?.date?.start ?? null,
         jobValue: p['Job Value']?.number ?? null,
+        milestones: milestonesByJob[page.id] ?? []
       }
     })
 

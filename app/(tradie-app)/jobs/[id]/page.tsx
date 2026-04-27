@@ -14,7 +14,7 @@ export default async function JobDetailPage({ params }: JobPageProps) {
   const { id } = await params
   const session = await getServerSession(authOptions)
 
-  if (!session?.user?.tradieConfigId) {
+  if (!session?.user?.email) {
     return (
       <div className="p-4 text-center">
         <p className="text-[#9CA3AF]">Not authenticated</p>
@@ -24,6 +24,8 @@ export default async function JobDetailPage({ params }: JobPageProps) {
       </div>
     )
   }
+
+  const tradieConfigId = session.user.tradieConfigId ?? 'joey-tradie'
 
   try {
     const page = await notion.pages.retrieve({ page_id: id }) as any

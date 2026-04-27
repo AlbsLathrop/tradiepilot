@@ -17,9 +17,11 @@ export async function GET(
 
   const session = await getServerSession(authOptions)
 
-  if (!session?.user?.tradieConfigId) {
+  if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const tradieConfigId = session.user.tradieConfigId ?? 'joey-tradie'
 
   try {
     // Fetch job page directly
@@ -97,7 +99,7 @@ export async function PATCH(
   const session = await getServerSession(authOptions)
   const { id } = await params
 
-  if (!session?.user?.tradieConfigId) {
+  if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -135,7 +137,7 @@ export async function DELETE(
   const session = await getServerSession(authOptions)
   const { id } = await params
 
-  if (!session?.user?.tradieConfigId) {
+  if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

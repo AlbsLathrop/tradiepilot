@@ -83,19 +83,33 @@ export default function JobsPage() {
   }
 
   const handleAction = async (job: Job, action: string) => {
-    setToast(`Sending "${action}" for ${job.clientName}...`)
+    setToast(`Sending "${action}"...`)
     try {
-      await fetch('/api/alfred', {
+      const res = await fetch('/api/alfred/action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: `${action} — ${job.clientName}, ${job.suburb}`,
-          tradieConfigId: 'joey-tradie',
+          action,
+          jobId: job.id,
+          clientName: job.clientName,
+          suburb: job.suburb,
+          tradieConfigId: job.tradieConfigId || 'joey-tradie',
         }),
       })
-      setToast(`✓ ${action} sent for ${job.clientName}`)
+      const data = await res.json()
+      if (data.success) {
+        setToast(`✓ ${action} sent for ${job.clientName}`)
+        // Refresh jobs to show new milestone
+        setTimeout(() => {
+          fetch('/api/jobs')
+            .then(r => r.json())
+            .then(d => setJobs(d.jobs ?? []))
+        }, 1500)
+      } else {
+        setToast('Failed — try again')
+      }
     } catch {
-      setToast('Failed to send action')
+      setToast('Failed — try again')
     }
     setTimeout(() => setToast(null), 3000)
   }

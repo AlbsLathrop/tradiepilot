@@ -1,112 +1,207 @@
-import { getServerSession } from 'next-auth';
-import Link from 'next/link';
-import { MessageCircle, Briefcase, Users } from 'lucide-react';
+'use client'
 
-interface Stats {
-  activeJobs: number;
-  openQuotes: number;
-  reviews: number;
-  hoursSaved: number;
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+
+interface DashboardData {
+  activeJobs: number
+  inProgressJobs: number
+  runningLate: Array<{ id: string; clientName: string; suburb: string }>
+  todayJobs: Array<{ id: string; clientName: string; suburb: string; status: string }>
+  newLeads: number
+  qualifiedLeads: number
+  monthRevenue: number
+  smsSentToday: number
+  lastComm: { message: string; recipient: string; time: string } | null
 }
 
-async function getStats(tradieConfigId?: string): Promise<Stats> {
-  if (!tradieConfigId) {
-    return { activeJobs: 0, openQuotes: 0, reviews: 0, hoursSaved: 0 };
+export default function HomePage() {
+  const [data, setData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/dashboard')
+      .then(r => r.json())
+      .then(d => { setData(d); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  const greeting = () => {
+    const h = new Date().getHours()
+    if (h < 12) return "Good morning"
+    if (h < 17) return "Good afternoon"
+    return "Good evening"
   }
-
-  try {
-    return { activeJobs: 0, openQuotes: 0, reviews: 0, hoursSaved: 0 };
-  } catch (error) {
-    console.error('Failed to fetch stats:', error);
-    return { activeJobs: 0, openQuotes: 0, reviews: 0, hoursSaved: 0 };
-  }
-}
-
-export default async function HomePage() {
-  const session = await getServerSession();
-
-  // if (!session) {
-  //   redirect('/');
-  // }
-
-  const stats = await getStats(session?.user?.tradieConfigId);
-  const firstName = session?.user?.name?.split(' ')[0] || 'Tradie';
 
   return (
-    <div className="min-h-screen bg-[#111827]">
-      <div className="px-4 py-6 space-y-6 pb-24">
-        {/* Header */}
-        <div className="space-y-1">
-          <p className="text-[#9CA3AF] text-xs uppercase tracking-widest font-medium">
-            {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-          </p>
-          <h1 className="text-3xl font-bold text-[#F9FAFB]">G&apos;day {firstName}</h1>
-          <p className="text-[#9CA3AF] text-sm">Your dashboard at a glance</p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-[#1F2937] rounded-lg p-4 border border-slate-700 shadow-sm">
-            <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wider mb-2">Active Jobs</p>
-            <p className="text-3xl font-bold text-[#F9FAFB]">{stats?.activeJobs ?? 0}</p>
-          </div>
-          <div className="bg-[#1F2937] rounded-lg p-4 border border-slate-700 shadow-sm">
-            <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wider mb-2">Open Quotes</p>
-            <p className="text-3xl font-bold text-[#F97316]">{stats?.openQuotes ?? 0}</p>
-          </div>
-          <div className="bg-[#1F2937] rounded-lg p-4 border border-slate-700 shadow-sm">
-            <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wider mb-2">Reviews</p>
-            <p className="text-3xl font-bold text-[#F9FAFB]">{stats?.reviews ?? 0}</p>
-          </div>
-          <div className="bg-[#1F2937] rounded-lg p-4 border border-slate-700 shadow-sm">
-            <p className="text-[#9CA3AF] text-xs font-medium uppercase tracking-wider mb-2">Saved This Week</p>
-            <p className="text-3xl font-bold text-[#F97316]">{stats?.hoursSaved ?? 0}h</p>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="space-y-2 pt-2">
-          <div className="grid grid-cols-3 gap-2">
-            <Link
-              href="/jobs/new"
-              className="flex flex-col items-center justify-center bg-[#F97316] text-white rounded-lg p-4 border border-slate-700 shadow-sm hover:bg-[#C2580A] transition min-h-12"
-            >
-              <Briefcase size={20} className="mb-1" />
-              <span className="text-xs font-semibold text-center">New Job</span>
-            </Link>
-            <Link
-              href="/leads"
-              className="flex flex-col items-center justify-center bg-[#F97316] text-white rounded-lg p-4 border border-slate-700 shadow-sm hover:bg-[#C2580A] transition min-h-12"
-            >
-              <Users size={20} className="mb-1" />
-              <span className="text-xs font-semibold text-center">New Lead</span>
-            </Link>
-            <button
-              className="flex flex-col items-center justify-center bg-[#F97316] text-white rounded-lg p-4 border border-slate-700 shadow-sm hover:bg-[#C2580A] transition min-h-12"
-            >
-              <MessageCircle size={20} className="mb-1" />
-              <span className="text-xs font-semibold text-center">FIXER</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Sections */}
-        <div className="space-y-4 pt-2">
-          <div>
-            <h2 className="text-sm font-semibold text-[#F9FAFB] uppercase tracking-wider mb-3">Today&apos;s Jobs</h2>
-            <div className="bg-[#1F2937] rounded-lg p-6 border border-slate-700 shadow-sm text-center">
-              <p className="text-[#9CA3AF] text-sm">No jobs scheduled for today</p>
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-sm font-semibold text-[#F9FAFB] uppercase tracking-wider mb-3">New Leads</h2>
-            <div className="bg-[#1F2937] rounded-lg p-6 border border-slate-700 shadow-sm text-center">
-              <p className="text-[#9CA3AF] text-sm">No new leads this week</p>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#0F0F0F] text-white pb-24">
+      <div className="px-4 pt-8 pb-4">
+        <p className="text-gray-400 text-sm">{greeting()},</p>
+        <h1 className="text-3xl font-bold text-white mt-1">Joey 👷</h1>
+        <p className="text-gray-500 text-sm mt-1">
+          {new Date().toLocaleDateString('en-AU', {
+            weekday: 'long', day: 'numeric', month: 'long'
+          })}
+        </p>
       </div>
+
+      {loading && (
+        <div className="px-4 space-y-3">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="bg-[#111827] rounded-xl h-24
+            animate-pulse" />
+          ))}
+        </div>
+      )}
+
+      {!loading && data && (
+        <div className="px-4 space-y-4">
+
+          {/* URGENT ALERT */}
+          {data.runningLate?.length > 0 && (
+            <div className="bg-red-500/10 border border-red-500/40
+            rounded-xl p-4">
+              <p className="text-red-400 text-xs font-bold uppercase mb-2">
+                ⚠️ Needs Attention
+              </p>
+              {data.runningLate.map((job) => (
+                <div key={job.id} className="flex justify-between
+                items-center py-1">
+                  <span className="text-white text-sm">{job.clientName}</span>
+                  <span className="text-red-400 text-xs">
+                    {job.suburb} • RUNNING LATE
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* STATS ROW */}
+          <div className="grid grid-cols-2 gap-3">
+            <Link href="/jobs">
+              <div className="bg-[#111827] rounded-xl p-4 cursor-pointer
+              active:opacity-70">
+                <p className="text-gray-400 text-xs uppercase mb-1">
+                  Active Jobs
+                </p>
+                <p className="text-3xl font-bold text-[#F97316]">
+                  {data.activeJobs ?? 0}
+                </p>
+                <p className="text-gray-500 text-xs mt-1">
+                  {data.inProgressJobs ?? 0} in progress
+                </p>
+              </div>
+            </Link>
+            <Link href="/leads">
+              <div className="bg-[#111827] rounded-xl p-4 cursor-pointer
+              active:opacity-70">
+                <p className="text-gray-400 text-xs uppercase mb-1">
+                  New Leads
+                </p>
+                <p className="text-3xl font-bold text-green-400">
+                  {data.newLeads ?? 0}
+                </p>
+                <p className="text-gray-500 text-xs mt-1">
+                  {data.qualifiedLeads ?? 0} qualified
+                </p>
+              </div>
+            </Link>
+            <div className="bg-[#111827] rounded-xl p-4">
+              <p className="text-gray-400 text-xs uppercase mb-1">
+                Month Revenue
+              </p>
+              <p className="text-2xl font-bold text-white">
+                ${(data.monthRevenue ?? 0).toLocaleString()}
+              </p>
+              <p className="text-gray-500 text-xs mt-1">jobs invoiced</p>
+            </div>
+            <div className="bg-[#111827] rounded-xl p-4">
+              <p className="text-gray-400 text-xs uppercase mb-1">
+                SMS Sent Today
+              </p>
+              <p className="text-3xl font-bold text-blue-400">
+                {data.smsSentToday ?? 0}
+              </p>
+              <p className="text-gray-500 text-xs mt-1">by ALFRED</p>
+            </div>
+          </div>
+
+          {/* TODAY'S JOBS */}
+          {data.todayJobs?.length > 0 && (
+            <div className="bg-[#111827] rounded-xl p-4">
+              <p className="text-[#F97316] text-xs font-bold uppercase mb-3">
+                On Site Today
+              </p>
+              <div className="space-y-2">
+                {data.todayJobs.map((job) => (
+                  <div key={job.id} className="flex justify-between
+                  items-center">
+                    <div>
+                      <p className="text-white text-sm font-medium">
+                        {job.clientName}
+                      </p>
+                      <p className="text-gray-400 text-xs">{job.suburb}</p>
+                    </div>
+                    <span className={`text-xs font-bold px-2 py-1
+                    rounded-full ${
+                      job.status === 'RUNNING LATE'
+                        ? 'bg-red-500 text-white'
+                        : 'bg-orange-500 text-white'
+                    }`}>
+                      {job.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* QUICK ACCESS */}
+          <div className="bg-[#111827] rounded-xl p-4">
+            <p className="text-[#F97316] text-xs font-bold uppercase mb-3">
+              Quick Access
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <Link href="/chat" className="bg-[#0F0F0F] border
+              border-[#F97316] text-[#F97316] text-xs font-bold py-3
+              rounded-lg text-center">
+                🧠 Ask ALFRED
+              </Link>
+              <Link href="/jobs" className="bg-[#0F0F0F] border
+              border-gray-600 text-white text-xs font-bold py-3
+              rounded-lg text-center">
+                💼 All Jobs
+              </Link>
+              <Link href="/leads" className="bg-[#0F0F0F] border
+              border-gray-600 text-white text-xs font-bold py-3
+              rounded-lg text-center">
+                🎯 Leads
+              </Link>
+              <Link href="/settings" className="bg-[#0F0F0F] border
+              border-gray-600 text-white text-xs font-bold py-3
+              rounded-lg text-center">
+                ⚙️ Settings
+              </Link>
+            </div>
+          </div>
+
+          {/* LAST ALFRED MESSAGE */}
+          {data.lastComm && (
+            <div className="bg-[#111827] rounded-xl p-4">
+              <p className="text-[#F97316] text-xs font-bold uppercase mb-2">
+                Last ALFRED Message
+              </p>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                &ldquo;{data.lastComm.message}&rdquo;
+              </p>
+              <p className="text-gray-500 text-xs mt-2">
+                → {data.lastComm.recipient} • {data.lastComm.time}
+              </p>
+            </div>
+          )}
+
+        </div>
+      )}
     </div>
-  );
+  )
 }

@@ -1,117 +1,187 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
-import { signOut } from 'next-auth/react'
-import { LogOut, MessageCircle, HelpCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+
+interface TradiePilotConfig {
+  businessName: string
+  tradeType: string
+  serviceArea: string
+  minJobValue: number
+  hoursStart: string
+  hoursEnd: string
+  tone: string
+  twilioNumber: string
+}
 
 export default function SettingsPage() {
-  const { data: session } = useSession()
+  const [config, setConfig] = useState<TradiePilotConfig | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+
+  const showToast = (msg: string) => {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(d => { setConfig(d.config); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      })
+      showToast('✓ Settings saved')
+    } catch {
+      showToast('Failed to save')
+    }
+    setSaving(false)
+  }
 
   return (
-    <div className="min-h-screen bg-[#111827]">
-      <div className="px-4 md:px-8 py-6 space-y-6 pb-24 max-w-2xl mx-auto">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-[#F9FAFB]">Settings</h1>
-          <p className="text-[#9CA3AF] text-sm">Account & preferences</p>
+    <div className="min-h-screen bg-[#0F0F0F] text-white pb-24">
+      {toast && (
+        <div className="fixed top-4 left-4 right-4 z-50
+        bg-[#F97316] text-white text-center py-3 px-4
+        rounded-xl text-sm font-medium">
+          {toast}
         </div>
+      )}
 
-        {/* Profile Card */}
-        <div className="bg-[#1F2937] rounded-lg p-5 border border-[#374151] space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-[#F97316] rounded-full flex items-center justify-center text-white text-2xl font-bold">
-              {(session?.user?.name || 'T')[0].toUpperCase()}
-            </div>
-            <div className="flex-1">
-              <h2 className="text-lg font-bold text-white">{session?.user?.name || 'Tradie'}</h2>
-              <p className="text-sm text-[#D1D5DB]">{session?.user?.email || 'user@example.com'}</p>
-            </div>
-          </div>
-          <div className="flex items-center justify-between border-t border-[#374151] pt-4">
-            <p className="text-sm text-[#D1D5DB]">Plan</p>
-            <span className="bg-[#F97316] text-white px-3 py-1 rounded-full text-xs font-semibold">
-              Growth Plan
-            </span>
-          </div>
+      <div className="px-4 pt-6 pb-4">
+        <h1 className="text-2xl font-bold">Settings</h1>
+        <p className="text-gray-400 text-sm">Your TradiePilot config</p>
+      </div>
+
+      {loading && (
+        <div className="px-4 space-y-3">
+          {[1,2,3].map(i => (
+            <div key={i} className="bg-[#111827] rounded-xl h-16
+            animate-pulse" />
+          ))}
         </div>
+      )}
 
-        {/* Stats Section */}
-        <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-[#F9FAFB] mb-3">This Month</h2>
+      {!loading && config && (
+        <div className="px-4 space-y-4">
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-[#1F2937] rounded-lg p-5 border border-[#374151]">
-              <p className="text-[#D1D5DB] text-xs font-medium uppercase tracking-wider mb-3">Active Jobs</p>
-              <p className="text-4xl font-bold text-[#F97316]">3</p>
+          <Section title="Business Profile">
+            <Field label="Business Name"
+              value={config.businessName ?? ''}
+              onChange={v => setConfig((p) => ({
+                ...p, businessName: v
+              }) as TradiePilotConfig)} />
+            <Field label="Trade Type"
+              value={config.tradeType ?? ''}
+              onChange={v => setConfig((p) => ({
+                ...p, tradeType: v
+              }) as TradiePilotConfig)} />
+            <Field label="Service Area"
+              value={config.serviceArea ?? ''}
+              onChange={v => setConfig((p) => ({
+                ...p, serviceArea: v
+              }) as TradiePilotConfig)} />
+          </Section>
+
+          <Section title="ALFRED Settings">
+            <Field label="Min Job Value ($)"
+              value={String(config.minJobValue ?? '')}
+              type="number"
+              onChange={v => setConfig((p) => ({
+                ...p, minJobValue: Number(v)
+              }) as TradiePilotConfig)} />
+            <Field label="Business Hours Start"
+              value={config.hoursStart ?? '7:00'}
+              onChange={v => setConfig((p) => ({
+                ...p, hoursStart: v
+              }) as TradiePilotConfig)} />
+            <Field label="Business Hours End"
+              value={config.hoursEnd ?? '17:00'}
+              onChange={v => setConfig((p) => ({
+                ...p, hoursEnd: v
+              }) as TradiePilotConfig)} />
+            <Field label="ALFRED Tone"
+              value={config.tone ?? 'Professional'}
+              onChange={v => setConfig((p) => ({
+                ...p, tone: v
+              }) as TradiePilotConfig)} />
+          </Section>
+
+          <Section title="Twilio">
+            <div className="flex justify-between items-center py-2">
+              <span className="text-gray-400 text-sm">
+                TradiePilot Number
+              </span>
+              <span className="text-white text-sm font-mono">
+                {config.twilioNumber ?? '+61468072974'}
+              </span>
             </div>
-            <div className="bg-[#1F2937] rounded-lg p-5 border border-[#374151]">
-              <p className="text-[#D1D5DB] text-xs font-medium uppercase tracking-wider mb-3">New Leads</p>
-              <p className="text-4xl font-bold text-[#F97316]">7</p>
-            </div>
-          </div>
-        </div>
+          </Section>
 
-        {/* Support Section */}
-        <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-[#F9FAFB] mb-3">Support</h2>
-
-          <div className="space-y-2">
-            <a
-              href="https://wa.me/61000000000"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 w-full h-11 bg-[#F97316] text-white rounded-lg py-3 px-4 hover:bg-[#C2580A] transition-all duration-200 ease font-semibold text-sm focus:ring-2 focus:ring-offset-2 focus:ring-[#F97316]"
-            >
-              <MessageCircle size={18} />
-              <span>WhatsApp Support</span>
+          <Section title="Talk to ALFRED">
+            <p className="text-gray-400 text-xs leading-relaxed">
+              You can change any setting by talking to ALFRED in Chat.
+              Try: "Make my messages more casual" or
+              "Add Manly to my service area"
+            </p>
+            <a href="/chat" className="w-full block bg-[#1F2937]
+            border border-[#F97316] text-[#F97316] text-sm font-bold
+            py-3 rounded-xl text-center mt-2">
+              🧠 Open ALFRED
             </a>
-            <a
-              href="#"
-              className="flex items-center justify-center gap-3 w-full h-11 bg-[#F97316] text-white rounded-lg py-3 px-4 hover:bg-[#C2580A] transition-all duration-200 ease font-semibold text-sm focus:ring-2 focus:ring-offset-2 focus:ring-[#F97316]"
-            >
-              <HelpCircle size={18} />
-              <span>Message FIXER</span>
-            </a>
-          </div>
-        </div>
-
-        {/* Reports */}
-        <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-[#F9FAFB] mb-3">Reports</h2>
-
-          <a
-            href="/report"
-            className="flex items-center justify-center gap-3 w-full h-11 bg-[#F97316] text-white rounded-lg py-3 px-4 hover:bg-[#C2580A] transition-all duration-200 ease font-semibold text-sm focus:ring-2 focus:ring-offset-2 focus:ring-[#F97316]"
-          >
-            <span>View Weekly Report</span>
-          </a>
-        </div>
-
-        {/* Account Actions */}
-        <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-[#F9FAFB] mb-3">Account</h2>
+          </Section>
 
           <button
-            onClick={() =>
-              signOut({
-                redirect: true,
-                callbackUrl: '/',
-              })
-            }
-            className="flex items-center justify-center gap-2 w-full h-11 bg-transparent border-2 border-[#EF4444] text-[#EF4444] rounded-lg py-3 px-4 hover:bg-[#EF4444] hover:text-white transition-all duration-200 ease font-semibold text-sm focus:ring-2 focus:ring-offset-2 focus:ring-[#EF4444]"
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full bg-[#F97316] text-white font-bold
+            py-3.5 rounded-xl text-sm disabled:opacity-50"
           >
-            <LogOut size={18} />
-            Logout
+            {saving ? 'Saving...' : 'Save Settings'}
           </button>
-        </div>
 
-        {/* Footer */}
-        <div className="pt-4 border-t border-[#374151] text-center">
-          <p className="text-xs text-[#6B7280]">
-            TradiePilot v1.0.0 • © 2026
-          </p>
         </div>
-      </div>
+      )}
+    </div>
+  )
+}
+
+function Section({ title, children }: {
+  title: string; children: React.ReactNode
+}) {
+  return (
+    <div className="bg-[#111827] rounded-xl p-4">
+      <p className="text-[#F97316] text-xs font-bold uppercase mb-3">
+        {title}
+      </p>
+      <div className="space-y-3">{children}</div>
+    </div>
+  )
+}
+
+function Field({ label, value, onChange, type = 'text' }: {
+  label: string; value: string;
+  onChange: (v: string) => void; type?: string
+}) {
+  return (
+    <div>
+      <label className="text-gray-400 text-xs mb-1 block">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="w-full bg-[#0F0F0F] border border-[#1F2937]
+        rounded-lg px-3 py-2.5 text-white text-sm
+        focus:border-[#F97316] outline-none"
+      />
     </div>
   )
 }

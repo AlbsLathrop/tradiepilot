@@ -262,36 +262,35 @@ async function getMilestonesForJob(jobId: string): Promise<string> {
   }
 }
 
-async function summarizeConversation(messages: any[]): Promise<string> {
-  try {
-    const conversationText = messages
-      .map(m => `${m.role === 'user' ? 'Joey' : 'ALFRED'}: ${m.content}`)
-      .join('\n');
+async function buildConversationContext(
+  allMessages: { role: string; content: string }[]
+): Promise<{ summary: string | null; recent: { role: string; content: string }[] }> {
+  const RECENT_LIMIT = 30;
+  if (allMessages.length <= RECENT_LIMIT) {
+    return { summary: null, recent: allMessages };
+  }
 
-    const response = await anthropic.messages.create({
+  const older = allMessages.slice(0, allMessages.length - RECENT_LIMIT);
+  const recent = allMessages.slice(-RECENT_LIMIT);
+
+  try {
+    const res = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 200,
+      max_tokens: 150,
       messages: [
         {
           role: 'user',
-          content: `Summarize this conversation in 2-3 sentences. Focus on:
-- Which jobs were discussed
-- What updates were made
-- What decisions were taken
-- Any issues flagged
-Be concise — this is context for an AI assistant.
-
-Conversation:
-${conversationText}`,
+          content: `Summarize in 2-3 sentences. Focus on: which jobs were discussed, what updates were made, what issues came up, what decisions were taken. Be concise.\n\n${older
+            .map(m => `${m.role.toUpperCase()}: ${m.content}`)
+            .join('\n')}`,
         },
       ],
     });
-
-    const summaryText = response.content[0].type === 'text' ? response.content[0].text : '';
-    return summaryText;
-  } catch (err) {
-    console.error('Summarization error:', err);
-    return '';
+    const summary =
+      res.content[0].type === 'text' ? res.content[0].text : null;
+    return { summary, recent };
+  } catch {
+    return { summary: null, recent: allMessages.slice(-RECENT_LIMIT) };
   }
 }
 
@@ -384,24 +383,18 @@ ${JSON.stringify(contextData, null, 2)}`;
       content: m.content,
     }));
 
-    // Implement rolling summary: if > 30 messages, summarize older ones
-    if (historyMessages.length > 30) {
-      const olderMessages = historyMessages.slice(0, -30);
-      const recentMessages = historyMessages.slice(-30);
+    // Build context with rolling summary for long conversations
+    const { summary, recent } = await buildConversationContext(historyMessages);
 
-      const summary = await summarizeConversation(olderMessages);
-
-      if (summary) {
-        console.log('[ALFRED] Summarized', olderMessages.length, 'messages:', summary.slice(0, 100) + '...');
-        historyMessages = [
-          { role: 'user' as const, content: `[CONVERSATION SUMMARY]: ${summary}` },
-          { role: 'assistant' as const, content: 'Got it, continuing.' },
-          ...recentMessages,
-        ];
-      } else {
-        // If summarization fails, just keep last 30
-        historyMessages = recentMessages;
-      }
+    if (summary) {
+      console.log('[ALFRED] Summarized', historyMessages.length - recent.length, 'messages:', summary.slice(0, 100) + '...');
+      historyMessages = [
+        { role: 'user' as const, content: `[EARLIER IN THIS SESSION]: ${summary}` },
+        { role: 'assistant' as const, content: 'Got it.' },
+        ...recent,
+      ];
+    } else {
+      historyMessages = recent;
     }
 
     const claudeMessages: any[] = mediaUrl ? [

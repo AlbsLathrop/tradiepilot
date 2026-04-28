@@ -1,10 +1,19 @@
+import { getToken } from 'next-auth/jwt';
 import { NextRequest, NextResponse } from 'next/server';
 
-export function middleware(request: NextRequest) {
-  // Completely disabled for testing - let all routes through
+export async function middleware(request: NextRequest) {
+  const token = await getToken({ req: request });
+  const pathname = request.nextUrl.pathname;
+
+  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/landing');
+
+  if (!token && !isAuthPage) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [],
+  matcher: ['/((?!api|_next|static|favicon.ico).*)'],
 };

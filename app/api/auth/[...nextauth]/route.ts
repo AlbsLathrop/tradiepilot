@@ -23,6 +23,7 @@ export const authOptions: NextAuthOptions = {
       name: 'Email',
       credentials: {
         email: { label: 'Email', type: 'text', placeholder: 'joey@tradie.test' },
+        rememberMe: { label: 'Remember Me', type: 'checkbox' },
       },
       async authorize(credentials) {
         if (!credentials?.email) return null;
@@ -70,8 +71,11 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   pages: {
-    signIn: '/',
-    signOut: '/',
+    signIn: '/login',
+    signOut: '/login',
+  },
+  session: {
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
     async jwt({ token, user }) {

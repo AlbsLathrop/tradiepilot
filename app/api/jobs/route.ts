@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { Client } from '@notionhq/client'
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
@@ -84,5 +84,50 @@ export async function GET() {
       error: error?.message,
       jobs: []
     }, { status: 500 })
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const body = await req.json()
+  try {
+    const page = await notion.pages.create({
+      parent: { database_id: process.env.NOTION_JOBS_DB_ID! },
+      properties: {
+        'Client Name': {
+          title: [{ text: { content: body.clientName } }]
+        },
+        'Client Phone': { phone_number: body.clientPhone ?? '' },
+        'Address': {
+          rich_text: [{ text: { content: body.address ?? '' } }]
+        },
+        'Suburb': {
+          rich_text: [{ text: { content: body.suburb ?? '' } }]
+        },
+        'Service': {
+          rich_text: [{ text: { content: body.service ?? '' } }]
+        },
+        'Scope': {
+          rich_text: [{ text: { content: body.scope ?? '' } }]
+        },
+        'Status': { select: { name: 'SCHEDULED' } },
+        'Job Type': {
+          select: { name: body.jobType ?? 'Residential Direct' }
+        },
+        'Tradie Config ID': {
+          rich_text: [{ text: { content: 'joey-tradie' } }]
+        },
+        ...(body.estimatedCompletion ? {
+          'Estimated Completion': {
+            date: { start: body.estimatedCompletion }
+          }
+        } : {}),
+        ...(body.jobValue ? {
+          'Job Value': { number: body.jobValue }
+        } : {}),
+      }
+    })
+    return NextResponse.json({ success: true, id: page.id })
+  } catch (error: any) {
+    return NextResponse.json({ error: error?.message }, { status: 500 })
   }
 }

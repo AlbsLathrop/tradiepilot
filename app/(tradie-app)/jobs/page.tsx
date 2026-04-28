@@ -62,6 +62,12 @@ export default function JobsPage() {
   const [activeTab, setActiveTab] = useState('All')
   const [toast, setToast] = useState<string | null>(null)
   const [openLogId, setOpenLogId] = useState<string | null>(null)
+  const [showNewJob, setShowNewJob] = useState(false)
+  const [newJob, setNewJob] = useState({
+    clientName: '', clientPhone: '', address: '',
+    suburb: '', service: '', scope: '',
+    jobValue: '', estimatedCompletion: ''
+  })
 
   const tabs = ['All', 'SCHEDULED', 'IN PROGRESS', 'RUNNING LATE', 'COMPLETE', 'INVOICED']
 
@@ -169,7 +175,10 @@ export default function JobsPage() {
           <h1 className="text-2xl font-bold text-white">Jobs</h1>
           <p className="text-gray-400 text-sm">Your active projects</p>
         </div>
-        <button className="w-10 h-10 bg-[#F97316] rounded-full flex items-center justify-center text-white text-xl font-bold">
+        <button
+          onClick={() => setShowNewJob(true)}
+          className="w-10 h-10 bg-[#F97316] rounded-full flex items-center justify-center text-white text-xl font-bold"
+        >
           +
         </button>
       </div>
@@ -457,6 +466,77 @@ export default function JobsPage() {
           </div>
         )}
       </div>
+
+      {/* New Job Modal */}
+      {showNewJob && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-end">
+          <div className="bg-[#111827] rounded-t-2xl w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex justify-between items-center">
+              <h2 className="text-white font-bold text-lg">New Job</h2>
+              <button onClick={() => setShowNewJob(false)} className="text-gray-400 text-xl">×</button>
+            </div>
+            {[
+              { key: 'clientName', label: 'Client Name *', type: 'text' },
+              { key: 'clientPhone', label: 'Phone', type: 'tel' },
+              { key: 'suburb', label: 'Suburb *', type: 'text' },
+              { key: 'address', label: 'Full Address', type: 'text' },
+              { key: 'service', label: 'Service Type', type: 'text' },
+              { key: 'scope', label: 'Scope of Work', type: 'text' },
+              { key: 'jobValue', label: 'Job Value ($)', type: 'number' },
+              { key: 'estimatedCompletion', label: 'Est. Completion', type: 'date' },
+            ].map(({ key, label, type }) => (
+              <div key={key}>
+                <label className="text-gray-400 text-xs mb-1 block">
+                  {label}
+                </label>
+                <input
+                  type={type}
+                  value={(newJob as any)[key]}
+                  onChange={e => setNewJob(prev => ({
+                    ...prev, [key]: e.target.value
+                  }))}
+                  className="w-full bg-[#0F0F0F] border border-[#1F2937] rounded-lg px-3 py-2.5 text-white text-sm focus:border-[#F97316] outline-none"
+                />
+              </div>
+            ))}
+            <button
+              onClick={async () => {
+                if (!newJob.clientName || !newJob.suburb) {
+                  setToast('Client name and suburb required')
+                  setTimeout(() => setToast(null), 3000)
+                  return
+                }
+                const res = await fetch('/api/jobs', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    ...newJob,
+                    jobValue: newJob.jobValue ? Number(newJob.jobValue) : null,
+                  }),
+                })
+                const data = await res.json()
+                if (data.success) {
+                  setToast('✓ Job created!')
+                  setShowNewJob(false)
+                  setNewJob({
+                    clientName: '', clientPhone: '', address: '',
+                    suburb: '', service: '', scope: '',
+                    jobValue: '', estimatedCompletion: ''
+                  })
+                  fetch('/api/jobs').then(r => r.json())
+                    .then(d => setJobs(d.jobs ?? []))
+                } else {
+                  setToast('Failed to create job')
+                }
+                setTimeout(() => setToast(null), 3000)
+              }}
+              className="w-full bg-[#F97316] text-white font-bold py-3 rounded-xl text-sm"
+            >
+              Create Job
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -46,6 +46,11 @@ export default function LeadsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('All')
   const [toast, setToast] = useState<string | null>(null)
+  const [showNewLead, setShowNewLead] = useState(false)
+  const [newLead, setNewLead] = useState({
+    clientName: '', phone: '', suburb: '',
+    service: '', source: '', notes: '', jobValue: ''
+  })
 
   useEffect(() => {
     fetch('/api/leads')
@@ -96,7 +101,9 @@ export default function LeadsPage() {
           <h1 className="text-2xl font-bold text-white">Leads</h1>
           <p className="text-gray-400 text-sm">Qualified opportunities</p>
         </div>
-        <button className="w-10 h-10 bg-[#F97316] rounded-full
+        <button
+          onClick={() => setShowNewLead(true)}
+          className="w-10 h-10 bg-[#F97316] rounded-full
         flex items-center justify-center text-white text-xl font-bold">
           +
         </button>
@@ -347,6 +354,73 @@ export default function LeadsPage() {
           </div>
         )}
       </div>
+
+      {/* New Lead Modal */}
+      {showNewLead && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-end">
+          <div className="bg-[#111827] rounded-t-2xl w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex justify-between items-center">
+              <h2 className="text-white font-bold text-lg">New Lead</h2>
+              <button onClick={() => setShowNewLead(false)} className="text-gray-400 text-xl">×</button>
+            </div>
+            {[
+              { key: 'clientName', label: 'Client Name *', type: 'text' },
+              { key: 'phone', label: 'Phone', type: 'tel' },
+              { key: 'suburb', label: 'Suburb *', type: 'text' },
+              { key: 'service', label: 'Service Type', type: 'text' },
+              { key: 'source', label: 'Source', type: 'text' },
+              { key: 'jobValue', label: 'Job Value ($)', type: 'number' },
+              { key: 'notes', label: 'Notes', type: 'text' },
+            ].map(({ key, label, type }) => (
+              <div key={key}>
+                <label className="text-gray-400 text-xs mb-1 block">
+                  {label}
+                </label>
+                <input
+                  type={type}
+                  value={(newLead as any)[key]}
+                  onChange={e => setNewLead(prev => ({
+                    ...prev, [key]: e.target.value
+                  }))}
+                  className="w-full bg-[#0F0F0F] border border-[#1F2937] rounded-lg px-3 py-2.5 text-white text-sm focus:border-[#F97316] outline-none"
+                />
+              </div>
+            ))}
+            <button
+              onClick={async () => {
+                if (!newLead.clientName || !newLead.suburb) {
+                  showToast('Client name and suburb required')
+                  return
+                }
+                const res = await fetch('/api/leads', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    ...newLead,
+                    jobValue: newLead.jobValue ? Number(newLead.jobValue) : null,
+                  }),
+                })
+                const data = await res.json()
+                if (data.success) {
+                  showToast('✓ Lead created!')
+                  setShowNewLead(false)
+                  setNewLead({
+                    clientName: '', phone: '', suburb: '',
+                    service: '', source: '', notes: '', jobValue: ''
+                  })
+                  fetch('/api/leads').then(r => r.json())
+                    .then(d => setLeads(d.leads ?? []))
+                } else {
+                  showToast('Failed to create lead')
+                }
+              }}
+              className="w-full bg-[#F97316] text-white font-bold py-3 rounded-xl text-sm"
+            >
+              Create Lead
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

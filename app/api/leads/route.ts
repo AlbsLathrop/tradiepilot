@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { Client } from '@notionhq/client'
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
@@ -41,5 +41,42 @@ export async function GET() {
     console.error('Leads fetch error:', error?.message)
     return NextResponse.json({ error: error?.message, leads: [] },
       { status: 500 })
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const body = await req.json()
+  try {
+    const page = await notion.pages.create({
+      parent: { database_id: process.env.NOTION_LEADS_DB_ID! },
+      properties: {
+        'Client Name': {
+          title: [{ text: { content: body.clientName } }]
+        },
+        'Phone': { phone_number: body.phone ?? '' },
+        'Suburb': {
+          rich_text: [{ text: { content: body.suburb ?? '' } }]
+        },
+        'Service': {
+          rich_text: [{ text: { content: body.service ?? '' } }]
+        },
+        'Status': { select: { name: 'NEW' } },
+        'Source': { select: { name: body.source ?? 'Direct' } },
+        'Tradie Config ID': {
+          rich_text: [{ text: { content: 'joey-tradie' } }]
+        },
+        ...(body.notes ? {
+          'Notes': {
+            rich_text: [{ text: { content: body.notes } }]
+          }
+        } : {}),
+        ...(body.jobValue ? {
+          'Job Value': { number: body.jobValue }
+        } : {}),
+      }
+    })
+    return NextResponse.json({ success: true, id: page.id })
+  } catch (error: any) {
+    return NextResponse.json({ error: error?.message }, { status: 500 })
   }
 }

@@ -79,6 +79,12 @@ export interface Lead {
   lunaNotes: string
   tradieConfigId: string
   receivedDate: string | null
+  source: string
+  lastContact: string | null
+  nextFollowUp: string | null
+  disqualifyReason: string
+  notes: string
+  leadScore: number | null
 }
 
 export interface TradieConfig {
@@ -136,6 +142,12 @@ function toLead(page: PageObjectResponse): Lead {
     lunaNotes: richText(page, 'LUNA Notes'),
     tradieConfigId: richText(page, 'Tradie Config ID'),
     receivedDate: date(page, 'Received Date'),
+    source: select(page, 'Source'),
+    lastContact: date(page, 'Last Contact'),
+    nextFollowUp: date(page, 'Next Follow Up'),
+    disqualifyReason: richText(page, 'Disqualify Reason'),
+    notes: richText(page, 'Notes'),
+    leadScore: number(page, 'Lead Score'),
   }
 }
 

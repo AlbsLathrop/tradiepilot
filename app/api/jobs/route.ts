@@ -36,6 +36,16 @@ export async function GET() {
         lastMessageSent: p['Last Message Sent']?.date?.start ?? null,
         jobValue: p['Job Value']?.number ?? null,
         tradieConfigId: p['Tradie Config ID']?.rich_text?.[0]?.plain_text ?? '',
+        invoiceStatus: p['Invoice Status']?.select?.name ?? 'NOT SENT',
+        invoiceDate: p['Invoice Date']?.date?.start ?? null,
+        invoiceAmount: p['Invoice Amount']?.number ?? null,
+        invoiceDueDays: (() => {
+          const sent = p['Invoice Date']?.date?.start
+          if (!sent) return null
+          return Math.floor(
+            (Date.now() - new Date(sent).getTime()) / (1000*60*60*24)
+          )
+        })(),
         milestones: [] as Array<{ jobId: string; event: string; note: string; date: string; type: string; loggedBy?: string; clientNotified?: boolean }>
       }
     })

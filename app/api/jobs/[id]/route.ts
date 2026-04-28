@@ -117,6 +117,12 @@ export async function PATCH(
     if (body.materialsStatus !== undefined) {
       updates['Materials Status'] = { select: { name: body.materialsStatus } }
     }
+    if (body.invoiceStatus) {
+      updates['Invoice Status'] = { select: { name: body.invoiceStatus } }
+    }
+    if (body.invoiceDate) {
+      updates['Invoice Date'] = { date: { start: body.invoiceDate } }
+    }
 
     await notion.pages.update({
       page_id: id,

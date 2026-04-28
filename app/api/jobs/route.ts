@@ -76,7 +76,47 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({ jobs })
+    // STEP 3: Fetch media — wrapped in try/catch, never breaks jobs
+    let mediaByJob: Record<string, any[]> = {}
+    try {
+      const mediaRes = await notion.databases.query({
+        database_id: process.env.NOTION_MEDIA_DB_ID!,
+        filter: {
+          property: 'Tradie Config ID',
+          rich_text: { equals: 'joey-tradie' }
+        },
+        sorts: [{ timestamp: 'created_time', direction: 'descending' }],
+        page_size: 100,
+      })
+
+      ;(mediaRes.results as any[]).forEach(m => {
+        const mp = m.properties
+        const jobId = mp['Job ID']?.rich_text?.[0]?.plain_text ?? ''
+        const url = mp['File URL']?.url ??
+                    mp['URL']?.url ??
+                    mp['Blob URL']?.url ?? ''
+        const description = mp['Description']?.rich_text?.[0]?.plain_text ?? ''
+        const type = mp['Media Type']?.select?.name ?? 'photo'
+
+        if (jobId && url) {
+          if (!mediaByJob[jobId]) mediaByJob[jobId] = []
+          mediaByJob[jobId].push({ url, description, type,
+            createdAt: m.created_time })
+        }
+      })
+    } catch (mediaError: any) {
+      console.warn('Media fetch failed (non-fatal):', mediaError?.message)
+      // Jobs still return fine — photos just empty
+    }
+
+    // Add photos to each job
+    const jobsWithMedia = jobs.map(job => ({
+      ...job,
+      photos: mediaByJob[job.id] ??
+              mediaByJob[job.id.replace(/-/g,'')] ?? []
+    }))
+
+    return NextResponse.json({ jobs: jobsWithMedia })
 
   } catch (error: any) {
     console.error('Jobs fetch error:', error?.message)

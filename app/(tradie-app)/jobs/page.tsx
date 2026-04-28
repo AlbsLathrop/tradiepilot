@@ -12,6 +12,13 @@ interface Milestone {
   clientNotified?: boolean
 }
 
+interface Photo {
+  url: string
+  description: string
+  type: string
+  createdAt: string
+}
+
 interface Job {
   id: string
   clientName: string
@@ -33,6 +40,7 @@ interface Job {
   jobValue: number | null
   tradieConfigId: string
   milestones: Milestone[]
+  photos?: Photo[]
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -63,6 +71,7 @@ export default function JobsPage() {
   const [toast, setToast] = useState<string | null>(null)
   const [openLogId, setOpenLogId] = useState<string | null>(null)
   const [showNewJob, setShowNewJob] = useState(false)
+  const [lightbox, setLightbox] = useState<Photo | null>(null)
   const [newJob, setNewJob] = useState({
     clientName: '', clientPhone: '', address: '',
     suburb: '', service: '', scope: '',
@@ -353,6 +362,34 @@ export default function JobsPage() {
                     </div>
                   )}
 
+                  {/* Photo Gallery */}
+                  {job.photos && job.photos.length > 0 && (
+                    <div>
+                      <p className="text-[#F97316] text-xs font-bold uppercase mb-2">
+                        📷 Photos ({job.photos.length})
+                      </p>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {job.photos.map((photo: Photo, i: number) => (
+                          <div
+                            key={i}
+                            onClick={() => setLightbox(photo)}
+                            className="aspect-square rounded-lg overflow-hidden
+                            cursor-pointer active:opacity-70"
+                          >
+                            <img
+                              src={photo.url}
+                              alt={photo.description || `Photo ${i+1}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none'
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Job Log */}
                   {job.milestones && job.milestones.length > 0 && (
                     <div className="border-t border-[#1F2937] pt-3">
@@ -466,6 +503,27 @@ export default function JobsPage() {
           </div>
         )}
       </div>
+
+      {/* Lightbox Modal */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 bg-black/95 z-50 flex flex-col
+          items-center justify-center p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <img
+            src={lightbox.url}
+            alt={lightbox.description}
+            className="max-w-full max-h-[75vh] rounded-xl object-contain"
+          />
+          {lightbox.description && (
+            <p className="text-white text-sm mt-4 text-center px-4">
+              {lightbox.description}
+            </p>
+          )}
+          <p className="text-gray-500 text-xs mt-2">Tap anywhere to close</p>
+        </div>
+      )}
 
       {/* New Job Modal */}
       {showNewJob && (

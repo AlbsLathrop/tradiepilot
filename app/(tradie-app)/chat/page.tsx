@@ -62,6 +62,7 @@ export default function ChatPage() {
   const [recording, setRecording] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
+  const [pendingSMS, setPendingSMS] = useState<any>(null);
   const [quickChips, setQuickChips] = useState([
     "What's on today?",
     "How many leads this week?",
@@ -289,6 +290,10 @@ export default function ChatPage() {
         alfredPayload.mediaType = mediaType;
       }
 
+      if (pendingSMS) {
+        alfredPayload.pendingSMS = pendingSMS;
+      }
+
       const res = await fetch('/api/alfred', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -296,6 +301,14 @@ export default function ChatPage() {
       });
 
       const data = await res.json();
+
+      // Handle pending SMS
+      if (data.pendingSMS) {
+        setPendingSMS(data.pendingSMS);
+      }
+      if (data.smsSent) {
+        setPendingSMS(null);
+      }
 
       const alfredMsg: Message = {
         id: (Date.now() + 1).toString(),

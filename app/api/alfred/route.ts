@@ -64,6 +64,24 @@ WHEN JOB IS AMBIGUOUS:
 - If you can't identify the job clearly, ask: "Which job? [list 2-3 active job names]"
 - Keep it short: "Running late on which job — Sarah's kitchen or the Bondi reno?"
 
+WHEN JOEY ASKS YOU TO SEND A MESSAGE TO A CLIENT:
+Joey might say: "Tell Sarah I'll be there at 2pm", "Text Dave the job is done", "Message Emma about the paint color", etc.
+When you identify this intent:
+1. Find the client's phone number from the jobs or leads context
+2. Write the SMS text (max 160 chars, friendly, like Joey would say it)
+3. Reply in EXACTLY this format (no markdown, plain text):
+[SMS_READY]
+TO: +61XXXXXXXXX
+NAME: [Client Name]
+MESSAGE: [the SMS text]
+[/SMS_READY]
+
+4. Then ask Joey: "Ready to send this to [Name] — shall I send it?"
+5. Wait for Joey to confirm by saying "yes", "send it", "go ahead", "yep", "do it", or similar
+6. When Joey confirms, reply with EXACTLY: [SEND_SMS]
+
+Do NOT send without Joey's confirmation.
+
 RESPONSE FORMAT — always return valid JSON:
 {
   "reply": "your message to Joey (max 2 sentences, casual)",
@@ -438,6 +456,77 @@ ${JSON.stringify(contextData, null, 2)}`;
       alfredResult = JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
     } catch {
       alfredResult = { reply: rawText || "Done ✓", action: 'none' };
+    }
+
+    // STEP 1: Check if ALFRED prepared an SMS
+    const smsMatch = rawText.match(/\[SMS_READY\]([\s\S]*?)\[\/SMS_READY\]/);
+    if (smsMatch) {
+      const smsBlock = smsMatch[1];
+      const toMatch = smsBlock.match(/TO:\s*(\+\d+)/);
+      const nameMatch = smsBlock.match(/NAME:\s*(.+?)(?:\n|$)/);
+      const msgMatch = smsBlock.match(/MESSAGE:\s*(.+?)(?:\n|$)/);
+
+      if (toMatch && msgMatch) {
+        const cleanReply = rawText.replace(/\[SMS_READY\][\s\S]*?\[\/SMS_READY\]/, '').trim();
+        return NextResponse.json({
+          success: true,
+          reply: cleanReply,
+          action: 'sms_pending',
+          pendingSMS: {
+            to: toMatch[1].trim(),
+            name: nameMatch?.[1]?.trim() ?? 'Client',
+            message: msgMatch[1].trim(),
+          }
+        });
+      }
+    }
+
+    // STEP 2: Check if Joey confirmed SMS send
+    const confirmationWords = ['yes', 'send', 'go ahead', 'yep', 'do it', 'send it'];
+    const isConfirming = message && confirmationWords.some(word => message.toLowerCase().match(new RegExp(`^(${word}|${word}s?|${word}\\s+it)$`)));
+
+    if ((rawText.includes('[SEND_SMS]') || isConfirming) && body.pendingSMS?.to && body.pendingSMS?.message) {
+      try {
+        const twilio = require('twilio')(
+          process.env.TWILIO_ACCOUNT_SID,
+          process.env.TWILIO_AUTH_TOKEN
+        );
+
+        await twilio.messages.create({
+          body: body.pendingSMS.message,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: body.pendingSMS.to,
+        });
+
+        // Log to Communication Log
+        try {
+          await notion.pages.create({
+            parent: { database_id: process.env.NOTION_COMMUNICATION_LOG_DB_ID! },
+            properties: {
+              'Message': { title: [{ text: { content: body.pendingSMS.message } }] },
+              'Recipient': { rich_text: [{ text: { content: body.pendingSMS.name } }] },
+              'Channel': { select: { name: 'SMS' } },
+              'Agent': { select: { name: 'ALFRED' } },
+            },
+          });
+        } catch (logErr) {
+          console.error('Comm log error:', logErr);
+        }
+
+        return NextResponse.json({
+          success: true,
+          reply: `✓ SMS sent to ${body.pendingSMS.name}: "${body.pendingSMS.message}"`,
+          action: 'sms_sent',
+          smsSent: true,
+        });
+      } catch (smsErr: any) {
+        return NextResponse.json({
+          success: false,
+          reply: `Failed to send SMS: ${smsErr.message}`,
+          action: 'none',
+          smsSent: false,
+        }, { status: 500 });
+      }
     }
 
     if (alfredResult.action === 'update_job_status' && alfredResult.jobId) {

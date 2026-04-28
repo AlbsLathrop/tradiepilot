@@ -18,6 +18,10 @@ interface DashboardData {
 export default function HomePage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showNotifBanner, setShowNotifBanner] = useState(
+    typeof window !== 'undefined' && 'Notification' in window &&
+    Notification.permission === 'default'
+  )
 
   useEffect(() => {
     fetch('/api/dashboard')
@@ -56,6 +60,44 @@ export default function HomePage() {
 
       {!loading && data && (
         <div className="px-4 space-y-4">
+
+          {/* NOTIFICATION PERMISSION BANNER */}
+          {showNotifBanner && (
+            <div className="bg-[#1F2937] border border-[#F97316]
+            rounded-xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-white text-sm font-bold">
+                  Enable Notifications
+                </p>
+                <p className="text-gray-400 text-xs">
+                  Get alerts for new leads and client replies
+                </p>
+              </div>
+              <button
+                onClick={async () => {
+                  const permission = await Notification.requestPermission()
+                  if (permission === 'granted') {
+                    const reg = await navigator.serviceWorker.ready
+                    const sub = await reg.pushManager.subscribe({
+                      userVisibleOnly: true,
+                      applicationServerKey: process.env
+                        .NEXT_PUBLIC_VAPID_PUBLIC_KEY
+                    })
+                    await fetch('/api/push/subscribe', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(sub)
+                    })
+                    setShowNotifBanner(false)
+                  }
+                }}
+                className="bg-[#F97316] text-white text-xs font-bold
+                px-4 py-2 rounded-lg whitespace-nowrap ml-4"
+              >
+                Allow
+              </button>
+            </div>
+          )}
 
           {/* URGENT ALERT */}
           {data.runningLate?.length > 0 && (

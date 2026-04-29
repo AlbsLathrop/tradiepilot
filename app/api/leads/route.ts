@@ -45,7 +45,38 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json({ leads })
+    let leadLogByLead: Record<string, any[]> = {}
+    try {
+      if (process.env.NOTION_LEAD_LOG_DB_ID) {
+        const logRes = await notion.databases.query({
+          database_id: process.env.NOTION_LEAD_LOG_DB_ID,
+          sorts: [{ timestamp: 'created_time', direction: 'descending' }],
+          page_size: 100,
+        })
+        ;(logRes.results as any[]).forEach((m: any) => {
+          const mp = m.properties
+          const leadId = mp['Lead ID']?.rich_text?.[0]?.plain_text ?? ''
+          if (!leadId) return
+          if (!leadLogByLead[leadId]) leadLogByLead[leadId] = []
+          leadLogByLead[leadId].push({
+            title: mp['Title']?.title?.[0]?.plain_text ?? '',
+            description: mp['Description']?.rich_text?.[0]?.plain_text ?? '',
+            eventType: mp['Event Type']?.select?.name ?? 'NOTE',
+            by: mp['By']?.select?.name ?? '',
+            date: (m as any).created_time ?? '',
+          })
+        })
+      }
+    } catch (e: any) {
+      console.warn('Lead log fetch non-fatal:', e?.message)
+    }
+
+    const leadsWithLog = leads.map((lead: any) => ({
+      ...lead,
+      leadLog: leadLogByLead[lead.id] ?? [],
+    }))
+
+    return NextResponse.json({ leads: leadsWithLog })
   } catch (error: any) {
     console.error('Leads fetch error:', error?.message)
     return NextResponse.json({

@@ -25,6 +25,8 @@ interface Lead {
   quoteExpiry: string | null
   quoteStatus: string
   disqualifyReason: string
+  leadLog?: any[]
+  daysToClose?: number | null
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -51,6 +53,8 @@ export default function LeadsPage() {
   const [activeTab, setActiveTab] = useState('All')
   const [toast, setToast] = useState<string | null>(null)
   const [showNewLead, setShowNewLead] = useState(false)
+  const [openLeadLogId, setOpenLeadLogId] = useState<string | null>(null)
+  const [quickNote, setQuickNote] = useState<Record<string, string>>({})
   const [newLead, setNewLead] = useState({
     clientName: '', phone: '', suburb: '',
     service: '', source: '', notes: ''
@@ -119,6 +123,31 @@ export default function LeadsPage() {
       showToast(`✓ Quote marked as ${status}`)
     } catch {
       showToast('Update failed')
+    }
+  }
+
+  const handleAddLeadNote = async (lead: Lead) => {
+    const note = quickNote[lead.id]?.trim()
+    if (!note) return
+    try {
+      await fetch('/api/leads/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId: lead.id,
+          leadName: lead.clientName,
+          title: `Note — ${lead.clientName}`,
+          description: note,
+          eventType: 'NOTE',
+          by: 'Joey',
+        }),
+      })
+      setQuickNote(prev => ({ ...prev, [lead.id]: '' }))
+      fetch('/api/leads').then(r => r.json())
+        .then(d => setLeads(d.leads ?? []))
+      showToast('✓ Note added')
+    } catch {
+      showToast('Failed to add note')
     }
   }
 
@@ -196,6 +225,22 @@ export default function LeadsPage() {
                   <p className="text-gray-400 text-sm mt-0.5 truncate">
                     {[lead.service, lead.suburb].filter(Boolean).join(' • ')}
                   </p>
+                  {(() => {
+                    const days = daysSince(lead.receivedDate)
+                    const isHot = days <= 2 && lead.status === 'NEW'
+                    const isStale = days > 14 &&
+                      !['WON','COLD','DECLINED'].includes(lead.status)
+                    return (
+                      <p className={`text-xs mt-0.5 ${
+                        isHot ? 'text-green-400' :
+                        isStale ? 'text-red-400' :
+                        'text-gray-500'
+                      }`}>
+                        {isHot ? '🔥 ' : isStale ? '⏰ ' : ''}
+                        {days === 0 ? 'Today' : `${days}d in pipeline`}
+                      </p>
+                    )
+                  })()}
                   {lead.quoteDaysLeft !== null &&
                    lead.quoteDaysLeft <= 2 && (
                     <span className="text-xs font-bold px-2 py-1 rounded-full
@@ -210,6 +255,13 @@ export default function LeadsPage() {
                   rounded-full ${statusClass}`}>
                     {lead.status}
                   </span>
+                  {lead.lunaStatus &&
+                   lead.lunaStatus !== '' && (
+                    <span className="text-[10px] text-gray-400
+                    px-1.5 py-0.5 rounded bg-gray-500/10">
+                      LUNA: {lead.lunaStatus}
+                    </span>
+                  )}
                   <span className="text-gray-500 text-sm">
                     {isOpen ? '▲' : '▼'}
                   </span>
@@ -266,6 +318,107 @@ export default function LeadsPage() {
                       <p className="text-gray-300 text-sm leading-relaxed">
                         {lead.notes}
                       </p>
+                    </div>
+                  )}
+
+                  {/* Lead Log */}
+                  {lead.leadLog && lead.leadLog.length > 0 && (
+                    <div className="border-t border-[#1F2937] pt-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setOpenLeadLogId(
+                            openLeadLogId === lead.id ? null : lead.id
+                          )
+                        }}
+                        className="w-full flex items-center justify-between py-2"
+                      >
+                        <span className="text-[#F97316] text-xs font-bold uppercase tracking-wide">
+                          📋 Lead Log ({lead.leadLog.length} entries)
+                        </span>
+                        <span className="text-gray-500 text-xs">
+                          {openLeadLogId === lead.id ? '▲' : '▼'}
+                        </span>
+                      </button>
+
+                      {openLeadLogId === lead.id && (
+                        <>
+                          <div className="space-y-2 mt-1 max-h-72 overflow-y-auto pr-1">
+                            {lead.leadLog.map((entry: any, i: number) => (
+                              <div
+                                key={i}
+                                className="bg-[#0F0F0F] rounded-lg p-3 border-l-2 border-[#F97316]"
+                              >
+                                <div className="flex items-start justify-between gap-2 mb-1">
+                                  <span className="text-white text-xs font-semibold leading-tight">
+                                    {entry.title}
+                                  </span>
+                                  <span className="text-gray-500 text-[10px] shrink-0">
+                                    {entry.date ? new Date(entry.date)
+                                      .toLocaleDateString('en-AU', {
+                                        day: 'numeric', month: 'short'
+                                      }) : ''}
+                                  </span>
+                                </div>
+                                {entry.description && (
+                                  <p className="text-gray-400 text-xs leading-relaxed mb-1.5">
+                                    {entry.description}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                    entry.eventType === 'WON'
+                                      ? 'bg-green-500/20 text-green-400'
+                                      : entry.eventType === 'LOST'
+                                        ? 'bg-red-500/20 text-red-400'
+                                        : entry.eventType === 'OBJECTION'
+                                          ? 'bg-red-500/20 text-red-400'
+                                          : entry.eventType === 'QUOTE_SENT'
+                                            ? 'bg-yellow-500/20 text-yellow-400'
+                                            : entry.eventType === 'SITE_VISIT'
+                                              ? 'bg-orange-500/20 text-orange-400'
+                                              : entry.eventType === 'LUNA_RESPONSE'
+                                                ? 'bg-purple-500/20 text-purple-400'
+                                                : entry.eventType === 'NEGOTIATION'
+                                                  ? 'bg-yellow-500/20 text-yellow-400'
+                                                  : 'bg-gray-500/20 text-gray-400'
+                                  }`}>
+                                    {entry.eventType}
+                                  </span>
+                                  {entry.by && (
+                                    <span className="text-gray-500 text-[10px]">
+                                      by {entry.by}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-2 flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Add a note..."
+                              value={quickNote[lead.id] ?? ''}
+                              onChange={(e) => setQuickNote(prev => ({
+                                ...prev, [lead.id]: e.target.value
+                              }))}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleAddLeadNote(lead)
+                              }}
+                              className="flex-1 bg-[#0F0F0F] border border-[#1F2937]
+                              rounded-lg px-3 py-2 text-white text-xs
+                              focus:border-[#F97316] outline-none"
+                            />
+                            <button
+                              onClick={() => handleAddLeadNote(lead)}
+                              className="bg-[#F97316] text-white text-xs font-bold
+                              px-3 py-2 rounded-lg"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
 

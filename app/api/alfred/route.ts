@@ -346,6 +346,35 @@ async function getMilestonesForJob(jobId: string): Promise<string> {
   }
 }
 
+async function getLeadLogsContext(): Promise<string> {
+  if (!process.env.NOTION_LEAD_LOG_DB_ID) return '';
+
+  try {
+    const res = await notion.databases.query({
+      database_id: process.env.NOTION_LEAD_LOG_DB_ID,
+      page_size: 20,
+      sorts: [{ timestamp: 'created_time', direction: 'descending' }],
+    });
+
+    const logs = (res.results as any[])
+      .map(m => {
+        const title = m.properties['Title']?.title?.[0]?.plain_text ?? '';
+        const leadName = m.properties['Lead Name']?.rich_text?.[0]?.plain_text ?? '';
+        const desc = m.properties['Description']?.rich_text?.[0]?.plain_text ?? '';
+        const eventType = m.properties['Event Type']?.select?.name ?? '';
+        const by = m.properties['By']?.select?.name ?? '';
+        return `${leadName} [${eventType}]: ${desc} (by ${by})`;
+      })
+      .join('\n');
+
+    return logs
+      ? `\nLEAD HISTORY:\n${logs}\n`
+      : '';
+  } catch {
+    return '';
+  }
+}
+
 async function buildConversationContext(
   allMessages: { role: string; content: string }[]
 ): Promise<{ summary: string | null; recent: { role: string; content: string }[] }> {
@@ -454,6 +483,9 @@ export async function POST(request: NextRequest) {
       milestoneContext = await getMilestonesForJob(mentionedJob.id);
     }
 
+    // Fetch lead logs for context
+    const leadLogsContext = await getLeadLogsContext();
+
     const contextData = {
       todaysJobs: todaysJobs.map(j => `${j.name} — ${j.clientName} — ${j.status} — ${j.suburb}`),
       allActiveJobs: jobs
@@ -474,6 +506,7 @@ export async function POST(request: NextRequest) {
     const textContent = `Joey says: "${message || 'Uploaded media'}"
 ${brainContext ? `\nJOB BRAIN for ${mentionedJob?.name}:\n${brainContext}` : ''}
 ${milestoneContext}
+${leadLogsContext}
 CONTEXT:
 ${JSON.stringify(contextData, null, 2)}`;
 

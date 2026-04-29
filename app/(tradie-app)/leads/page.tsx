@@ -164,11 +164,6 @@ export default function LeadsPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2 ml-3 shrink-0">
-                  {lead.jobValue && (
-                    <span className="text-gray-300 text-xs font-medium">
-                      ${lead.jobValue.toLocaleString()}
-                    </span>
-                  )}
                   <span className={`text-xs font-bold px-2.5 py-1
                   rounded-full ${statusClass}`}>
                     {lead.status}

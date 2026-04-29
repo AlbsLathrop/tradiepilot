@@ -11,6 +11,19 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "TradiePilot",
   description: "Cockpit + War Room for TradiePilot",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "TradiePilot",
+  },
+  icons: {
+    apple: "/icon-192.png",
+  },
+  themeColor: "#F97316",
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({

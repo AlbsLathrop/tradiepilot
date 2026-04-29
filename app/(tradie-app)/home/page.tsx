@@ -13,6 +13,8 @@ interface DashboardData {
   monthRevenue: number
   smsSentToday: number
   lastComm: { message: string; recipient: string; time: string } | null
+  avgScore?: number | null
+  reviewCount?: number
 }
 
 export default function HomePage() {
@@ -24,9 +26,18 @@ export default function HomePage() {
   )
 
   useEffect(() => {
-    fetch('/api/dashboard')
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false) })
+    Promise.all([
+      fetch('/api/dashboard').then(r => r.json()),
+      fetch('/api/satisfaction?tradieId=joey-tradie').then(r => r.json())
+    ])
+      .then(([dashData, satData]) => {
+        setData({
+          ...dashData,
+          avgScore: satData.average,
+          reviewCount: satData.count
+        })
+        setLoading(false)
+      })
       .catch(() => setLoading(false))
   }, [])
 
@@ -165,6 +176,17 @@ export default function HomePage() {
                 {data.smsSentToday ?? 0}
               </p>
               <p className="text-gray-500 text-xs mt-1">by ALFRED</p>
+            </div>
+            <div className="bg-[#111827] rounded-xl p-4">
+              <p className="text-gray-400 text-xs uppercase mb-1">
+                Satisfaction
+              </p>
+              <p className="text-2xl font-bold text-yellow-400">
+                {data.avgScore ? `${data.avgScore}⭐` : '—'}
+              </p>
+              <p className="text-gray-500 text-xs mt-1">
+                {data.reviewCount ?? 0} reviews
+              </p>
             </div>
           </div>
 

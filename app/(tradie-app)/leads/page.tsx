@@ -82,39 +82,6 @@ export default function LeadsPage() {
     }
   }
 
-  const handleQuoteUpdate = async (lead: Lead, status: string) => {
-    try {
-      await fetch(`/api/leads/${lead.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          quoteStatus: status,
-          quoteDate: status === 'SENT'
-            ? new Date().toISOString().split('T')[0]
-            : undefined,
-          quoteExpiry: status === 'SENT'
-            ? new Date(Date.now() + 14*24*60*60*1000)
-              .toISOString().split('T')[0]
-            : undefined
-        }),
-      })
-      setLeads(prev => prev.map(l =>
-        l.id === lead.id
-          ? {
-            ...l,
-            quoteStatus: status,
-            quoteDate: status === 'SENT' ? new Date().toISOString().split('T')[0] : l.quoteDate,
-            quoteExpiry: status === 'SENT' ? new Date(Date.now() + 14*24*60*60*1000).toISOString().split('T')[0] : l.quoteExpiry,
-            quoteDaysLeft: status === 'SENT' ? 14 : l.quoteDaysLeft
-          }
-          : l
-      ))
-      showToast(`✓ Quote marked as ${status}`)
-    } catch {
-      showToast('Update failed')
-    }
-  }
-
   return (
     <div className="min-h-screen bg-[#0F0F0F] text-white pb-24">
 

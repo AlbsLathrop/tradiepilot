@@ -18,6 +18,11 @@ interface Lead {
   leadScore: number | null
   jobValue: number | null
   tradieConfigId: string
+  quoteStatus: string
+  quoteAmount: number | null
+  quoteDate: string | null
+  quoteExpiry: string | null
+  quoteDaysLeft: number | null
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -80,6 +85,39 @@ export default function LeadsPage() {
         l.id === lead.id ? { ...l, status: newStatus } : l
       ))
       showToast(`✓ ${lead.clientName} → ${newStatus}`)
+    } catch {
+      showToast('Update failed')
+    }
+  }
+
+  const handleQuoteUpdate = async (lead: Lead, status: string) => {
+    try {
+      await fetch(`/api/leads/${lead.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quoteStatus: status,
+          quoteDate: status === 'SENT'
+            ? new Date().toISOString().split('T')[0]
+            : undefined,
+          quoteExpiry: status === 'SENT'
+            ? new Date(Date.now() + 14*24*60*60*1000)
+              .toISOString().split('T')[0]
+            : undefined
+        }),
+      })
+      setLeads(prev => prev.map(l =>
+        l.id === lead.id
+          ? {
+            ...l,
+            quoteStatus: status,
+            quoteDate: status === 'SENT' ? new Date().toISOString().split('T')[0] : l.quoteDate,
+            quoteExpiry: status === 'SENT' ? new Date(Date.now() + 14*24*60*60*1000).toISOString().split('T')[0] : l.quoteExpiry,
+            quoteDaysLeft: status === 'SENT' ? 14 : l.quoteDaysLeft
+          }
+          : l
+      ))
+      showToast(`✓ Quote marked as ${status}`)
     } catch {
       showToast('Update failed')
     }
@@ -159,6 +197,15 @@ export default function LeadsPage() {
                   <p className="text-gray-400 text-sm mt-0.5 truncate">
                     {[lead.service, lead.suburb].filter(Boolean).join(' • ')}
                   </p>
+                  {lead.quoteDaysLeft !== null &&
+                   lead.quoteDaysLeft <= 2 &&
+                   lead.quoteStatus === 'SENT' && (
+                    <span className="text-xs font-bold px-2 py-1 rounded-full
+                    bg-yellow-500 text-black mt-0.5 inline-block">
+                      ⚠️ Quote expires {lead.quoteDaysLeft <= 0 ? 'today' :
+                      `in ${lead.quoteDaysLeft}d`}
+                    </span>
+                  )}
                   {daysLastContact !== null && (
                     <p className={`text-xs mt-0.5 ${
                       daysLastContact > 7 ? 'text-red-400' :
@@ -278,6 +325,84 @@ export default function LeadsPage() {
                         </span>
                       </div>
                     )}
+                  </div>
+
+                  {/* Quote */}
+                  <div className="bg-[#0F0F0F] rounded-lg p-3 space-y-2">
+                    <p className="text-[#F97316] text-xs font-bold uppercase">Quote</p>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400 text-sm">Status</span>
+                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                        lead.quoteStatus === 'ACCEPTED'
+                          ? 'bg-green-500/20 text-green-400' :
+                        lead.quoteStatus === 'SENT' && lead.quoteDaysLeft! < 0
+                          ? 'bg-red-500/20 text-red-400' :
+                        lead.quoteStatus === 'SENT' && lead.quoteDaysLeft! <= 2
+                          ? 'bg-yellow-500/20 text-yellow-400' :
+                        lead.quoteStatus === 'SENT'
+                          ? 'bg-blue-500/20 text-blue-400' :
+                        'bg-gray-500/20 text-gray-400'
+                      }`}>
+                        {lead.quoteStatus === 'SENT' && lead.quoteDaysLeft !== null
+                          ? lead.quoteDaysLeft < 0
+                            ? 'EXPIRED'
+                            : `SENT · ${lead.quoteDaysLeft}d left`
+                          : lead.quoteStatus}
+                      </span>
+                    </div>
+
+                    {lead.quoteAmount && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400 text-sm">Amount</span>
+                        <span className="text-white text-sm font-bold">
+                          ${lead.quoteAmount.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+
+                    {lead.quoteDate && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400 text-sm">Sent</span>
+                        <span className="text-white text-sm">
+                          {new Date(lead.quoteDate).toLocaleDateString('en-AU', {
+                            day: 'numeric', month: 'short'
+                          })}
+                        </span>
+                      </div>
+                    )}
+
+                    {lead.quoteExpiry && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400 text-sm">Expires</span>
+                        <span className={`text-sm ${
+                          lead.quoteDaysLeft !== null && lead.quoteDaysLeft <= 2
+                            ? 'text-red-400 font-bold'
+                            : 'text-white'
+                        }`}>
+                          {new Date(lead.quoteExpiry).toLocaleDateString('en-AU', {
+                            day: 'numeric', month: 'short'
+                          })}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                      {['NOT QUOTED','SENT','ACCEPTED'].map(status => (
+                        <button
+                          key={status}
+                          onClick={() => handleQuoteUpdate(lead, status)}
+                          className={`text-xs font-bold py-2 rounded-lg ${
+                            lead.quoteStatus === status
+                              ? 'bg-[#F97316] text-white'
+                              : 'bg-[#1F2937] text-gray-400'
+                          }`}
+                        >
+                          {status === 'NOT QUOTED' ? 'Not Sent' :
+                           status === 'SENT' ? 'Quoted' : 'Won ✓'}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Ask ALFRED */}

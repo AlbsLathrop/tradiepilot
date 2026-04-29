@@ -33,6 +33,17 @@ export async function GET() {
         leadScore: p['Lead Score']?.number ?? null,
         jobValue: p['Job Value']?.number ?? null,
         tradieConfigId: p['Tradie Config ID']?.rich_text?.[0]?.plain_text ?? '',
+        quoteStatus: p['Quote Status']?.select?.name ?? 'NOT QUOTED',
+        quoteAmount: p['Quote Amount']?.number ?? null,
+        quoteDate: p['Quote Date']?.date?.start ?? null,
+        quoteExpiry: p['Quote Expiry']?.date?.start ?? null,
+        quoteDaysLeft: (() => {
+          const expiry = p['Quote Expiry']?.date?.start
+          if (!expiry) return null
+          return Math.ceil(
+            (new Date(expiry).getTime() - Date.now()) / (1000*60*60*24)
+          )
+        })(),
       }
     })
 

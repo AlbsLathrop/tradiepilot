@@ -25,6 +25,15 @@ export async function PATCH(
         rich_text: [{ text: { content: body.disqualifyReason } }]
       }
     }
+    if (body.quoteStatus) {
+      updates['Quote Status'] = { select: { name: body.quoteStatus } }
+    }
+    if (body.quoteDate) {
+      updates['Quote Date'] = { date: { start: body.quoteDate } }
+    }
+    if (body.quoteExpiry) {
+      updates['Quote Expiry'] = { date: { start: body.quoteExpiry } }
+    }
 
     await notion.pages.update({ page_id: id, properties: updates })
     return NextResponse.json({ success: true })

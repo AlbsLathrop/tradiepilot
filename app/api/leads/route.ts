@@ -28,12 +28,17 @@ export async function GET() {
         source: p['Source']?.rich_text?.[0]?.plain_text ?? '',
         receivedDate: p['Received Date']?.date?.start ??
                       page.created_time ?? '',
+        lastContact: p['Last Contact']?.date?.start ?? '',
+        nextFollowUp: p['Next Follow Up']?.date?.start ?? '',
         quoteDate: p['Quote Date']?.date?.start ?? null,
         notes: p['LUNA Notes']?.rich_text?.[0]?.plain_text ?? '',
-        lunaLastUpdate: p['LUNA Last Update']
-          ?.rich_text?.[0]?.plain_text ?? '',
-        tradieConfigId: p['Tradie Config ID']
-          ?.rich_text?.[0]?.plain_text ?? '',
+        lunaLastUpdate: p['LUNA Last Update']?.rich_text?.[0]?.plain_text ?? '',
+        tradieConfigId: p['Tradie Config ID']?.rich_text?.[0]?.plain_text ?? '',
+        jobValue: null,
+        quoteAmount: null,
+        quoteExpiry: null,
+        quoteStatus: 'NOT QUOTED',
+        disqualifyReason: '',
         quoteDaysLeft: (() => {
           const qd = p['Quote Date']?.date?.start
           if (!qd) return null

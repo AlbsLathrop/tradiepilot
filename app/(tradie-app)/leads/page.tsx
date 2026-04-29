@@ -13,11 +13,18 @@ interface Lead {
   chaseStatus: string
   source: string
   receivedDate: string
+  lastContact: string
+  nextFollowUp: string
   quoteDate: string | null
+  quoteDaysLeft: number | null
   notes: string
   lunaLastUpdate: string
   tradieConfigId: string
-  quoteDaysLeft: number | null
+  jobValue: number | null
+  quoteAmount: number | null
+  quoteExpiry: string | null
+  quoteStatus: string
+  disqualifyReason: string
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -82,6 +89,39 @@ export default function LeadsPage() {
     }
   }
 
+  const handleQuoteUpdate = async (lead: Lead, status: string) => {
+    try {
+      await fetch(`/api/leads/${lead.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quoteStatus: status,
+          quoteDate: status === 'SENT'
+            ? new Date().toISOString().split('T')[0]
+            : undefined,
+          quoteExpiry: status === 'SENT'
+            ? new Date(Date.now() + 14*24*60*60*1000)
+              .toISOString().split('T')[0]
+            : undefined
+        }),
+      })
+      setLeads(prev => prev.map(l =>
+        l.id === lead.id
+          ? {
+            ...l,
+            quoteStatus: status,
+            quoteDate: status === 'SENT' ? new Date().toISOString().split('T')[0] : l.quoteDate,
+            quoteExpiry: status === 'SENT' ? new Date(Date.now() + 14*24*60*60*1000).toISOString().split('T')[0] : l.quoteExpiry,
+            quoteDaysLeft: status === 'SENT' ? 14 : l.quoteDaysLeft
+          }
+          : l
+      ))
+      showToast(`✓ Quote marked as ${status}`)
+    } catch {
+      showToast('Update failed')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#0F0F0F] text-white pb-24">
 
@@ -134,6 +174,8 @@ export default function LeadsPage() {
           const statusClass = STATUS_COLORS[lead.status] ??
                               'bg-gray-600 text-white'
           const daysOld = daysSince(lead.receivedDate)
+          const daysLastContact = lead.lastContact
+            ? daysSince(lead.lastContact) : null
 
           return (
             <div

@@ -521,8 +521,83 @@ export default function JobsPage() {
                     🧠 Ask ALFRED about this job
                   </a>
 
-                  {/* INVOICE — compact collapsible */}
-                  <div className="border-t border-[#1F2937] pt-3 mb-4">
+                  {/* Job Log */}
+                  {job.milestones && job.milestones.length > 0 && (
+                    <div className="border-t border-[#1F2937] pt-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setOpenLogId(openLogId === job.id ? null : job.id)
+                        }}
+                        className="w-full flex items-center justify-between py-2"
+                      >
+                        <span className="text-[#F97316] text-xs font-bold uppercase">
+                          📋 Job Log ({job.milestones.length} entries)
+                        </span>
+                        <span className="text-gray-500 text-xs">
+                          {openLogId === job.id ? '▲' : '▼'}
+                        </span>
+                      </button>
+
+                      {openLogId === job.id && (
+                        <div className="space-y-2 mt-2">
+                          {job.milestones.map((m: any, i: number) => (
+                            <div
+                              key={i}
+                              className="bg-[#0F0F0F] rounded-lg p-3 border-l-2 border-[#F97316]"
+                            >
+                              <div className="flex items-start justify-between gap-2 mb-1">
+                                <span className="text-white text-xs font-semibold">
+                                  {m.event}
+                                </span>
+                                <span className="text-gray-500 text-[10px] shrink-0">
+                                  {m.date ? new Date(m.date).toLocaleDateString('en-AU', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                  }) : ''}
+                                </span>
+                              </div>
+                              {m.note && (
+                                <p className="text-gray-400 text-xs leading-relaxed mb-1">
+                                  {m.note}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-2">
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                  m.type === 'ISSUE_FOUND'
+                                    ? 'bg-red-500/20 text-red-400'
+                                    : m.type === 'ISSUE_RESOLVED'
+                                      ? 'bg-green-500/20 text-green-400'
+                                      : m.type === 'PHASE_COMPLETE'
+                                        ? 'bg-purple-500/20 text-purple-400'
+                                        : m.type === 'VARIATION_APPROVED'
+                                          ? 'bg-orange-500/20 text-orange-400'
+                                          : m.type === 'JOB_STARTED'
+                                            ? 'bg-blue-500/20 text-blue-400'
+                                            : 'bg-gray-500/20 text-gray-400'
+                                }`}>
+                                  {m.type}
+                                </span>
+                                {m.loggedBy && (
+                                  <span className="text-gray-500 text-[10px]">
+                                    by {m.loggedBy}
+                                  </span>
+                                )}
+                                {m.clientNotified && (
+                                  <span className="text-green-400 text-[10px]">
+                                    ✓ notified
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* INVOICE */}
+                  <div className="border-t border-[#1F2937] pt-3">
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
@@ -530,24 +605,26 @@ export default function JobsPage() {
                           openInvoiceId === job.id ? null : job.id
                         )
                       }}
-                      className="w-full flex items-center justify-between py-1.5"
+                      className="w-full flex items-center justify-between
+                      px-3 py-2 rounded-lg border border-[#F97316]/50
+                      hover:border-[#F97316] transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-gray-400 text-xs uppercase
-                        font-bold tracking-wide">Invoice</span>
+                        <span className="text-[#F97316] text-xs font-bold uppercase
+                        tracking-wide">Invoice</span>
                         <span className={`text-[10px] font-bold px-2 py-0.5
                         rounded-full ${
                           job.invoiceStatus === 'PAID'
                             ? 'bg-green-500/20 text-green-400'
                             : job.invoiceStatus === 'SENT' &&
-                              job.invoiceDueDays && job.invoiceDueDays > 14
-                            ? 'bg-red-500/20 text-red-400'
+                              (job.invoiceDueDays ?? 0) > 14
+                            ? 'bg-red-500/20 text-red-400 animate-pulse'
                             : job.invoiceStatus === 'SENT'
                             ? 'bg-blue-500/20 text-blue-400'
-                            : 'bg-gray-500/20 text-gray-400'
+                            : 'bg-gray-500/20 text-gray-500'
                         }`}>
                           {job.invoiceStatus === 'SENT' &&
-                           job.invoiceDueDays && job.invoiceDueDays > 14
+                           (job.invoiceDueDays ?? 0) > 14
                             ? `OVERDUE ${job.invoiceDueDays}d`
                             : job.invoiceStatus || 'NOT SENT'}
                         </span>
@@ -557,29 +634,32 @@ export default function JobsPage() {
                           </span>
                         )}
                       </div>
-                      <span className="text-gray-600 text-xs">
+                      <span className="text-[#F97316]/60 text-xs">
                         {openInvoiceId === job.id ? '▲' : '▼'}
                       </span>
                     </button>
 
                     {openInvoiceId === job.id && (
-                      <div className="grid grid-cols-3 gap-2 mt-2 pb-1">
-                        {['NOT SENT', 'SENT', 'PAID'].map(status => (
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        {[
+                          { value: 'NOT SENT', label: 'Not Sent' },
+                          { value: 'SENT', label: 'Invoiced' },
+                          { value: 'PAID', label: '✓ Paid' },
+                        ].map(({ value, label }) => (
                           <button
-                            key={status}
+                            key={value}
                             onClick={(e) => {
                               e.stopPropagation()
-                              handleInvoiceUpdate(job, status)
+                              handleInvoiceUpdate(job, value)
                             }}
                             className={`text-xs font-bold py-2.5 rounded-lg
-                            transition-all ${
-                              (job.invoiceStatus || 'NOT SENT') === status
+                            transition-all active:scale-95 ${
+                              (job.invoiceStatus || 'NOT SENT') === value
                                 ? 'bg-[#F97316] text-white'
-                                : 'bg-[#1F2937] text-gray-400 active:opacity-70'
+                                : 'bg-[#0F0F0F] border border-[#1F2937] text-gray-400'
                             }`}
                           >
-                            {status === 'NOT SENT' ? 'Not Sent' :
-                             status === 'SENT' ? 'Invoiced' : '✓ Paid'}
+                            {label}
                           </button>
                         ))}
                       </div>

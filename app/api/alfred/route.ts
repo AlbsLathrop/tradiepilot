@@ -5,6 +5,34 @@ import { Client } from '@notionhq/client';
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 const notion = new Client({ auth: process.env.NOTION_API_KEY! });
 
+function isDarkHours(
+  hoursStart: string = '7:00',
+  hoursEnd: string = '20:00'
+): boolean {
+  const now = new Date()
+  const sydneyTime = new Date(now.toLocaleString('en-US', { timeZone: 'Australia/Sydney' }))
+  const hours = sydneyTime.getHours()
+  const minutes = sydneyTime.getMinutes()
+  const currentMins = hours * 60 + minutes
+
+  const [startH, startM] = hoursStart.split(':').map(Number)
+  const [endH, endM] = hoursEnd.split(':').map(Number)
+  const startMins = startH * 60 + (startM || 0)
+  const endMins = endH * 60 + (endM || 0)
+
+  return currentMins < startMins || currentMins >= endMins
+}
+
+function getSydneyTime(): string {
+  const now = new Date()
+  return new Intl.DateTimeFormat('en-AU', {
+    timeZone: 'Australia/Sydney',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).format(now)
+}
+
 const ALFRED_SYSTEM_PROMPT = `You are ALFRED, the central intelligence agent for TradiePilot. You work exclusively for Joey — a tradie running a trade business in Sydney.
 
 You will receive JSON context with Joey's real jobs and leads data.
@@ -103,6 +131,19 @@ MESSAGE: [the SMS text]
 6. When Joey confirms, reply with EXACTLY: [SEND_SMS]
 
 Do NOT send without Joey's confirmation.
+
+DARK HOURS RULE: You must NEVER send SMS or initiate calls outside of business hours (7am–8pm Sydney time).
+
+If a client or foreman contacts Joey outside of these hours:
+1. Do NOT respond with a business message
+2. Instead reply: 'Thanks for your message! Joey will get back to you first thing in the morning. — TradiePilot'
+3. Log the message in Communication Log for Joey to see tomorrow
+
+If Joey asks you to send an SMS outside of business hours:
+1. Warn him: 'It's currently [time] — outside business hours (7am-8pm Sydney time)'
+2. Ask: 'Should I schedule this for 7am tomorrow instead?'
+3. If Joey says yes, note it in the reply for Joey to send manually
+4. If Joey says send anyway, refuse and explain why it's a bad idea
 
 RESPONSE FORMAT — always return valid JSON:
 {
@@ -437,6 +478,14 @@ ${JSON.stringify(contextData, null, 2)}`;
       historyMessages = recent;
     }
 
+    const inDarkHours = isDarkHours('7:00', '20:00')
+    const sydneyTime = getSydneyTime()
+
+    let systemPrompt = ALFRED_SYSTEM_PROMPT
+    if (inDarkHours) {
+      systemPrompt += `\n\n⚠️ DARK HOURS ACTIVE: Current Sydney time is ${sydneyTime} (outside 7am-8pm). Do not send SMS or initiate calls. Warn Joey if he tries to send an SMS.`
+    }
+
     const claudeMessages: any[] = mediaUrl ? [
       ...historyMessages,
       {
@@ -466,7 +515,7 @@ ${JSON.stringify(contextData, null, 2)}`;
     const claudeResponse = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
-      system: ALFRED_SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: claudeMessages,
     });
 
@@ -508,6 +557,36 @@ ${JSON.stringify(contextData, null, 2)}`;
     const isConfirming = message && confirmationWords.some(word => message.toLowerCase().match(new RegExp(`^(${word}|${word}s?|${word}\\s+it)$`)));
 
     if ((rawText.includes('[SEND_SMS]') || isConfirming) && body.pendingSMS?.to && body.pendingSMS?.message) {
+      const sydneyHour = new Date(
+        new Date().toLocaleString('en-US', { timeZone: 'Australia/Sydney' })
+      ).getHours()
+
+      if (sydneyHour < 7 || sydneyHour >= 20) {
+        // Log to Milestone Log but DON'T send SMS
+        try {
+          await notion.pages.create({
+            parent: { database_id: process.env.NOTION_COMMUNICATION_LOG_DB_ID! },
+            properties: {
+              'Message': { title: [{ text: { content: body.pendingSMS.message } }] },
+              'Recipient': { rich_text: [{ text: { content: body.pendingSMS.name } }] },
+              'Channel': { select: { name: 'SMS' } },
+              'Agent': { select: { name: 'ALFRED' } },
+              'Direction': { select: { name: 'Outbound (Scheduled)' } },
+            },
+          });
+        } catch (logErr) {
+          console.error('Comm log error:', logErr);
+        }
+
+        return NextResponse.json({
+          success: true,
+          reply: `🌙 Dark hours active (${sydneyHour}:00 Sydney time). Message logged but not sent — it's after business hours. I'll remind you to send at 7am.`,
+          action: 'sms_blocked_dark_hours',
+          darkHours: true,
+          smsSent: false,
+        });
+      }
+
       try {
         const twilio = require('twilio')(
           process.env.TWILIO_ACCOUNT_SID,

@@ -118,7 +118,11 @@ export default function JobsPage() {
       })
       const data = await res.json()
       if (data.success) {
-        setToast(`✓ ${action} sent for ${job.clientName}`)
+        if (data.darkHours) {
+          setToast(`🌙 After hours — logged but no SMS sent`)
+        } else {
+          setToast(`✓ ${action} sent for ${job.clientName}`)
+        }
         // Refresh jobs to show new milestone
         setTimeout(() => {
           fetch('/api/jobs')

@@ -9,34 +9,26 @@ interface Lead {
   suburb: string
   service: string
   status: string
+  lunaStatus: string
+  chaseStatus: string
   source: string
   receivedDate: string
-  lastContact: string
-  nextFollowUp: string
-  disqualifyReason: string
-  notes: string
-  leadScore: number | null
-  jobValue: number | null
-  tradieConfigId: string
-  quoteStatus: string
-  quoteAmount: number | null
   quoteDate: string | null
-  quoteExpiry: string | null
+  notes: string
+  lunaLastUpdate: string
+  tradieConfigId: string
   quoteDaysLeft: number | null
 }
 
 const STATUS_COLORS: Record<string, string> = {
   'NEW': 'bg-orange-500 text-white',
-  'QUALIFIED': 'bg-green-500 text-white',
-  'QUOTED': 'bg-blue-500 text-white',
-  'PENDING DECLINE': 'bg-yellow-500 text-black',
-  'DECLINED': 'bg-red-500 text-white',
+  'CALLED': 'bg-blue-500 text-white',
+  'QUOTED': 'bg-purple-500 text-white',
+  'WON': 'bg-green-500 text-white',
   'COLD': 'bg-gray-600 text-white',
-  'WON': 'bg-emerald-500 text-white',
 }
 
-const TABS = ['All', 'NEW', 'QUALIFIED', 'QUOTED',
-               'PENDING DECLINE', 'DECLINED', 'COLD']
+const TABS = ['All', 'NEW', 'CALLED', 'QUOTED', 'WON', 'COLD']
 
 function daysSince(dateStr: string): number {
   if (!dateStr) return 0
@@ -54,7 +46,7 @@ export default function LeadsPage() {
   const [showNewLead, setShowNewLead] = useState(false)
   const [newLead, setNewLead] = useState({
     clientName: '', phone: '', suburb: '',
-    service: '', source: '', notes: '', jobValue: ''
+    service: '', source: '', notes: ''
   })
 
   useEffect(() => {
@@ -198,24 +190,12 @@ export default function LeadsPage() {
                     {[lead.service, lead.suburb].filter(Boolean).join(' • ')}
                   </p>
                   {lead.quoteDaysLeft !== null &&
-                   lead.quoteDaysLeft <= 2 &&
-                   lead.quoteStatus === 'SENT' && (
+                   lead.quoteDaysLeft <= 2 && (
                     <span className="text-xs font-bold px-2 py-1 rounded-full
                     bg-yellow-500 text-black mt-0.5 inline-block">
                       ⚠️ Quote expires {lead.quoteDaysLeft <= 0 ? 'today' :
                       `in ${lead.quoteDaysLeft}d`}
                     </span>
-                  )}
-                  {daysLastContact !== null && (
-                    <p className={`text-xs mt-0.5 ${
-                      daysLastContact > 7 ? 'text-red-400' :
-                      daysLastContact > 3 ? 'text-yellow-400' :
-                      'text-gray-500'
-                    }`}>
-                      {daysLastContact === 0
-                        ? 'Contacted today'
-                        : `Last contact: ${daysLastContact}d ago`}
-                    </p>
                   )}
                 </div>
                 <div className="flex items-center gap-2 ml-3 shrink-0">
@@ -254,43 +234,27 @@ export default function LeadsPage() {
                         {daysOld === 0 ? 'Today' : `${daysOld} days ago`}
                       </span>
                     </div>
-                    {lead.leadScore && (
+                    {lead.lunaStatus && (
                       <div className="flex justify-between">
                         <span className="text-gray-400 text-sm">
-                          Lead Score
+                          LUNA Status
                         </span>
                         <span className="text-[#F97316] text-sm font-bold">
-                          {lead.leadScore}/10
+                          {lead.lunaStatus}
                         </span>
                       </div>
                     )}
-                    {lead.nextFollowUp && (
+                    {lead.chaseStatus && (
                       <div className="flex justify-between">
                         <span className="text-gray-400 text-sm">
-                          Next Follow-up
+                          CHASE Status
                         </span>
                         <span className="text-blue-400 text-sm">
-                          {new Date(lead.nextFollowUp)
-                            .toLocaleDateString('en-AU', {
-                              day: 'numeric', month: 'short'
-                            })}
+                          {lead.chaseStatus}
                         </span>
                       </div>
                     )}
                   </div>
-
-                  {/* Disqualify reason */}
-                  {lead.disqualifyReason && (
-                    <div className="bg-red-500/10 border
-                    border-red-500/30 rounded-lg p-3">
-                      <p className="text-red-400 text-xs font-bold mb-1">
-                        ❌ Disqualified
-                      </p>
-                      <p className="text-gray-300 text-sm">
-                        {lead.disqualifyReason}
-                      </p>
-                    </div>
-                  )}
 
                   {/* Notes */}
                   {lead.notes && (
@@ -327,83 +291,17 @@ export default function LeadsPage() {
                     )}
                   </div>
 
-                  {/* Quote */}
-                  <div className="bg-[#0F0F0F] rounded-lg p-3 space-y-2">
-                    <p className="text-[#F97316] text-xs font-bold uppercase">Quote</p>
-
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400 text-sm">Status</span>
-                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-                        lead.quoteStatus === 'ACCEPTED'
-                          ? 'bg-green-500/20 text-green-400' :
-                        lead.quoteStatus === 'SENT' && lead.quoteDaysLeft! < 0
-                          ? 'bg-red-500/20 text-red-400' :
-                        lead.quoteStatus === 'SENT' && lead.quoteDaysLeft! <= 2
-                          ? 'bg-yellow-500/20 text-yellow-400' :
-                        lead.quoteStatus === 'SENT'
-                          ? 'bg-blue-500/20 text-blue-400' :
-                        'bg-gray-500/20 text-gray-400'
-                      }`}>
-                        {lead.quoteStatus === 'SENT' && lead.quoteDaysLeft !== null
-                          ? lead.quoteDaysLeft < 0
-                            ? 'EXPIRED'
-                            : `SENT · ${lead.quoteDaysLeft}d left`
-                          : lead.quoteStatus}
-                      </span>
+                  {/* Quote Date */}
+                  {lead.quoteDate && (
+                    <div className="bg-[#0F0F0F] rounded-lg p-3">
+                      <p className="text-[#F97316] text-xs font-bold uppercase mb-2">Quote Date</p>
+                      <p className="text-white text-sm">
+                        {new Date(lead.quoteDate).toLocaleDateString('en-AU', {
+                          day: 'numeric', month: 'short', year: 'numeric'
+                        })}
+                      </p>
                     </div>
-
-                    {lead.quoteAmount && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-400 text-sm">Amount</span>
-                        <span className="text-white text-sm font-bold">
-                          ${lead.quoteAmount.toLocaleString()}
-                        </span>
-                      </div>
-                    )}
-
-                    {lead.quoteDate && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-400 text-sm">Sent</span>
-                        <span className="text-white text-sm">
-                          {new Date(lead.quoteDate).toLocaleDateString('en-AU', {
-                            day: 'numeric', month: 'short'
-                          })}
-                        </span>
-                      </div>
-                    )}
-
-                    {lead.quoteExpiry && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-400 text-sm">Expires</span>
-                        <span className={`text-sm ${
-                          lead.quoteDaysLeft !== null && lead.quoteDaysLeft <= 2
-                            ? 'text-red-400 font-bold'
-                            : 'text-white'
-                        }`}>
-                          {new Date(lead.quoteExpiry).toLocaleDateString('en-AU', {
-                            day: 'numeric', month: 'short'
-                          })}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-3 gap-2 mt-2">
-                      {['NOT QUOTED','SENT','ACCEPTED'].map(status => (
-                        <button
-                          key={status}
-                          onClick={() => handleQuoteUpdate(lead, status)}
-                          className={`text-xs font-bold py-2 rounded-lg ${
-                            lead.quoteStatus === status
-                              ? 'bg-[#F97316] text-white'
-                              : 'bg-[#1F2937] text-gray-400'
-                          }`}
-                        >
-                          {status === 'NOT QUOTED' ? 'Not Sent' :
-                           status === 'SENT' ? 'Quoted' : 'Won ✓'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  )}
 
                   {/* Ask ALFRED */}
                   <a
@@ -439,22 +337,31 @@ export default function LeadsPage() {
                         💬 Text
                       </a>
                     )}
-                    {lead.status !== 'QUALIFIED' && (
+                    {lead.status !== 'CALLED' && (
                       <button
-                        onClick={() => handleStatusUpdate(lead, 'QUALIFIED')}
+                        onClick={() => handleStatusUpdate(lead, 'CALLED')}
+                        className="bg-blue-600 text-white text-xs
+                        font-bold py-3 rounded-lg"
+                      >
+                        ✓ Called
+                      </button>
+                    )}
+                    {lead.status !== 'QUOTED' && (
+                      <button
+                        onClick={() => handleStatusUpdate(lead, 'QUOTED')}
+                        className="bg-purple-600 text-white text-xs
+                        font-bold py-3 rounded-lg"
+                      >
+                        📋 Quoted
+                      </button>
+                    )}
+                    {lead.status !== 'WON' && (
+                      <button
+                        onClick={() => handleStatusUpdate(lead, 'WON')}
                         className="bg-green-600 text-white text-xs
                         font-bold py-3 rounded-lg"
                       >
-                        ✓ Qualify
-                      </button>
-                    )}
-                    {lead.status !== 'DECLINED' && (
-                      <button
-                        onClick={() => handleStatusUpdate(lead, 'DECLINED')}
-                        className="bg-red-600 text-white text-xs
-                        font-bold py-3 rounded-lg"
-                      >
-                        ✗ Decline
+                        🎉 Won
                       </button>
                     )}
                     {lead.status !== 'COLD' && (
@@ -494,7 +401,6 @@ export default function LeadsPage() {
               { key: 'suburb', label: 'Suburb *', type: 'text' },
               { key: 'service', label: 'Service Type', type: 'text' },
               { key: 'source', label: 'Source', type: 'text' },
-              { key: 'jobValue', label: 'Job Value ($)', type: 'number' },
               { key: 'notes', label: 'Notes', type: 'text' },
             ].map(({ key, label, type }) => (
               <div key={key}>
@@ -520,10 +426,7 @@ export default function LeadsPage() {
                 const res = await fetch('/api/leads', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    ...newLead,
-                    jobValue: newLead.jobValue ? Number(newLead.jobValue) : null,
-                  }),
+                  body: JSON.stringify(newLead),
                 })
                 const data = await res.json()
                 if (data.success) {
@@ -531,7 +434,7 @@ export default function LeadsPage() {
                   setShowNewLead(false)
                   setNewLead({
                     clientName: '', phone: '', suburb: '',
-                    service: '', source: '', notes: '', jobValue: ''
+                    service: '', source: '', notes: ''
                   })
                   fetch('/api/leads').then(r => r.json())
                     .then(d => setLeads(d.leads ?? []))

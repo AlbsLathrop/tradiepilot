@@ -18,35 +18,29 @@ export async function GET() {
       const p = page.properties
       return {
         id: page.id,
-        clientName: p['Client Name']?.title?.[0]?.plain_text ?? 'Unknown',
+        clientName: p['Name']?.title?.[0]?.plain_text ?? 'Unknown',
         phone: p['Phone']?.phone_number ?? '',
         suburb: p['Suburb']?.rich_text?.[0]?.plain_text ?? '',
         service: p['Service']?.rich_text?.[0]?.plain_text ?? '',
         status: p['Status']?.select?.name ?? 'NEW',
-        source: p['Source']?.select?.name ?? '',
+        lunaStatus: p['LUNA Status']?.select?.name ?? '',
+        chaseStatus: p['CHASE Status']?.select?.name ?? '',
+        source: p['Source']?.rich_text?.[0]?.plain_text ?? '',
         receivedDate: p['Received Date']?.date?.start ??
                       page.created_time ?? '',
-        lastContact: p['Last Contact']?.date?.start ?? '',
-        nextFollowUp: p['Next Follow Up']?.date?.start ?? '',
-        disqualifyReason: p['Disqualify Reason']
-          ?.rich_text?.[0]?.plain_text ?? '',
-        notes: p['Notes']?.rich_text?.[0]?.plain_text ?? '',
-        leadScore: p['Lead Score']?.number ?? null,
-        jobValue: p['Job Value']?.number ?? null,
-        quoteStatus: p['Quote Status']?.select?.name ?? 'NOT QUOTED',
-        quoteAmount: p['Quote Amount']?.number ?? null,
         quoteDate: p['Quote Date']?.date?.start ?? null,
-        quoteExpiry: p['Quote Expiry']?.date?.start ?? null,
-        quoteDaysLeft: (() => {
-          const expiry = p['Quote Expiry']?.date?.start
-          if (!expiry) return null
-          return Math.ceil(
-            (new Date(expiry).getTime() - Date.now())
-            / (1000*60*60*24)
-          )
-        })(),
+        notes: p['LUNA Notes']?.rich_text?.[0]?.plain_text ?? '',
+        lunaLastUpdate: p['LUNA Last Update']
+          ?.rich_text?.[0]?.plain_text ?? '',
         tradieConfigId: p['Tradie Config ID']
           ?.rich_text?.[0]?.plain_text ?? '',
+        quoteDaysLeft: (() => {
+          const qd = p['Quote Date']?.date?.start
+          if (!qd) return null
+          return Math.ceil(
+            (new Date(qd).getTime() - Date.now()) / (1000*60*60*24)
+          )
+        })(),
       }
     })
 

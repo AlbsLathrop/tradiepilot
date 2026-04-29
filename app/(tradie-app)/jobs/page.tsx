@@ -74,6 +74,7 @@ export default function JobsPage() {
   const [activeTab, setActiveTab] = useState('All')
   const [toast, setToast] = useState<string | null>(null)
   const [openLogId, setOpenLogId] = useState<string | null>(null)
+  const [openInvoiceId, setOpenInvoiceId] = useState<string | null>(null)
   const [showNewJob, setShowNewJob] = useState(false)
   const [lightbox, setLightbox] = useState<Photo | null>(null)
   const [newJob, setNewJob] = useState({
@@ -337,66 +338,6 @@ export default function JobsPage() {
                     )}
                   </div>
 
-                  {/* Invoice */}
-                  <div className="bg-[#0F0F0F] rounded-lg p-3 space-y-2">
-                    <p className="text-[#F97316] text-xs font-bold uppercase">Invoice</p>
-
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400 text-sm">Status</span>
-                      <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-                        job.invoiceStatus === 'PAID'
-                          ? 'bg-green-500/20 text-green-400' :
-                        job.invoiceStatus === 'SENT' && job.invoiceDueDays && job.invoiceDueDays > 14
-                          ? 'bg-red-500/20 text-red-400' :
-                        job.invoiceStatus === 'SENT'
-                          ? 'bg-blue-500/20 text-blue-400' :
-                        'bg-gray-500/20 text-gray-400'
-                      }`}>
-                        {job.invoiceStatus === 'SENT' && job.invoiceDueDays && job.invoiceDueDays > 14
-                          ? `OVERDUE ${job.invoiceDueDays}d`
-                          : job.invoiceStatus}
-                      </span>
-                    </div>
-
-                    {job.invoiceAmount && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-400 text-sm">Amount</span>
-                        <span className="text-white text-sm font-bold">
-                          ${job.invoiceAmount.toLocaleString()}
-                        </span>
-                      </div>
-                    )}
-
-                    {job.invoiceDate && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-400 text-sm">Sent</span>
-                        <span className="text-white text-sm">
-                          {new Date(job.invoiceDate).toLocaleDateString('en-AU', {
-                            day: 'numeric', month: 'short'
-                          })}
-                          {job.invoiceDueDays ? ` (${job.invoiceDueDays}d ago)` : ''}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-3 gap-2 mt-2">
-                      {['NOT SENT','SENT','PAID'].map(status => (
-                        <button
-                          key={status}
-                          onClick={() => handleInvoiceUpdate(job, status)}
-                          className={`text-xs font-bold py-2 rounded-lg ${
-                            job.invoiceStatus === status
-                              ? 'bg-[#F97316] text-white'
-                              : 'bg-[#1F2937] text-gray-400'
-                          }`}
-                        >
-                          {status === 'NOT SENT' ? 'Not Sent' :
-                           status === 'SENT' ? 'Invoiced' : 'Paid ✓'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
                   {/* Client & Site */}
                   <div className="bg-[#0F0F0F] rounded-lg p-3 space-y-2">
                     <p className="text-[#F97316] text-xs font-bold uppercase">Client & Site</p>
@@ -579,6 +520,71 @@ export default function JobsPage() {
                   >
                     🧠 Ask ALFRED about this job
                   </a>
+
+                  {/* INVOICE — compact collapsible */}
+                  <div className="border-t border-[#1F2937] pt-3 mb-4">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setOpenInvoiceId(
+                          openInvoiceId === job.id ? null : job.id
+                        )
+                      }}
+                      className="w-full flex items-center justify-between py-1.5"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-400 text-xs uppercase
+                        font-bold tracking-wide">Invoice</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5
+                        rounded-full ${
+                          job.invoiceStatus === 'PAID'
+                            ? 'bg-green-500/20 text-green-400'
+                            : job.invoiceStatus === 'SENT' &&
+                              job.invoiceDueDays && job.invoiceDueDays > 14
+                            ? 'bg-red-500/20 text-red-400'
+                            : job.invoiceStatus === 'SENT'
+                            ? 'bg-blue-500/20 text-blue-400'
+                            : 'bg-gray-500/20 text-gray-400'
+                        }`}>
+                          {job.invoiceStatus === 'SENT' &&
+                           job.invoiceDueDays && job.invoiceDueDays > 14
+                            ? `OVERDUE ${job.invoiceDueDays}d`
+                            : job.invoiceStatus || 'NOT SENT'}
+                        </span>
+                        {job.invoiceAmount && (
+                          <span className="text-gray-400 text-xs">
+                            ${job.invoiceAmount.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-gray-600 text-xs">
+                        {openInvoiceId === job.id ? '▲' : '▼'}
+                      </span>
+                    </button>
+
+                    {openInvoiceId === job.id && (
+                      <div className="grid grid-cols-3 gap-2 mt-2 pb-1">
+                        {['NOT SENT', 'SENT', 'PAID'].map(status => (
+                          <button
+                            key={status}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleInvoiceUpdate(job, status)
+                            }}
+                            className={`text-xs font-bold py-2.5 rounded-lg
+                            transition-all ${
+                              (job.invoiceStatus || 'NOT SENT') === status
+                                ? 'bg-[#F97316] text-white'
+                                : 'bg-[#1F2937] text-gray-400 active:opacity-70'
+                            }`}
+                          >
+                            {status === 'NOT SENT' ? 'Not Sent' :
+                             status === 'SENT' ? 'Invoiced' : '✓ Paid'}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Quick Actions */}
                   <div>

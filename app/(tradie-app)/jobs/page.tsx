@@ -112,6 +112,7 @@ export default function JobsPage() {
           action,
           jobId: job.id,
           clientName: job.clientName,
+          clientPhone: job.clientPhone,
           suburb: job.suburb,
           tradieConfigId: job.tradieConfigId || 'joey-tradie',
         }),
@@ -120,6 +121,8 @@ export default function JobsPage() {
       if (data.success) {
         if (data.darkHours) {
           setToast(`🌙 After hours — logged but no SMS sent`)
+        } else if (action === 'ON THE WAY') {
+          setToast(`📱 SMS sent to ${job.clientName} — on the way!`)
         } else {
           setToast(`✓ ${action} sent for ${job.clientName}`)
         }

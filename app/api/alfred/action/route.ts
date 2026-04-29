@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { action, jobId, clientName, suburb, tradieConfigId } = await req.json()
+  const { action, jobId, clientName, suburb, tradieConfigId, clientPhone } = await req.json()
 
   const validationError = validateRequired({ action, jobId, clientName }, ['action', 'jobId', 'clientName'])
   if (validationError) {
@@ -42,6 +42,26 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // ON THE WAY: Send SMS immediately to client
+    if (action === 'ON THE WAY' && clientPhone) {
+      try {
+        const twilio = require('twilio')(
+          process.env.TWILIO_ACCOUNT_SID,
+          process.env.TWILIO_AUTH_TOKEN
+        )
+
+        const smsBody = `Hi ${clientName}, Joey's on his way to ${suburb} now. Should be with you shortly. — TradiePilot`
+
+        await twilio.messages.create({
+          body: smsBody,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: clientPhone,
+        })
+      } catch (smsErr: any) {
+        console.warn('SMS failed (non-fatal):', smsErr.message)
+      }
+    }
+
     const sydneyHour = new Date(
       new Date().toLocaleString('en-US', { timeZone: 'Australia/Sydney' })
     ).getHours()

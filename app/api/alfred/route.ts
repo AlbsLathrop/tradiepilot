@@ -88,6 +88,7 @@ WHEN JOEY ASKS ABOUT A JOB'S HISTORY:
 - "give me a summary of the Bondi kitchen"
 - "what's the status on Emma's deck?"
 → Read the JOB BRAIN context provided below
+→ If a question is asked about a job's history, milestones, or progress, also read the JOB MILESTONE HISTORY section provided in the context below
 → Summarize in 3-4 sentences: what was done, current status, any issues, what's next
 → Sound like you know the job personally
 

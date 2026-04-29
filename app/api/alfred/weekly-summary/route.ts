@@ -11,10 +11,28 @@ const twilioClient = twilio(
 )
 
 export async function POST(req: NextRequest) {
-  const { tradieConfigId, tradiePhone, tradieName } = await req.json()
+  const { tradieConfigId } = await req.json()
   const configId = tradieConfigId || 'joey-tradie'
 
   try {
+    // Look up tradie config from Notion
+    const configRes = await notion.databases.query({
+      database_id: process.env.NOTION_TRADIE_CONFIG_DB_ID!,
+      filter: {
+        property: 'Tradie Config ID',
+        rich_text: { equals: configId }
+      },
+      page_size: 1,
+    })
+
+    const configPage = configRes.results[0] as any
+    const tradiePhone = configPage?.properties['Phone']?.phone_number
+      ?? configPage?.properties['Twilio Number']?.phone_number
+      ?? null
+    const tradieName = configPage?.properties['Owner Name']
+      ?.rich_text?.[0]?.plain_text
+      ?? configId
+
     // Fetch jobs
     const jobsRes = await notion.databases.query({
       database_id: process.env.NOTION_JOBS_DB_ID!,

@@ -1,86 +1,142 @@
-'use client';
+'use client'
 
-import { FormEvent, useState } from 'react';
-import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react'
+import { signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState('joey@tradie.test');
-  const [rememberMe, setRememberMe] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    const result = await signIn('credentials', {
-      email,
-      rememberMe: rememberMe ? 'true' : 'false',
-      redirect: false,
-    });
-
-    setLoading(false);
-
-    if (result?.ok) {
-      router.push('/home');
-      router.refresh();
-    } else {
-      setError('Invalid email. Please try again.');
+  const handleSignIn = async () => {
+    if (!email) {
+      setError('Enter your email')
+      return
     }
+    setLoading(true)
+    setError('')
+
+    try {
+      const result = await signIn('credentials', {
+        email: email.toLowerCase().trim(),
+        redirect: false,
+      })
+
+      if (result?.ok && !result?.error) {
+        router.push('/')
+        router.refresh()
+      } else {
+        setError('Email not recognised. Try joey@tradie.test')
+      }
+    } catch (e) {
+      setError('Sign in failed. Try again.')
+    }
+    setLoading(false)
   }
 
   return (
-    <div className="min-h-screen bg-[#111827] flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="bg-[#1F2937] rounded-xl border border-white/5 p-8">
-          <h1 className="text-3xl font-bold text-white mb-2">TradiePilot</h1>
-          <p className="text-gray-400 mb-8">Cockpit + War Room</p>
+    <div style={{
+      minHeight: '100vh',
+      background: '#0F0F0F',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '1rem',
+    }}>
+      <div style={{
+        background: '#111827',
+        border: '0.5px solid #1F2937',
+        borderRadius: '16px',
+        padding: '2rem',
+        width: '100%',
+        maxWidth: '380px',
+      }}>
+        <h1 style={{
+          color: 'white',
+          fontSize: '24px',
+          fontWeight: '600',
+          marginBottom: '4px',
+        }}>TradiePilot</h1>
+        <p style={{
+          color: '#9CA3AF',
+          fontSize: '14px',
+          marginBottom: '2rem',
+        }}>Cockpit + War Room</p>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="joey@tradie.test"
-                className="w-full px-4 py-2 rounded-lg bg-[#111827] border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-[#06B6D4]"
-                disabled={loading}
-              />
-            </div>
+        <label style={{
+          color: '#9CA3AF',
+          fontSize: '13px',
+          display: 'block',
+          marginBottom: '6px',
+        }}>Email</label>
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSignIn()}
+          placeholder="joey@tradie.test"
+          style={{
+            width: '100%',
+            background: '#1F2937',
+            border: '0.5px solid #374151',
+            borderRadius: '8px',
+            padding: '12px',
+            color: 'white',
+            fontSize: '15px',
+            marginBottom: '1rem',
+            outline: 'none',
+            boxSizing: 'border-box',
+          }}
+        />
 
-            <label className="flex items-center gap-2 text-gray-400 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 rounded border-white/10 bg-[#111827] accent-[#06B6D4]"
-                disabled={loading}
-              />
-              Keep me logged in for 30 days
-            </label>
+        <label style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          color: '#9CA3AF',
+          fontSize: '13px',
+          marginBottom: '1.5rem',
+          cursor: 'pointer',
+        }}>
+          <input type="checkbox" defaultChecked />
+          Keep me logged in for 30 days
+        </label>
 
-            {error && <div className="text-red-400 text-sm">{error}</div>}
+        {error && (
+          <p style={{
+            color: '#F87171',
+            fontSize: '13px',
+            marginBottom: '1rem',
+          }}>{error}</p>
+        )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#06B6D4] hover:bg-[#0891B2] text-black font-semibold py-2 px-4 rounded-lg transition disabled:opacity-50"
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
+        <button
+          onClick={handleSignIn}
+          disabled={loading}
+          style={{
+            width: '100%',
+            background: loading ? '#9CA3AF' : '#F97316',
+            color: 'white',
+            border: 'none',
+            borderRadius: '10px',
+            padding: '14px',
+            fontSize: '15px',
+            fontWeight: '600',
+            cursor: loading ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {loading ? 'Signing in...' : 'Sign In'}
+        </button>
 
-          <p className="text-gray-500 text-xs mt-6 text-center">
-            Test email: joey@tradie.test
-          </p>
-        </div>
+        <p style={{
+          color: '#4B5563',
+          fontSize: '12px',
+          textAlign: 'center',
+          marginTop: '1.5rem',
+        }}>Test email: joey@tradie.test</p>
       </div>
     </div>
-  );
+  )
 }

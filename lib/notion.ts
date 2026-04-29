@@ -322,3 +322,14 @@ export async function createLead({
 
   return toLead(page as PageObjectResponse)
 }
+
+export async function queryNotionDatabase(
+  databaseId: string,
+  queryOptions?: any
+): Promise<PageObjectResponse[]> {
+  const response = await notion.databases.query({
+    database_id: databaseId,
+    ...queryOptions,
+  })
+  return response.results.filter(isFullPage) as PageObjectResponse[]
+}

@@ -134,8 +134,6 @@ export default function LeadsPage() {
           const statusClass = STATUS_COLORS[lead.status] ??
                               'bg-gray-600 text-white'
           const daysOld = daysSince(lead.receivedDate)
-          const daysLastContact = lead.lastContact
-            ? daysSince(lead.lastContact) : null
 
           return (
             <div

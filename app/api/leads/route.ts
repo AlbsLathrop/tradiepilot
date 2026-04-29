@@ -7,10 +7,6 @@ export async function GET() {
   try {
     const response = await notion.databases.query({
       database_id: process.env.NOTION_LEADS_DB_ID!,
-      filter: {
-        property: 'Tradie Config ID',
-        rich_text: { equals: 'joey-tradie' }
-      },
       sorts: [{ timestamp: 'created_time', direction: 'descending' }],
     })
 

@@ -30,10 +30,6 @@ export async function GET() {
     // Fetch leads
     const leadsRes = await notion.databases.query({
       database_id: process.env.NOTION_LEADS_DB_ID!,
-      filter: {
-        property: 'Tradie Config ID',
-        rich_text: { equals: tradieId },
-      },
     })
     const leads = leadsRes.results as LeadRecord[]
 

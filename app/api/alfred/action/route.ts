@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
 import Anthropic from '@anthropic-ai/sdk'
+import { sanitizeString, validateRequired } from '@/lib/sanitize'
+import { getClientIp, rateLimit } from '@/lib/ratelimit'
+import { logRateLimitExceeded, logValidationError } from '@/lib/logger'
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 const MILESTONE_DB_ID = process.env.NOTION_MILESTONE_LOG_DB_ID!
 
-// Map action → Milestone Type
 const ACTION_TO_MILESTONE: Record<string, string> = {
   'STARTING TODAY': 'JOB_STARTED',
   'ON THE WAY': 'JOB_STARTED',
@@ -20,7 +22,24 @@ const ACTION_TO_MILESTONE: Record<string, string> = {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req.headers)
+
+  const { success } = rateLimit(ip, 30, 60000)
+  if (!success) {
+    logRateLimitExceeded('/api/alfred/action', ip)
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429 }
+    )
+  }
+
   const { action, jobId, clientName, suburb, tradieConfigId } = await req.json()
+
+  const validationError = validateRequired({ action, jobId, clientName }, ['action', 'jobId', 'clientName'])
+  if (validationError) {
+    logValidationError('/api/alfred/action', ip, 'required', validationError)
+    return NextResponse.json({ error: validationError }, { status: 400 })
+  }
 
   try {
     const sydneyHour = new Date(
@@ -131,10 +150,10 @@ Just write the description, no preamble.`
 
     return NextResponse.json({ success: true, description, darkHours: false })
   } catch (error: any) {
-    console.error('Action error:', error?.message)
-    return NextResponse.json({
-      success: false,
-      error: error?.message
-    }, { status: 500 })
+    console.error('Action error:', error)
+    return NextResponse.json(
+      { success: false, error: 'Something went wrong. Please try again.' },
+      { status: 500 }
+    )
   }
 }

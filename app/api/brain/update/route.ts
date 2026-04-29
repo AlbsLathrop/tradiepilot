@@ -134,6 +134,6 @@ RECENT COMMS: ${JSON.stringify(commHistory.slice(-5), null, 2)}`
 
   } catch (error: any) {
     console.error('Brain update error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

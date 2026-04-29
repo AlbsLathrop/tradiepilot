@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { Client } from '@notionhq/client';
+import { sanitizeString, validateRequired } from '@/lib/sanitize';
+import { getClientIp, rateLimit } from '@/lib/ratelimit';
+import { logValidationError, logRateLimitExceeded } from '@/lib/logger';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 const notion = new Client({ auth: process.env.NOTION_API_KEY! });
@@ -376,12 +379,29 @@ async function buildConversationContext(
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request.headers);
+
+  const { success } = rateLimit(ip, 50, 60000);
+  if (!success) {
+    logRateLimitExceeded('/api/alfred', ip);
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { message, mediaUrl, mediaType, tradieConfigId = 'joey-tradie', conversationHistory = [] } = body;
 
     if (!message && !mediaUrl) {
+      logValidationError('/api/alfred', ip, 'message', 'Message or media required');
       return NextResponse.json({ error: 'Message or media required' }, { status: 400 });
+    }
+
+    if (typeof tradieConfigId !== 'string' || !tradieConfigId.trim()) {
+      logValidationError('/api/alfred', ip, 'tradieConfigId', 'Invalid tradie config ID');
+      return NextResponse.json({ error: 'Invalid tradie config ID' }, { status: 400 });
     }
 
     // Route config commands to FIXER
@@ -741,6 +761,9 @@ ${JSON.stringify(contextData, null, 2)}`;
 
   } catch (error: any) {
     console.error('ALFRED error:', error);
-    return NextResponse.json({ error: error.message || 'ALFRED failed' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Something went wrong. Please try again.' },
+      { status: 500 }
+    );
   }
 }

@@ -114,6 +114,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('FIXER error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

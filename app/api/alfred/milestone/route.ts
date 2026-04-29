@@ -29,6 +29,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Milestone error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

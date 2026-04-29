@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
 import Anthropic from '@anthropic-ai/sdk'
 import twilio from 'twilio'
+import { sanitizeString, validateRequired, validatePhoneNumber } from '@/lib/sanitize'
+import { getClientIp, rateLimit } from '@/lib/ratelimit'
+import { logRateLimitExceeded, logValidationError } from '@/lib/logger'
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -10,16 +13,39 @@ const twilioClient = twilio(
   process.env.TWILIO_AUTH_TOKEN
 )
 
-const TWILIO_NUMBER = process.env.TWILIO_PHONE_NUMBER! // +61468072974
+const TWILIO_NUMBER = process.env.TWILIO_PHONE_NUMBER!
+
+function isValidAustralianPhone(phone: string): boolean {
+  const cleaned = phone.replace(/\s/g, '')
+  return /^(\+61|0)[2-9]\d{8}$/.test(cleaned)
+}
 
 export async function POST(req: NextRequest) {
-  const { jobId, clientName, clientPhone, suburb, callType, tradieConfigId }
-    = await req.json()
+  const ip = getClientIp(req.headers)
 
-  if (!clientPhone) {
-    return NextResponse.json({
-      error: 'No phone number for this client'
-    }, { status: 400 })
+  const { success } = rateLimit(ip, 20, 60000)
+  if (!success) {
+    logRateLimitExceeded('/api/alfred/call', ip)
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429 }
+    )
+  }
+
+  const { jobId, clientName, clientPhone, suburb, callType, tradieConfigId } = await req.json()
+
+  const validationError = validateRequired({ jobId, clientName, clientPhone }, ['jobId', 'clientName', 'clientPhone'])
+  if (validationError) {
+    logValidationError('/api/alfred/call', ip, 'required', validationError)
+    return NextResponse.json({ error: validationError }, { status: 400 })
+  }
+
+  if (!isValidAustralianPhone(clientPhone)) {
+    logValidationError('/api/alfred/call', ip, 'clientPhone', 'Invalid Australian phone number')
+    return NextResponse.json(
+      { error: 'Invalid phone number' },
+      { status: 400 }
+    )
   }
 
   try {
@@ -97,9 +123,10 @@ Just write the script, no labels or preamble.`
     })
 
   } catch (error: any) {
-    console.error('Call error:', error?.message)
-    return NextResponse.json({
-      error: error?.message
-    }, { status: 500 })
+    console.error('Call error:', error)
+    return NextResponse.json(
+      { error: 'Something went wrong. Please try again.' },
+      { status: 500 }
+    )
   }
 }

@@ -376,6 +376,32 @@ async function getLeadLogsContext(): Promise<string> {
   }
 }
 
+async function getMilestoneHistoryContext(): Promise<string> {
+  let milestoneContext = '';
+  try {
+    if (process.env.NOTION_MILESTONE_LOG_DB_ID) {
+      const mRes = await notion.databases.query({
+        database_id: process.env.NOTION_MILESTONE_LOG_DB_ID,
+        sorts: [{ timestamp: 'created_time', direction: 'descending' }],
+        page_size: 50,
+      });
+      const lines = (mRes.results as any[]).map((m: any) => {
+        const jid = m.properties?.['Job ID']?.rich_text?.[0]?.plain_text ?? 'unknown';
+        const title = m.properties?.['Title']?.title?.[0]?.plain_text ?? '';
+        const desc = m.properties?.['Description']?.rich_text?.[0]?.plain_text ?? '';
+        const type = m.properties?.['Milestone Type']?.select?.name ?? '';
+        const by = m.properties?.['Logged By']?.select?.name ?? '';
+        const date = new Date((m as any).created_time).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+        return `[${jid.slice(0, 8)}] ${date} ${type}: ${title} — ${desc} (by ${by})`;
+      });
+      if (lines.length > 0) {
+        milestoneContext = `\n\nJOB MILESTONE HISTORY:\n${lines.join('\n')}\n\nIMPORTANT: When asked about a specific job, search these milestones for matching job IDs and include them in your response. The first 8 chars of a milestone's Job ID match the job.`;
+      }
+    }
+  } catch {}
+  return milestoneContext;
+}
+
 async function buildConversationContext(
   allMessages: { role: string; content: string }[]
 ): Promise<{ summary: string | null; recent: { role: string; content: string }[] }> {
@@ -487,6 +513,9 @@ export async function POST(request: NextRequest) {
     // Fetch lead logs for context
     const leadLogsContext = await getLeadLogsContext();
 
+    // Fetch global milestone history for system context
+    const globalMilestoneContext = await getMilestoneHistoryContext();
+
     const contextData = {
       todaysJobs: todaysJobs.map(j => `${j.name} — ${j.clientName} — ${j.status} — ${j.suburb}`),
       allActiveJobs: jobs
@@ -539,6 +568,7 @@ ${JSON.stringify(contextData, null, 2)}`;
     if (inDarkHours) {
       systemPrompt += `\n\n⚠️ DARK HOURS ACTIVE: Current Sydney time is ${sydneyTime} (outside 7am-8pm). Do not send SMS or initiate calls. Warn Joey if he tries to send an SMS.`
     }
+    systemPrompt += globalMilestoneContext
 
     const claudeMessages: any[] = mediaUrl ? [
       ...historyMessages,

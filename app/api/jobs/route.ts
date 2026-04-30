@@ -66,54 +66,31 @@ export async function GET(req: NextRequest) {
           if (!sent) return null
           return Math.floor((Date.now() - new Date(sent).getTime()) / (1000 * 60 * 60 * 24))
         })(),
-        milestones: [] as Array<{
-          jobId: string
-          event: string
-          note: string
-          date: string
-          type: string
-          loggedBy?: string
-          clientNotified?: boolean
-        }>,
       }
     })
 
+    const milestonesByJob: Record<string, any[]> = {}
     if (process.env.NOTION_MILESTONE_LOG_DB_ID) {
       try {
-        const milestonesRes = await notion.databases.query({
+        const mRes = await notion.databases.query({
           database_id: process.env.NOTION_MILESTONE_LOG_DB_ID,
-          filter: {
-            property: 'Tradie Config ID',
-            rich_text: { equals: cleanTradieConfigId },
-          },
-          sorts: [{ property: 'Date', direction: 'descending' }],
+          sorts: [{ timestamp: 'created_time', direction: 'descending' }],
           page_size: 100,
         })
-
-        const milestones = (milestonesRes.results as any[]).map((m) => {
-          const mp = m.properties
-          const event = mp['Title']?.title?.[0]?.plain_text ?? ''
-          const note = mp['Description']?.rich_text?.[0]?.plain_text ?? ''
-          const date = (m as any).created_time ?? ''
-          const jobId = mp['Job ID']?.rich_text?.[0]?.plain_text ?? ''
-          const type = mp['Milestone Type']?.select?.name ?? 'UPDATE'
-          const loggedBy = mp['Logged By']?.select?.name ?? ''
-          const clientNotified = mp['Client Notified']?.checkbox ?? false
-
-          return { jobId, event, note, date, type, loggedBy, clientNotified }
+        ;(mRes.results as any[]).forEach((m: any) => {
+          const rawId = (m.properties?.['Job ID']?.rich_text?.[0]?.plain_text ?? '').replace(/-/g,'')
+          if (!rawId) return
+          if (!milestonesByJob[rawId]) milestonesByJob[rawId] = []
+          milestonesByJob[rawId].push({
+            event: m.properties?.['Title']?.title?.[0]?.plain_text ?? '',
+            note: m.properties?.['Description']?.rich_text?.[0]?.plain_text ?? '',
+            date: (m as any).created_time ?? '',
+            type: m.properties?.['Milestone Type']?.select?.name ?? 'UPDATE',
+            loggedBy: m.properties?.['Logged By']?.select?.name ?? '',
+            clientNotified: m.properties?.['Client Notified']?.checkbox ?? false,
+          })
         })
-
-        milestones.forEach((m) => {
-          const job = jobs.find(
-            (j) =>
-              j.id === m.jobId ||
-              j.id.replace(/-/g, '') === m.jobId.replace(/-/g, '')
-          )
-          if (job) job.milestones.push(m)
-        })
-      } catch (milestoneError: any) {
-        console.warn('Milestone fetch failed (non-fatal):', milestoneError)
-      }
+      } catch {}
     }
 
     let mediaByJob: Record<string, any[]> = {}
@@ -145,13 +122,17 @@ export async function GET(req: NextRequest) {
       console.warn('Media fetch failed (non-fatal):', mediaError)
     }
 
-    const jobsWithMedia = jobs.map((job) => ({
-      ...job,
+    const jobsWithMilestones = jobs.map((j: any) => ({
+      ...j,
+      milestones: milestonesByJob[j.id?.replace(/-/g,'') ?? ''] ?? [],
       photos:
-        mediaByJob[job.id] ?? mediaByJob[job.id.replace(/-/g, '')] ?? [],
+        mediaByJob[j.id] ?? mediaByJob[j.id.replace(/-/g, '')] ?? [],
     }))
 
-    return NextResponse.json({ jobs: jobsWithMedia })
+    console.log('Milestones keys:', Object.keys(milestonesByJob))
+    console.log('First job id (nodash):', jobs[0]?.id?.replace(/-/g,''))
+
+    return NextResponse.json({ jobs: jobsWithMilestones })
   } catch (error: any) {
     console.error('Jobs fetch error:', error)
     return NextResponse.json(

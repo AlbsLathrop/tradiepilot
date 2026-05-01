@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { signOut } from 'next-auth/react'
 
 interface TradiePilotConfig {
   businessName: string
@@ -146,6 +147,14 @@ export default function SettingsPage() {
             py-3.5 rounded-xl text-sm disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save Settings'}
+          </button>
+
+          <button
+            onClick={() => signOut({ callbackUrl: '/login' })}
+            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold
+            py-3.5 rounded-xl text-sm transition-colors active:opacity-70"
+          >
+            Sign Out
           </button>
 
         </div>

@@ -13,9 +13,17 @@ interface LeadRecord {
   properties: Record<string, any>
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const tradieId = 'joey-tradie'
+    const { searchParams } = new URL(request.url)
+    const tradieId = searchParams.get('tradieConfigId')
+
+    if (!tradieId) {
+      return NextResponse.json(
+        { error: 'Missing tradieConfigId query parameter' },
+        { status: 400 }
+      )
+    }
 
     // Fetch all jobs
     const jobsRes = await notion.databases.query({

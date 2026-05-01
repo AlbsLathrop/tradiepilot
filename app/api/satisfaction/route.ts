@@ -95,7 +95,14 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const tradieId = new URL(req.url).searchParams.get('tradieId') || 'joey-tradie'
+  const tradieId = new URL(req.url).searchParams.get('tradieId')
+
+  if (!tradieId) {
+    return NextResponse.json(
+      { error: 'Missing tradieId query parameter' },
+      { status: 400 }
+    )
+  }
 
   try {
     const res = await notion.databases.query({

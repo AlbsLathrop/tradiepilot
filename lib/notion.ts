@@ -181,11 +181,15 @@ export async function getActiveJobs(): Promise<Job[]> {
 }
 
 export async function getJobs(tradieConfigId: string): Promise<Job[]> {
+  if (!tradieConfigId) {
+    throw new Error('tradieConfigId is required')
+  }
+
   const res = await notion.databases.query({
     database_id: NOTION_DB.JOBS,
     filter: {
       property: 'Tradie Config ID',
-      rich_text: { equals: tradieConfigId || 'joey-tradie' },
+      rich_text: { equals: tradieConfigId },
     },
     sorts: [
       { timestamp: 'last_edited_time', direction: 'descending' },

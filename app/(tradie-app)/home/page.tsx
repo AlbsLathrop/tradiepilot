@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 
 interface DashboardData {
@@ -18,6 +19,7 @@ interface DashboardData {
 }
 
 export default function HomePage() {
+  const { data: session } = useSession()
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [showNotifBanner, setShowNotifBanner] = useState(
@@ -26,9 +28,14 @@ export default function HomePage() {
   )
 
   useEffect(() => {
+    if (!session?.user?.tradieConfigId) {
+      setLoading(false)
+      return
+    }
+
     Promise.all([
-      fetch('/api/dashboard').then(r => r.json()),
-      fetch('/api/satisfaction?tradieId=joey-tradie').then(r => r.json())
+      fetch(`/api/dashboard?tradieConfigId=${session.user.tradieConfigId}`).then(r => r.json()),
+      fetch(`/api/satisfaction?tradieId=${session.user.tradieConfigId}`).then(r => r.json())
     ])
       .then(([dashData, satData]) => {
         setData({
@@ -39,7 +46,7 @@ export default function HomePage() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [])
+  }, [session?.user?.tradieConfigId])
 
   const greeting = () => {
     const h = new Date().getHours()
@@ -52,7 +59,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#0F0F0F] text-white pb-24">
       <div className="px-4 pt-8 pb-4">
         <p className="text-gray-400 text-sm">{greeting()},</p>
-        <h1 className="text-3xl font-bold text-white mt-1">Joey 👷</h1>
+        <h1 className="text-3xl font-bold text-white mt-1">{session?.user?.name || 'Tradie'} 👷</h1>
         <p className="text-gray-500 text-sm mt-1">
           {new Date().toLocaleDateString('en-AU', {
             weekday: 'long', day: 'numeric', month: 'long'

@@ -21,8 +21,6 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const tradieConfigId = session.user.tradieConfigId ?? 'joey-tradie'
-
   try {
     // Fetch job page directly
     const page = await notion.pages.retrieve({ page_id: id }) as any

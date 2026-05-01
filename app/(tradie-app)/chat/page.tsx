@@ -25,21 +25,26 @@ interface Job {
 
 export default function ChatPage() {
   const { data: session } = useSession();
-  const [tradieConfigId, setTradieConfigId] = useState('joey-tradie');
+  const [tradieConfigId, setTradieConfigId] = useState('');
 
   useEffect(() => {
-    if (session?.user?.email) {
-      setTradieConfigId(getTradieConfigId(session.user.email));
+    if (session?.user?.tradieConfigId) {
+      setTradieConfigId(session.user.tradieConfigId);
     }
-  }, [session]);
+  }, [session?.user?.tradieConfigId]);
+
+  const getDefaultMessage = () => {
+    const name = session?.user?.name || 'mate';
+    return {
+      id: '1',
+      role: 'alfred' as const,
+      content: `G'day ${name}. I'm ALFRED — your TradiePilot agent. Tell me about a job update, ask about your leads, or anything else about the business.`,
+      timestamp: new Date(),
+    };
+  };
 
   const [messages, setMessages] = useState<Message[]>(() => {
-    if (typeof window === 'undefined') return [{
-      id: '1',
-      role: 'alfred',
-      content: "G'day Joey. I'm ALFRED — your TradiePilot agent. Tell me about a job update, ask about your leads, or anything else about the business.",
-      timestamp: new Date(),
-    }];
+    if (typeof window === 'undefined') return [getDefaultMessage()];
 
     try {
       const saved = localStorage.getItem('alfred_chat_history');
@@ -49,12 +54,7 @@ export default function ChatPage() {
       }
     } catch {}
 
-    return [{
-      id: '1',
-      role: 'alfred',
-      content: "G'day Joey. I'm ALFRED — your TradiePilot agent. Tell me about a job update, ask about your leads, or anything else about the business.",
-      timestamp: new Date(),
-    }];
+    return [getDefaultMessage()];
   });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

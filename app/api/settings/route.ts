@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
 import { Client } from '@notionhq/client'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
 
@@ -19,13 +21,18 @@ interface TradiePilotConfig {
   twilioNumber: string
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.tradieConfigId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const res = await notion.databases.query({
       database_id: process.env.NOTION_TRADIE_CONFIG_DB_ID!,
       filter: {
         property: 'Tradie Config ID',
-        rich_text: { equals: 'joey-tradie' }
+        rich_text: { equals: session.user.tradieConfigId }
       },
       page_size: 1,
     })
@@ -52,11 +59,16 @@ export async function GET() {
 export async function PATCH(req: NextRequest) {
   const body = await req.json()
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.tradieConfigId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const res = await notion.databases.query({
       database_id: process.env.NOTION_TRADIE_CONFIG_DB_ID!,
       filter: {
         property: 'Tradie Config ID',
-        rich_text: { equals: 'joey-tradie' }
+        rich_text: { equals: session.user.tradieConfigId }
       },
       page_size: 1,
     })

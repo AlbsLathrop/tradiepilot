@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 
 interface Milestone {
   jobId: string
@@ -68,6 +69,7 @@ const QUICK_ACTIONS = [
 ]
 
 export default function JobsPage() {
+  const { data: session } = useSession()
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -85,15 +87,23 @@ export default function JobsPage() {
 
   const tabs = ['All', 'SCHEDULED', 'IN PROGRESS', 'RUNNING LATE', 'COMPLETE', 'INVOICED']
 
-  useEffect(() => {
-    fetch('/api/jobs')
+  const fetchJobs = (tradieConfigId: string) => {
+    fetch(`/api/jobs?tradieConfigId=${tradieConfigId}`)
       .then(r => r.json())
       .then(data => {
         setJobs(data.jobs ?? [])
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => {
+    if (!session?.user?.tradieConfigId) {
+      setLoading(false)
+      return
+    }
+    fetchJobs(session.user.tradieConfigId)
+  }, [session?.user?.tradieConfigId])
 
   const filteredJobs = activeTab === 'All'
     ? jobs
@@ -115,7 +125,7 @@ export default function JobsPage() {
           clientName: job.clientName,
           clientPhone: job.clientPhone,
           suburb: job.suburb,
-          tradieConfigId: job.tradieConfigId || 'joey-tradie',
+          tradieConfigId: job.tradieConfigId,
         }),
       })
       const data = await res.json()
@@ -129,9 +139,9 @@ export default function JobsPage() {
         }
         // Refresh jobs to show new milestone
         setTimeout(() => {
-          fetch('/api/jobs')
-            .then(r => r.json())
-            .then(d => setJobs(d.jobs ?? []))
+          if (session?.user?.tradieConfigId) {
+            fetchJobs(session.user.tradieConfigId)
+          }
         }, 1500)
       } else {
         setToast('Failed — try again')
@@ -661,8 +671,9 @@ export default function JobsPage() {
                     suburb: '', service: '', scope: '',
                     jobValue: '', estimatedCompletion: ''
                   })
-                  fetch('/api/jobs').then(r => r.json())
-                    .then(d => setJobs(d.jobs ?? []))
+                  if (session?.user?.tradieConfigId) {
+                    fetchJobs(session.user.tradieConfigId)
+                  }
                 } else {
                   setToast('Failed to create job')
                 }

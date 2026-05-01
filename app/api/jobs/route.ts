@@ -3,14 +3,24 @@ import { Client } from '@notionhq/client'
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const tradieConfigId = searchParams.get('tradieConfigId')
+
+    if (!tradieConfigId) {
+      return NextResponse.json(
+        { error: 'Missing tradieConfigId query parameter' },
+        { status: 400 }
+      )
+    }
+
     // 1. Fetch jobs
     const jobsRes = await notion.databases.query({
       database_id: process.env.NOTION_JOBS_DB_ID!,
       filter: {
         property: 'Tradie Config ID',
-        rich_text: { equals: 'joey-tradie' }
+        rich_text: { equals: tradieConfigId }
       },
     })
 

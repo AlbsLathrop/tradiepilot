@@ -1,69 +1,77 @@
-# TradiePilot — Project Rules for Claude Code
-> Read this file before writing any code. Follow all rules without exception.
-## WHO THIS IS FOR
-Alberto Lathrop (ADHD, direct comms only) + Benny (co-founder).
-Show code immediately. No lengthy explanations before code.
-When in doubt, build it. Ask after.
+# TradiePilot
+**For:** Alberto (ADHD, direct) + Benny. **Show code first.** Build → ask.
 
 ## STACK
-- Next.js 14 App Router, TypeScript strict (no `any`)
-- Tailwind CSS + shadcn/ui
-- Notion API via @notionhq/client
-- Vercel deployment
-- Twilio for SMS
-- Claude API claude-haiku-4-5-20251001
+Next.js 14 App Router | TS strict | Tailwind + shadcn/ui | Notion (@notionhq/client) | Twilio SMS | Claude API (haiku-4-5) | Vercel
 
-## DESIGN SYSTEM
-Background: #111827 | Surface: #1F2937 | Accent: #06B6D4 | Text: #F9FAFB
-Dark theme ONLY. Never light mode. Font: Inter.
-Cards: rounded-xl bg-[#1F2937] border border-white/5
-Inputs: rounded-lg bg-[#111827] border border-white/10
-Badges: px-2 py-0.5 rounded-full text-xs font-medium uppercase
+## DESIGN
+| Element | Spec |
+|---------|------|
+| BG | #111827 |
+| Surface | #1F2937 |
+| Accent | #06B6D4 |
+| Text | #F9FAFB |
+| Cards | rounded-xl bg-[#1F2937] border-white/5 |
+| Inputs | rounded-lg bg-[#111827] border-white/10 |
+| Badges | px-2 py-0.5 rounded-full text-xs uppercase |
+| Theme | Dark only |
+| Font | Inter |
 
-## ARCHITECTURE
-- /app/(war-room)/admin/ → War Room
-- /app/(tradie-app)/app/ → Tradie App
-- /lib/notion.ts → ALL Notion calls. Never inline.
-- /lib/twilio.ts → ALL SMS
-- /lib/claude.ts → ALL Claude API
-- /lib/constants.ts → All DB IDs, config, status maps
-Server components default. 'use client' only for forms/interactive state.
-Error boundaries on all async components. Skeleton loading for all data.
+## ROUTING
+| Path | Purpose |
+|------|---------|
+| `/app/(war-room)/admin/` | War Room |
+| `/app/(tradie-app)/app/` | Tradie App |
 
-## NAMING
-- Ben/Benny = co-founder admin (War Room). NEVER tradie example.
-- Joey = tradie client avatar.
-- Joey's customers = homeowners.
-- Tradie Config ID = always without dashes.
+## MODULES
+| File | Purpose |
+|------|---------|
+| `/lib/notion.ts` | All Notion calls (never inline) |
+| `/lib/twilio.ts` | All SMS |
+| `/lib/claude.ts` | All Claude API |
+| `/lib/constants.ts` | DB IDs, config, status maps |
 
 ## STATUS COLORS
-SCHEDULED/QUOTED: blue | IN PROGRESS: cyan | RUNNING LATE: orange
-DAY DONE: purple | COMPLETE: green | INVOICED: yellow | PAID: emerald
-Qualified: green | Disqualified: red | Pending Decline: orange | Declined/COLD: gray
+| Status | Color |
+|--------|-------|
+| SCHEDULED/QUOTED | blue |
+| IN PROGRESS | cyan |
+| RUNNING LATE | orange |
+| DAY DONE | purple |
+| COMPLETE | green |
+| INVOICED | yellow |
+| PAID | emerald |
+| Qualified | green |
+| Disqualified | red |
+| Pending Decline | orange |
+| Declined/COLD | gray |
 
-## TOKEN EFFICIENCY RULES
-1. One session = one feature. Commit before starting next.
-2. Reference specific files: "in /lib/notion.ts add..." not "look at the project and..."
-3. Use /clear between unrelated tasks.
-4. Use Haiku model (in Claude settings) for: boilerplate, types, constants, simple components.
-5. Use Sonnet for: complex logic, architecture, API integrations, debugging.
-6. Read skills docs before starting: /docs/skills/notion-api.md | /docs/skills/orbit-sms.md
-7. Never ask Claude Code to scan the whole project. Point to specific files.
-8. Commit working code before asking for changes.
-9. Describe the output you want, not the steps to get there.
-10. If a task needs >20 tool calls, break it into 2 sessions.
+## NAMING
+- Ben/Benny → War Room admin (never tradie example)
+- Joey → tradie avatar, Joey's customers = homeowners
+- Config IDs: no dashes
 
-## NOTION FIELD PATTERNS (from /docs/skills/notion-api.md)
-Rich text: array → [0]?.plain_text ?? ''
-Status: .select?.name
-Phone: .phone_number
-Checkbox: .checkbox (boolean)
-Date: .date?.start
+## NOTION PATTERNS
+| Field | Extract |
+|-------|---------|
+| Rich text | `[0]?.plain_text ?? ''` |
+| Status | `.select?.name` |
+| Phone | `.phone_number` |
+| Checkbox | `.checkbox` (bool) |
+| Date | `.date?.start` |
 
-## DO NOT
-- Never hardcode API keys
-- Never use light mode
-- Never call Notion API in page components (use /lib/notion.ts)
-- Never add 'use client' unless necessary
-- Never use `any` type
-- Never use Ben as a tradie client example
+## COMPONENTS
+- Server by default. `use client` only: forms/interactive
+- Error boundaries on async
+- Skeleton loading for data
+
+## RULES
+1. One session = one feature → commit before next
+2. Reference specific files (not "scan project")
+3. `/clear` between unrelated tasks
+4. **Haiku:** boilerplate, types, constants, simple components
+5. **Sonnet:** complex logic, architecture, API, debugging
+6. Describe output, not steps
+7. \>20 tool calls? Split into 2 sessions
+8. Commit before asking changes
+9. Never: hardcode keys, light mode, Notion in pages, `use client` unless needed, `any` type, Ben as example

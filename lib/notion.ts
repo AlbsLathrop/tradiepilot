@@ -333,3 +333,27 @@ export async function queryNotionDatabase(
   })
   return response.results.filter(isFullPage) as PageObjectResponse[]
 }
+
+export async function getTradieByEmail(email: string): Promise<{ id: string; name: string } | null> {
+  try {
+    const res = await notion.databases.query({
+      database_id: NOTION_DB.CONFIG,
+      filter: { property: 'Email', email: { equals: email } },
+      page_size: 1,
+    })
+
+    const page = res.results[0] as PageObjectResponse | undefined
+    if (!page) return null
+
+    return {
+      id: page.id,
+      name: title(page, 'Name'),
+    }
+  } catch (error) {
+    console.error('[getTradieByEmail] Error querying Notion:', {
+      email,
+      error: error instanceof Error ? error.message : String(error),
+    })
+    return null
+  }
+}

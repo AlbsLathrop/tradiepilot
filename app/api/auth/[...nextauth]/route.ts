@@ -1,5 +1,6 @@
 import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import { getTradieByEmail } from '@/lib/notion'
 
 export const authOptions = {
   providers: [
@@ -9,24 +10,28 @@ export const authOptions = {
         email: { label: 'Email', type: 'email' }
       },
       async authorize(credentials) {
-        const allowed = [
-          'joey@tradie.test',
-          'ben@tradie.test',
-          process.env.ADMIN_EMAIL,
-        ].filter(Boolean)
+        if (!credentials?.email) return null
 
-        if (credentials?.email &&
-            allowed.includes(credentials.email)) {
+        // Admin access
+        if (credentials.email === process.env.ADMIN_EMAIL) {
           return {
             id: credentials.email,
             email: credentials.email,
             name: credentials.email.split('@')[0],
-            tradieConfigId: credentials.email === 'ben@tradie.test'
-              ? 'ben-stonemason'
-              : 'joey-tradie',
+            tradieConfigId: 'admin',
           }
         }
-        return null
+
+        // Lookup tradie in Notion CONFIG database by Email
+        const tradie = await getTradieByEmail(credentials.email)
+        if (!tradie) return null
+
+        return {
+          id: credentials.email,
+          email: credentials.email,
+          name: tradie.name,
+          tradieConfigId: tradie.id,
+        }
       }
     })
   ],

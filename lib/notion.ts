@@ -21,7 +21,8 @@ function richText(page: PageObjectResponse, key: string): string {
 }
 
 function title(page: PageObjectResponse, key: string): string {
-  return prop<TitleProperty>(page, key).title[0]?.plain_text ?? ''
+  const propVal = page.properties[key] as TitleProperty | undefined
+  return propVal?.title?.[0]?.plain_text ?? ''
 }
 
 function select(page: PageObjectResponse, key: string): string {
@@ -154,7 +155,7 @@ function toLead(page: PageObjectResponse): Lead {
 function toTradieConfig(page: PageObjectResponse): TradieConfig {
   return {
     id: page.id,
-    name: title(page, 'Name'),
+    name: title(page, 'Business Name'),
     phone: phone(page, 'Phone'),
     businessName: richText(page, 'Business Name'),
     suburb: richText(page, 'Suburb'),
@@ -353,7 +354,7 @@ export async function getTradieByEmail(email: string): Promise<{ id: string; nam
 
     if (res.results.length > 0) {
       const page = res.results[0] as PageObjectResponse
-      const tradieName = title(page, 'Name')
+      const tradieName = title(page, 'Business Name')
       console.log('[getTradieByEmail] Found via email filter:', { pageId: page.id, name: tradieName })
       return { id: page.id, name: tradieName }
     }
@@ -370,7 +371,7 @@ export async function getTradieByEmail(email: string): Promise<{ id: string; nam
     for (const page of allRes.results as PageObjectResponse[]) {
       const pageEmail = extract_email(page, 'Email')
       if (pageEmail && pageEmail.toLowerCase() === email.toLowerCase()) {
-        const tradieName = title(page, 'Name')
+        const tradieName = title(page, 'Business Name')
         console.log('[getTradieByEmail] Found via JS scan:', { pageId: page.id, email: pageEmail, name: tradieName })
         return { id: page.id, name: tradieName }
       }

@@ -142,44 +142,6 @@ export default function JobsPage() {
     setTimeout(() => setToast(null), 3000)
   }
 
-  const handleCall = async (job: Job) => {
-    if (!job.clientPhone) {
-      setToast('No phone number for this client')
-      return
-    }
-
-    const confirmed = window.confirm(
-      `ALFRED will call ${job.clientName} on ${job.clientPhone}.\n\nProceed?`
-    )
-    if (!confirmed) return
-
-    setToast(`📞 Calling ${job.clientName}...`)
-
-    try {
-      const res = await fetch('/api/alfred/call', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jobId: job.id,
-          clientName: job.clientName,
-          clientPhone: job.clientPhone,
-          suburb: job.suburb,
-          callType: 'general update',
-          tradieConfigId: job.tradieConfigId || 'joey-tradie',
-        }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        setToast(`✓ Call placed to ${job.clientName}`)
-      } else {
-        setToast(`Call failed: ${data.error}`)
-      }
-    } catch {
-      setToast('Call failed — check connection')
-    }
-    setTimeout(() => setToast(null), 4000)
-  }
-
   const showToast = (msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
@@ -351,13 +313,15 @@ export default function JobsPage() {
                           >
                             {job.clientPhone}
                           </a>
-                          <button
-                            onClick={() => handleCall(job)}
-                            className="bg-green-600 hover:bg-green-700 text-white text-xs
-                            font-bold px-3 py-1.5 rounded-lg active:opacity-70 transition-colors"
-                          >
-                            📞 ALFRED Call
-                          </button>
+                          {job.clientPhone && (
+                            <a
+                              href={`tel:${job.clientPhone}`}
+                              className="bg-green-600 hover:bg-green-700 text-white text-xs
+                              font-bold px-3 py-1.5 rounded-lg active:opacity-70 transition-colors inline-block"
+                            >
+                              📞 ALFRED Call
+                            </a>
+                          )}
                         </div>
                       </div>
                     )}

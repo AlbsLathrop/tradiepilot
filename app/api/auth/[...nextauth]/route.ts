@@ -10,10 +10,16 @@ export const authOptions = {
         email: { label: 'Email', type: 'email' }
       },
       async authorize(credentials) {
-        if (!credentials?.email) return null
+        console.log('[NextAuth authorize] Attempting sign-in:', { email: credentials?.email })
+
+        if (!credentials?.email) {
+          console.error('[NextAuth authorize] No email provided')
+          return null
+        }
 
         // Admin access
         if (credentials.email === process.env.ADMIN_EMAIL) {
+          console.log('[NextAuth authorize] Admin sign-in successful:', { email: credentials.email })
           return {
             id: credentials.email,
             email: credentials.email,
@@ -23,9 +29,15 @@ export const authOptions = {
         }
 
         // Lookup tradie in Notion CONFIG database by Email
+        console.log('[NextAuth authorize] Looking up tradie in Notion:', { email: credentials.email })
         const tradie = await getTradieByEmail(credentials.email)
-        if (!tradie) return null
 
+        if (!tradie) {
+          console.error('[NextAuth authorize] Tradie not found in Notion:', { email: credentials.email })
+          return null
+        }
+
+        console.log('[NextAuth authorize] Tradie sign-in successful:', { email: credentials.email, tradieId: tradie.id, tradieName: tradie.name })
         return {
           id: credentials.email,
           email: credentials.email,

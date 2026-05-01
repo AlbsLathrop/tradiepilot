@@ -336,24 +336,70 @@ export async function queryNotionDatabase(
 
 export async function getTradieByEmail(email: string): Promise<{ id: string; name: string } | null> {
   try {
+    console.log('[getTradieByEmail] Querying Notion for email:', { email, dbId: NOTION_DB.CONFIG })
+
     const res = await notion.databases.query({
       database_id: NOTION_DB.CONFIG,
       filter: { property: 'Email', email: { equals: email } },
       page_size: 1,
     })
 
+    console.log('[getTradieByEmail] Query response:', {
+      resultCount: res.results.length,
+      results: res.results.map(r => ({
+        id: r.id,
+        properties: Object.keys((r as any).properties || {}),
+      })),
+    })
+
     const page = res.results[0] as PageObjectResponse | undefined
-    if (!page) return null
+    if (!page) {
+      console.warn('[getTradieByEmail] No page found for email, trying fallback name match')
+      // Fallback: query all pages and match by title/name
+      const allPages = await notion.databases.query({
+        database_id: NOTION_DB.CONFIG,
+        page_size: 100,
+      })
+
+      for (const p of allPages.results as PageObjectResponse[]) {
+        const pageName = title(p, 'Name')
+        const pageEmail = try_email_field(p, 'Email')
+        console.log('[getTradieByEmail] Checking page:', { pageId: p.id, name: pageName, email: pageEmail })
+
+        if (pageEmail === email) {
+          console.log('[getTradieByEmail] Found match via fallback:', { pageId: p.id, name: pageName })
+          return { id: p.id, name: pageName }
+        }
+      }
+      return null
+    }
+
+    const tradieId = page.id
+    const tradieName = title(page, 'Name')
+    console.log('[getTradieByEmail] Success:', { tradieId, tradieName, email })
 
     return {
-      id: page.id,
-      name: title(page, 'Name'),
+      id: tradieId,
+      name: tradieName,
     }
   } catch (error) {
     console.error('[getTradieByEmail] Error querying Notion:', {
       email,
+      dbId: NOTION_DB.CONFIG,
       error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
     })
     return null
+  }
+}
+
+function try_email_field(page: PageObjectResponse, key: string): string {
+  try {
+    const prop = page.properties[key] as any
+    if (prop?.email) return prop.email
+    if (prop?.rich_text?.[0]?.plain_text) return prop.rich_text[0].plain_text
+    return ''
+  } catch {
+    return ''
   }
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 
 interface Lead {
   id: string
@@ -47,6 +48,7 @@ function daysSince(dateStr: string): number {
 }
 
 export default function LeadsPage() {
+  const { data: session } = useSession()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -60,12 +62,19 @@ export default function LeadsPage() {
     service: '', source: '', notes: ''
   })
 
-  useEffect(() => {
-    fetch('/api/leads')
+  const fetchLeads = (tradieSlug: string) => {
+    fetch(`/api/leads?tradieSlug=${tradieSlug}`)
       .then(r => r.json())
       .then(d => { setLeads(d.leads ?? []); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => {
+    if (!session?.user?.tradieSlug) {
+      return
+    }
+    fetchLeads(session.user.tradieSlug)
+  }, [session?.user?.tradieSlug])
 
   const filtered = activeTab === 'All'
     ? leads
@@ -143,8 +152,9 @@ export default function LeadsPage() {
         }),
       })
       setQuickNote(prev => ({ ...prev, [lead.id]: '' }))
-      fetch('/api/leads').then(r => r.json())
-        .then(d => setLeads(d.leads ?? []))
+      if (session?.user?.tradieSlug) {
+        fetchLeads(session.user.tradieSlug)
+      }
       showToast('✓ Note added')
     } catch {
       showToast('Failed to add note')
@@ -591,8 +601,9 @@ export default function LeadsPage() {
                     clientName: '', phone: '', suburb: '',
                     service: '', source: '', notes: ''
                   })
-                  fetch('/api/leads').then(r => r.json())
-                    .then(d => setLeads(d.leads ?? []))
+                  if (session?.user?.tradieSlug) {
+                    fetchLeads(session.user.tradieSlug)
+                  }
                 } else {
                   showToast('Failed to create lead')
                 }

@@ -3,10 +3,24 @@ import { Client } from '@notionhq/client'
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url)
+    const tradieSlug = searchParams.get('tradieSlug')
+
+    if (!tradieSlug) {
+      return NextResponse.json(
+        { error: 'Missing tradieSlug query parameter' },
+        { status: 400 }
+      )
+    }
+
     const leadsRes = await notion.databases.query({
       database_id: process.env.NOTION_LEADS_DB_ID!,
+      filter: {
+        property: 'Tradie Config ID',
+        rich_text: { equals: tradieSlug },
+      },
       sorts: [{ timestamp: 'created_time', direction: 'descending' }],
     })
 

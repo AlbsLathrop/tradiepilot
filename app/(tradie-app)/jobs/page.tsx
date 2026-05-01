@@ -87,8 +87,8 @@ export default function JobsPage() {
 
   const tabs = ['All', 'SCHEDULED', 'IN PROGRESS', 'RUNNING LATE', 'COMPLETE', 'INVOICED']
 
-  const fetchJobs = (tradieConfigId: string) => {
-    fetch(`/api/jobs?tradieConfigId=${tradieConfigId}`)
+  const fetchJobs = (tradieSlug: string) => {
+    fetch(`/api/jobs?tradieSlug=${tradieSlug}`)
       .then(r => r.json())
       .then(data => {
         setJobs(data.jobs ?? [])
@@ -98,12 +98,11 @@ export default function JobsPage() {
   }
 
   useEffect(() => {
-    if (!session?.user?.tradieConfigId) {
-      setLoading(false)
+    if (!session?.user?.tradieSlug) {
       return
     }
-    fetchJobs(session.user.tradieConfigId)
-  }, [session?.user?.tradieConfigId])
+    fetchJobs(session.user.tradieSlug)
+  }, [session?.user?.tradieSlug])
 
   const filteredJobs = activeTab === 'All'
     ? jobs
@@ -139,8 +138,8 @@ export default function JobsPage() {
         }
         // Refresh jobs to show new milestone
         setTimeout(() => {
-          if (session?.user?.tradieConfigId) {
-            fetchJobs(session.user.tradieConfigId)
+          if (session?.user?.tradieSlug) {
+            fetchJobs(session.user.tradieSlug)
           }
         }, 1500)
       } else {
@@ -671,8 +670,8 @@ export default function JobsPage() {
                     suburb: '', service: '', scope: '',
                     jobValue: '', estimatedCompletion: ''
                   })
-                  if (session?.user?.tradieConfigId) {
-                    fetchJobs(session.user.tradieConfigId)
+                  if (session?.user?.tradieSlug) {
+                    fetchJobs(session.user.tradieSlug)
                   }
                 } else {
                   setToast('Failed to create job')

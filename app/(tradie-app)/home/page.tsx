@@ -28,14 +28,13 @@ export default function HomePage() {
   )
 
   useEffect(() => {
-    if (!session?.user?.tradieConfigId) {
-      setLoading(false)
+    if (!session?.user?.tradieSlug) {
       return
     }
 
     Promise.all([
-      fetch(`/api/dashboard?tradieConfigId=${session.user.tradieConfigId}`).then(r => r.json()),
-      fetch(`/api/satisfaction?tradieId=${session.user.tradieConfigId}`).then(r => r.json())
+      fetch(`/api/dashboard?tradieSlug=${session.user.tradieSlug}`).then(r => r.json()),
+      fetch(`/api/satisfaction?tradieSlug=${session.user.tradieSlug}`).then(r => r.json())
     ])
       .then(([dashData, satData]) => {
         setData({
@@ -46,7 +45,7 @@ export default function HomePage() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [session?.user?.tradieConfigId])
+  }, [session?.user?.tradieSlug])
 
   const greeting = () => {
     const h = new Date().getHours()

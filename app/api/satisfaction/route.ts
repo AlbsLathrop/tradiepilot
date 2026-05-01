@@ -95,11 +95,11 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const tradieId = new URL(req.url).searchParams.get('tradieId')
+  const tradieSlug = new URL(req.url).searchParams.get('tradieSlug')
 
-  if (!tradieId) {
+  if (!tradieSlug) {
     return NextResponse.json(
-      { error: 'Missing tradieId query parameter' },
+      { error: 'Missing tradieSlug query parameter' },
       { status: 400 }
     )
   }
@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
       database_id: process.env.NOTION_MILESTONE_LOG_DB_ID!,
       filter: {
         property: 'Tradie Config ID',
-        rich_text: { equals: tradieId },
+        rich_text: { equals: tradieSlug },
       },
       page_size: 50,
     })

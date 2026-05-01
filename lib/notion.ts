@@ -339,7 +339,7 @@ export async function queryNotionDatabase(
   return response.results.filter(isFullPage) as PageObjectResponse[]
 }
 
-export async function getTradieByEmail(email: string): Promise<{ id: string; name: string } | null> {
+export async function getTradieByEmail(email: string): Promise<{ id: string; name: string; tradieSlug: string } | null> {
   try {
     const dbId = process.env.NOTION_TRADIE_CONFIG_DB_ID || NOTION_DB.CONFIG
     console.log('[getTradieByEmail] Starting lookup:', { email, dbId })
@@ -359,8 +359,9 @@ export async function getTradieByEmail(email: string): Promise<{ id: string; nam
     if (res.results.length > 0) {
       const page = res.results[0] as PageObjectResponse
       const tradieName = title(page, 'Business Name')
-      console.log('[getTradieByEmail] Found via email filter:', { pageId: page.id, name: tradieName })
-      return { id: page.id, name: tradieName }
+      const tradieSlug = richText(page, 'Tradie ID')
+      console.log('[getTradieByEmail] Found via email filter:', { pageId: page.id, name: tradieName, tradieSlug })
+      return { id: page.id, name: tradieName, tradieSlug }
     }
 
     // Fallback: fetch all and filter in JS
@@ -376,8 +377,9 @@ export async function getTradieByEmail(email: string): Promise<{ id: string; nam
       const pageEmail = extract_email(page, 'Email')
       if (pageEmail && pageEmail.toLowerCase() === email.toLowerCase()) {
         const tradieName = title(page, 'Business Name')
-        console.log('[getTradieByEmail] Found via JS scan:', { pageId: page.id, email: pageEmail, name: tradieName })
-        return { id: page.id, name: tradieName }
+        const tradieSlug = richText(page, 'Tradie ID')
+        console.log('[getTradieByEmail] Found via JS scan:', { pageId: page.id, email: pageEmail, name: tradieName, tradieSlug })
+        return { id: page.id, name: tradieName, tradieSlug }
       }
     }
 

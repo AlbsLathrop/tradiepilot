@@ -37,12 +37,13 @@ export const authOptions = {
           return null
         }
 
-        console.log('[NextAuth authorize] Tradie sign-in successful:', { email: credentials.email, tradieId: tradie.id, tradieName: tradie.name })
+        console.log('[NextAuth authorize] Tradie sign-in successful:', { email: credentials.email, tradieId: tradie.id, tradieName: tradie.name, tradieSlug: tradie.tradieSlug })
         return {
           id: credentials.email,
           email: credentials.email,
           name: tradie.name,
           tradieConfigId: tradie.id,
+          tradieSlug: tradie.tradieSlug,
         }
       }
     })
@@ -56,6 +57,7 @@ export const authOptions = {
     async jwt({ token, user }: any) {
       if (user) {
         token.tradieConfigId = user.tradieConfigId
+        token.tradieSlug = user.tradieSlug
         token.email = user.email
       }
       return token
@@ -63,6 +65,7 @@ export const authOptions = {
     async session({ session, token }: any) {
       if (session.user) {
         session.user.tradieConfigId = token.tradieConfigId
+        session.user.tradieSlug = token.tradieSlug
         session.user.email = token.email
       }
       return session

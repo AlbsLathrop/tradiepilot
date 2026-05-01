@@ -16,11 +16,11 @@ interface LeadRecord {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const tradieId = searchParams.get('tradieConfigId')
+    const tradieSlug = searchParams.get('tradieSlug')
 
-    if (!tradieId) {
+    if (!tradieSlug) {
       return NextResponse.json(
-        { error: 'Missing tradieConfigId query parameter' },
+        { error: 'Missing tradieSlug query parameter' },
         { status: 400 }
       )
     }
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
       database_id: process.env.NOTION_JOBS_DB_ID!,
       filter: {
         property: 'Tradie Config ID',
-        rich_text: { equals: tradieId },
+        rich_text: { equals: tradieSlug },
       },
     })
     const jobs = jobsRes.results as JobRecord[]

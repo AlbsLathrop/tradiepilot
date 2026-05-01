@@ -28,7 +28,7 @@ export default function LoginPage() {
         router.push('/')
         router.refresh()
       } else {
-        setError('Email not recognised. Try joey@tradie.test')
+        setError('Email not recognised.')
       }
     } catch (e) {
       setError('Sign in failed. Try again.')
@@ -129,13 +129,6 @@ export default function LoginPage() {
         >
           {loading ? 'Signing in...' : 'Sign In'}
         </button>
-
-        <p style={{
-          color: '#4B5563',
-          fontSize: '12px',
-          textAlign: 'center',
-          marginTop: '1.5rem',
-        }}>Test email: joey@tradie.test</p>
       </div>
     </div>
   )

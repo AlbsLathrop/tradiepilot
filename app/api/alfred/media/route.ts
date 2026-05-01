@@ -5,12 +5,7 @@ import { Client } from '@notionhq/client';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export const dynamic = 'force-dynamic';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 const notion = new Client({ auth: process.env.NOTION_API_KEY! });

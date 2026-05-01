@@ -336,70 +336,51 @@ export async function queryNotionDatabase(
 
 export async function getTradieByEmail(email: string): Promise<{ id: string; name: string } | null> {
   try {
-    console.log('[getTradieByEmail] Querying Notion for email:', { email, dbId: NOTION_DB.CONFIG })
+    const dbId = process.env.NOTION_TRADIE_CONFIG_DB_ID || NOTION_DB.CONFIG
+    console.log('[getTradieByEmail] Starting lookup:', { email, dbId })
 
-    // Try email field first (if it's typed as email property)
+    // Query with email field filter (Notion email type)
+    console.log('[getTradieByEmail] Attempting email filter query...')
     let res = await notion.databases.query({
-      database_id: NOTION_DB.CONFIG,
+      database_id: dbId,
       filter: { property: 'Email', email: { equals: email } },
-      page_size: 1,
     })
 
-    console.log('[getTradieByEmail] Email field query result:', {
+    console.log('[getTradieByEmail] Email filter response:', {
       resultCount: res.results.length,
+      hasError: false,
     })
 
-    let page = res.results[0] as PageObjectResponse | undefined
-
-    // If no result, try rich_text filter (Email might be stored as text)
-    if (!page) {
-      console.log('[getTradieByEmail] No match with email filter, trying rich_text filter...')
-      res = await notion.databases.query({
-        database_id: NOTION_DB.CONFIG,
-        filter: { property: 'Email', rich_text: { equals: email } },
-        page_size: 1,
-      })
-      console.log('[getTradieByEmail] Rich text filter result:', {
-        resultCount: res.results.length,
-      })
-      page = res.results[0] as PageObjectResponse | undefined
+    if (res.results.length > 0) {
+      const page = res.results[0] as PageObjectResponse
+      const tradieName = title(page, 'Name')
+      console.log('[getTradieByEmail] Found via email filter:', { pageId: page.id, name: tradieName })
+      return { id: page.id, name: tradieName }
     }
 
-    if (!page) {
-      console.warn('[getTradieByEmail] No direct match, scanning all pages for email...')
-      // Fallback: query all pages and match by email field
-      const allPages = await notion.databases.query({
-        database_id: NOTION_DB.CONFIG,
-        page_size: 100,
-      })
+    // Fallback: fetch all and filter in JS
+    console.log('[getTradieByEmail] No email filter match, fetching all tradies for JS filtering...')
+    const allRes = await notion.databases.query({
+      database_id: dbId,
+      page_size: 100,
+    })
 
-      console.log('[getTradieByEmail] Total pages in CONFIG:', { count: allPages.results.length })
+    console.log('[getTradieByEmail] Fetched all pages:', { count: allRes.results.length })
 
-      for (const p of allPages.results as PageObjectResponse[]) {
-        const pageName = title(p, 'Name')
-        const pageEmail = try_email_field(p, 'Email')
-        console.log('[getTradieByEmail] Checking page:', { pageId: p.id, name: pageName, email: pageEmail })
-
-        if (pageEmail?.toLowerCase() === email.toLowerCase()) {
-          console.log('[getTradieByEmail] Found match via scan:', { pageId: p.id, name: pageName, email: pageEmail })
-          return { id: p.id, name: pageName }
-        }
+    for (const page of allRes.results as PageObjectResponse[]) {
+      const pageEmail = extract_email(page, 'Email')
+      if (pageEmail && pageEmail.toLowerCase() === email.toLowerCase()) {
+        const tradieName = title(page, 'Name')
+        console.log('[getTradieByEmail] Found via JS scan:', { pageId: page.id, email: pageEmail, name: tradieName })
+        return { id: page.id, name: tradieName }
       }
-      return null
     }
 
-    const tradieId = page.id
-    const tradieName = title(page, 'Name')
-    console.log('[getTradieByEmail] Success:', { tradieId, tradieName, email })
-
-    return {
-      id: tradieId,
-      name: tradieName,
-    }
+    console.error('[getTradieByEmail] No tradie found for email:', { email })
+    return null
   } catch (error) {
-    console.error('[getTradieByEmail] Error querying Notion:', {
+    console.error('[getTradieByEmail] Exception:', {
       email,
-      dbId: NOTION_DB.CONFIG,
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
     })
@@ -407,13 +388,23 @@ export async function getTradieByEmail(email: string): Promise<{ id: string; nam
   }
 }
 
-function try_email_field(page: PageObjectResponse, key: string): string {
+function extract_email(page: PageObjectResponse, fieldName: string): string | null {
   try {
-    const prop = page.properties[key] as any
-    if (prop?.email) return prop.email
-    if (prop?.rich_text?.[0]?.plain_text) return prop.rich_text[0].plain_text
-    return ''
-  } catch {
-    return ''
+    const prop = (page.properties[fieldName] as any) || {}
+
+    // Notion email field type
+    if (prop.email && typeof prop.email === 'string') {
+      return prop.email
+    }
+
+    // Rich text field
+    if (prop.rich_text && Array.isArray(prop.rich_text) && prop.rich_text.length > 0) {
+      return prop.rich_text[0]?.plain_text || null
+    }
+
+    return null
+  } catch (e) {
+    console.warn('[extract_email] Failed to extract email:', { fieldName, error: e })
+    return null
   }
 }

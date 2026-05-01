@@ -11,8 +11,14 @@ const twilioClient = twilio(
 )
 
 export async function POST(req: NextRequest) {
-  const { tradieConfigId } = await req.json()
-  const configId = tradieConfigId || 'joey-tradie'
+  const { tradieSlug } = await req.json()
+
+  if (!tradieSlug) {
+    return NextResponse.json(
+      { error: 'Missing tradieSlug in request body' },
+      { status: 400 }
+    )
+  }
 
   try {
     // Look up tradie config from Notion
@@ -20,7 +26,7 @@ export async function POST(req: NextRequest) {
       database_id: process.env.NOTION_TRADIE_CONFIG_DB_ID!,
       filter: {
         property: 'Tradie Config ID',
-        rich_text: { equals: configId }
+        rich_text: { equals: tradieSlug }
       },
       page_size: 1,
     })
@@ -38,7 +44,7 @@ export async function POST(req: NextRequest) {
       database_id: process.env.NOTION_JOBS_DB_ID!,
       filter: {
         property: 'Tradie Config ID',
-        rich_text: { equals: configId }
+        rich_text: { equals: tradieSlug }
       },
     })
     const jobs = jobsRes.results as any[]
@@ -48,7 +54,7 @@ export async function POST(req: NextRequest) {
       database_id: process.env.NOTION_LEADS_DB_ID!,
       filter: {
         property: 'Tradie Config ID',
-        rich_text: { equals: configId }
+        rich_text: { equals: tradieSlug }
       },
     })
     const leads = leadsRes.results as any[]

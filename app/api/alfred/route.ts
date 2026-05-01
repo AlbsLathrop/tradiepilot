@@ -161,13 +161,13 @@ RESPONSE FORMAT — always return valid JSON:
   "orbitContext": "extra context for ORBIT (e.g. 'stuck in traffic, about 30 mins away')"
 }`;
 
-async function getJobsContext(tradieConfigId: string) {
+async function getJobsContext(tradieSlug: string) {
   try {
     const response = await notion.databases.query({
       database_id: process.env.NOTION_JOBS_DB_ID!,
       filter: {
         property: 'Tradie Config ID',
-        rich_text: { equals: tradieConfigId },
+        rich_text: { equals: tradieSlug },
       },
       sorts: [{ timestamp: 'created_time', direction: 'descending' }],
       page_size: 30,
@@ -201,13 +201,13 @@ async function getJobsContext(tradieConfigId: string) {
   }
 }
 
-async function getLeadsContext(tradieConfigId: string) {
+async function getLeadsContext(tradieSlug: string) {
   try {
     const response = await notion.databases.query({
       database_id: process.env.NOTION_LEADS_DB_ID!,
       filter: {
         property: 'Tradie Config ID',
-        rich_text: { equals: tradieConfigId },
+        rich_text: { equals: tradieSlug },
       },
       sorts: [{ timestamp: 'created_time', direction: 'descending' }],
       page_size: 20,
@@ -448,16 +448,16 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { message, mediaUrl, mediaType, tradieConfigId = 'joey-tradie', conversationHistory = [] } = body;
+    const { message, mediaUrl, mediaType, tradieSlug, conversationHistory = [] } = body;
 
     if (!message && !mediaUrl) {
       logValidationError('/api/alfred', ip, 'message', 'Message or media required');
       return NextResponse.json({ error: 'Message or media required' }, { status: 400 });
     }
 
-    if (typeof tradieConfigId !== 'string' || !tradieConfigId.trim()) {
-      logValidationError('/api/alfred', ip, 'tradieConfigId', 'Invalid tradie config ID');
-      return NextResponse.json({ error: 'Invalid tradie config ID' }, { status: 400 });
+    if (typeof tradieSlug !== 'string' || !tradieSlug.trim()) {
+      logValidationError('/api/alfred', ip, 'tradieSlug', 'Invalid tradie slug');
+      return NextResponse.json({ error: 'Invalid tradie slug' }, { status: 400 });
     }
 
     // Route config commands to FIXER
@@ -466,7 +466,7 @@ export async function POST(request: NextRequest) {
       const fixerRes = await fetch(`${baseUrl}/api/fixer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, tradieConfigId }),
+        body: JSON.stringify({ message, tradieSlug }),
       });
       const fixerData = await fixerRes.json();
       await logToCommLog(message, fixerData.reply || 'Config updated', 'fixer_config');
@@ -477,8 +477,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const jobs = await getJobsContext(tradieConfigId);
-    const { leads, stats: leadsStats } = await getLeadsContext(tradieConfigId);
+    const jobs = await getJobsContext(tradieSlug);
+    const { leads, stats: leadsStats } = await getLeadsContext(tradieSlug);
     const todaysJobs = getTodaysJobs(jobs);
 
     const mentionedJob = message ? findJob(jobs, message) : null;
@@ -745,7 +745,7 @@ ${JSON.stringify(contextData, null, 2)}`;
         fetch(`${baseUrl}/api/brain/update`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jobId: alfredResult.jobId, tradieConfigId }),
+          body: JSON.stringify({ jobId: alfredResult.jobId, tradieSlug }),
         }).catch(err => console.error('Brain update error:', err));
       } catch (err) {
         console.error('Notion update error:', err);

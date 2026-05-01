@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Send, Paperclip, Mic } from 'lucide-react';
-import { getTradieConfigId } from '@/lib/tradie-config';
 
 interface Message {
   id: string;
@@ -25,13 +24,13 @@ interface Job {
 
 export default function ChatPage() {
   const { data: session } = useSession();
-  const [tradieConfigId, setTradieConfigId] = useState('');
+  const [tradieSlug, setTradieSlug] = useState('');
 
   useEffect(() => {
-    if (session?.user?.tradieConfigId) {
-      setTradieConfigId(session.user.tradieConfigId);
+    if (session?.user?.tradieSlug) {
+      setTradieSlug(session.user.tradieSlug);
     }
-  }, [session?.user?.tradieConfigId]);
+  }, [session?.user?.tradieSlug]);
 
   const getDefaultMessage = () => {
     const name = session?.user?.name || 'mate';
@@ -181,7 +180,7 @@ export default function ChatPage() {
       const alfredRes = await fetch('/api/alfred', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: transcribeData.transcript, tradieConfigId }),
+        body: JSON.stringify({ message: transcribeData.transcript, tradieSlug }),
       });
       const alfredData = await alfredRes.json();
 
@@ -281,7 +280,7 @@ export default function ChatPage() {
 
       const alfredPayload: any = {
         message: text || (mediaType ? `Shared a ${mediaType.toLowerCase()}` : 'File sent'),
-        tradieConfigId,
+        tradieSlug,
         conversationHistory: recentMessages,
       };
 

@@ -118,6 +118,15 @@ export async function GET(request: Request) {
 
 export async function POST(req: Request) {
   const body = await req.json()
+  const { tradieSlug } = body
+
+  if (!tradieSlug) {
+    return NextResponse.json(
+      { error: 'Missing tradieSlug in request body' },
+      { status: 400 }
+    )
+  }
+
   try {
     const page = await notion.pages.create({
       parent: { database_id: process.env.NOTION_JOBS_DB_ID! },
@@ -129,7 +138,7 @@ export async function POST(req: Request) {
         'Service': { rich_text: [{ text: { content: body.service ?? '' } }] },
         'Scope': { rich_text: [{ text: { content: body.scope ?? '' } }] },
         'Status': { select: { name: 'SCHEDULED' } },
-        'Tradie Config ID': { rich_text: [{ text: { content: 'joey-tradie' } }] },
+        'Tradie Config ID': { rich_text: [{ text: { content: tradieSlug } }] },
         ...(body.jobValue ? { 'Job Value': { number: Number(body.jobValue) } } : {}),
         ...(body.estimatedCompletion ? { 'Estimated Completion': { date: { start: body.estimatedCompletion } } } : {}),
       }

@@ -338,36 +338,50 @@ export async function getTradieByEmail(email: string): Promise<{ id: string; nam
   try {
     console.log('[getTradieByEmail] Querying Notion for email:', { email, dbId: NOTION_DB.CONFIG })
 
-    const res = await notion.databases.query({
+    // Try email field first (if it's typed as email property)
+    let res = await notion.databases.query({
       database_id: NOTION_DB.CONFIG,
       filter: { property: 'Email', email: { equals: email } },
       page_size: 1,
     })
 
-    console.log('[getTradieByEmail] Query response:', {
+    console.log('[getTradieByEmail] Email field query result:', {
       resultCount: res.results.length,
-      results: res.results.map(r => ({
-        id: r.id,
-        properties: Object.keys((r as any).properties || {}),
-      })),
     })
 
-    const page = res.results[0] as PageObjectResponse | undefined
+    let page = res.results[0] as PageObjectResponse | undefined
+
+    // If no result, try rich_text filter (Email might be stored as text)
     if (!page) {
-      console.warn('[getTradieByEmail] No page found for email, trying fallback name match')
-      // Fallback: query all pages and match by title/name
+      console.log('[getTradieByEmail] No match with email filter, trying rich_text filter...')
+      res = await notion.databases.query({
+        database_id: NOTION_DB.CONFIG,
+        filter: { property: 'Email', rich_text: { equals: email } },
+        page_size: 1,
+      })
+      console.log('[getTradieByEmail] Rich text filter result:', {
+        resultCount: res.results.length,
+      })
+      page = res.results[0] as PageObjectResponse | undefined
+    }
+
+    if (!page) {
+      console.warn('[getTradieByEmail] No direct match, scanning all pages for email...')
+      // Fallback: query all pages and match by email field
       const allPages = await notion.databases.query({
         database_id: NOTION_DB.CONFIG,
         page_size: 100,
       })
+
+      console.log('[getTradieByEmail] Total pages in CONFIG:', { count: allPages.results.length })
 
       for (const p of allPages.results as PageObjectResponse[]) {
         const pageName = title(p, 'Name')
         const pageEmail = try_email_field(p, 'Email')
         console.log('[getTradieByEmail] Checking page:', { pageId: p.id, name: pageName, email: pageEmail })
 
-        if (pageEmail === email) {
-          console.log('[getTradieByEmail] Found match via fallback:', { pageId: p.id, name: pageName })
+        if (pageEmail?.toLowerCase() === email.toLowerCase()) {
+          console.log('[getTradieByEmail] Found match via scan:', { pageId: p.id, name: pageName, email: pageEmail })
           return { id: p.id, name: pageName }
         }
       }

@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { action, jobId, clientName, suburb, tradieConfigId, clientPhone } = await req.json()
+  const { action, jobId, clientName, suburb, tradieConfigId, clientPhone, tradieName = 'the tradie' } = await req.json()
 
   const validationError = validateRequired({ action, jobId, clientName }, ['action', 'jobId', 'clientName'])
   if (validationError) {
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
           process.env.TWILIO_AUTH_TOKEN
         )
 
-        const smsBody = `Hi ${clientName}, Joey's on his way to ${suburb} now. Should be with you shortly. — TradiePilot`
+        const smsBody = `Hi ${clientName}, ${tradieName} is on the way to ${suburb} now. Should be with you shortly. — TradiePilot`
 
         await twilio.messages.create({
           body: smsBody,
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     if (sydneyHour < 7 || sydneyHour >= 20) {
       // Still log to Milestone Log but DON'T send any outbound actions
       const prompt = `You are ALFRED, an AI assistant for Australian tradies.
-Joey (the tradie) just tapped: "${action}" for the job: ${clientName} in ${suburb}.
+${tradieName} just tapped: "${action}" for the job: ${clientName} in ${suburb}.
 
 Write a SHORT, practical milestone log entry (1-2 sentences max).
 Be specific and professional. Use Australian English.
@@ -85,7 +85,7 @@ Just write the description, no preamble.`
 
       const description = claudeRes.content[0].type === 'text'
         ? claudeRes.content[0].text.trim()
-        : `Joey tapped: ${action}`
+        : `${tradieName} tapped: ${action}`
 
       await notion.pages.create({
         parent: { database_id: MILESTONE_DB_ID },
@@ -103,7 +103,7 @@ Just write the description, no preamble.`
             select: { name: ACTION_TO_MILESTONE[action] ?? 'PHASE_COMPLETE' }
           },
           'Logged By': {
-            select: { name: 'Joey' }
+            select: { name: tradieName }
           },
           'Client Notified': {
             checkbox: false
@@ -121,15 +121,15 @@ Just write the description, no preamble.`
 
     // STEP 1: Ask Claude to write a milestone description
     const prompt = `You are ALFRED, an AI assistant for Australian tradies.
-Joey (the tradie) just tapped: "${action}" for the job: ${clientName} in ${suburb}.
+${tradieName} just tapped: "${action}" for the job: ${clientName} in ${suburb}.
 
 Write a SHORT, practical milestone log entry (1-2 sentences max).
 Be specific and professional. Use Australian English.
 Examples:
-- "STARTING TODAY" → "Joey commenced work on site today."
+- "STARTING TODAY" → "${tradieName} commenced work on site today."
 - "PHASE DONE" → "Current phase completed. Moving to next stage."
-- "RUNNING LATE" → "Joey running behind schedule today. Client may need to be notified."
-- "JOB COMPLETE" → "Job marked complete by Joey. Ready for invoice."
+- "RUNNING LATE" → "${tradieName} running behind schedule today. Client may need to be notified."
+- "JOB COMPLETE" → "Job marked complete by ${tradieName}. Ready for invoice."
 
 Just write the description, no preamble.`
 
@@ -141,7 +141,7 @@ Just write the description, no preamble.`
 
     const description = claudeRes.content[0].type === 'text'
       ? claudeRes.content[0].text.trim()
-      : `Joey tapped: ${action}`
+      : `${tradieName} tapped: ${action}`
 
     // STEP 2: Write to Milestone Log in Notion
     await notion.pages.create({
@@ -160,7 +160,7 @@ Just write the description, no preamble.`
           select: { name: ACTION_TO_MILESTONE[action] ?? 'PHASE_COMPLETE' }
         },
         'Logged By': {
-          select: { name: 'Joey' }
+          select: { name: tradieName }
         },
         'Client Notified': {
           checkbox: false

@@ -2,6 +2,7 @@
 
 import { Bot, Send, X, Check, CheckCheck } from 'lucide-react'
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useSession } from 'next-auth/react'
 import { useChatStore, ChatMessage } from '@/lib/store/chat'
 import { usePipelineStore } from '@/lib/store/pipeline'
 import { supabase } from '@/lib/supabase/client'
@@ -28,6 +29,7 @@ interface AlfredMessage {
 }
 
 function AlfredTab() {
+  const { data: session } = useSession()
   const [messages, setMessages] = useState<AlfredMessage[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -56,7 +58,9 @@ function AlfredTab() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [...messages, userMsg].map((m) => ({ role: m.role, content: m.content })),
+          message: input,
+          tradieSlug: session?.user?.tradieSlug,
+          conversationHistory: [...messages, userMsg].map((m) => ({ role: m.role, content: m.content })),
         }),
       })
 

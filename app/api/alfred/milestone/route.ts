@@ -6,7 +6,7 @@ const notion = new Client({ auth: process.env.NOTION_API_KEY! });
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { jobId, jobName, milestoneType, description, loggedBy = 'Joey' } = body;
+    const { jobId, jobName, milestoneType, description, loggedBy = 'ALFRED' } = body;
 
     if (!process.env.NOTION_MILESTONE_LOG_DB_ID) {
       console.log('Milestone Log DB not configured yet');

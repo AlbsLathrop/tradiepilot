@@ -62,6 +62,26 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // RUNNING LATE: Send SMS immediately to client
+    if (action === 'RUNNING LATE' && clientPhone) {
+      try {
+        const twilio = require('twilio')(
+          process.env.TWILIO_ACCOUNT_SID,
+          process.env.TWILIO_AUTH_TOKEN
+        )
+
+        const smsBody = `Hi ${clientName}, running a bit behind today but on the way. Thanks for your patience! — TradiePilot`
+
+        await twilio.messages.create({
+          body: smsBody,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: clientPhone,
+        })
+      } catch (smsErr: any) {
+        console.warn('SMS failed (non-fatal):', smsErr.message)
+      }
+    }
+
     const sydneyHour = new Date(
       new Date().toLocaleString('en-US', { timeZone: 'Australia/Sydney' })
     ).getHours()

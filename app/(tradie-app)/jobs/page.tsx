@@ -125,6 +125,7 @@ export default function JobsPage() {
           clientPhone: job.clientPhone,
           suburb: job.suburb,
           tradieConfigId: job.tradieConfigId,
+          tradieName: session?.user?.name || 'your tradie',
         }),
       })
       const data = await res.json()
@@ -133,6 +134,8 @@ export default function JobsPage() {
           setToast(`🌙 After hours — logged but no SMS sent`)
         } else if (action === 'ON THE WAY') {
           setToast(`📱 SMS sent to ${job.clientName} — on the way!`)
+        } else if (action === 'RUNNING LATE') {
+          setToast(`📱 SMS sent to ${job.clientName} — running late notice`)
         } else {
           setToast(`✓ ${action} sent for ${job.clientName}`)
         }

@@ -118,9 +118,11 @@ export async function GET(request: Request) {
 
 export async function POST(req: Request) {
   const body = await req.json()
+  console.log('POST /api/jobs - Request body:', body)
   const { tradieSlug } = body
 
   if (!tradieSlug) {
+    console.error('POST /api/jobs - Missing tradieSlug')
     return NextResponse.json(
       { error: 'Missing tradieSlug in request body' },
       { status: 400 }

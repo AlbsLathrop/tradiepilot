@@ -626,15 +626,15 @@ export default function JobsPage() {
               <button onClick={() => setShowNewJob(false)} className="text-gray-400 text-xl">×</button>
             </div>
             {[
-              { key: 'clientName', label: 'Client Name *', type: 'text' },
-              { key: 'clientPhone', label: 'Phone', type: 'tel' },
-              { key: 'suburb', label: 'Suburb *', type: 'text' },
-              { key: 'address', label: 'Full Address', type: 'text' },
-              { key: 'service', label: 'Service Type', type: 'text' },
-              { key: 'scope', label: 'Scope of Work', type: 'text' },
-              { key: 'jobValue', label: 'Job Value ($)', type: 'number' },
-              { key: 'estimatedCompletion', label: 'Est. Completion', type: 'date' },
-            ].map(({ key, label, type }) => (
+              { key: 'clientName', label: 'Client Name *', type: 'text', placeholder: '' },
+              { key: 'clientPhone', label: 'Phone', type: 'tel', placeholder: '' },
+              { key: 'suburb', label: 'Suburb *', type: 'text', placeholder: '' },
+              { key: 'address', label: 'Full Address', type: 'text', placeholder: '32 Wark Ave, Pagewood NSW 2035' },
+              { key: 'service', label: 'Type of Work', type: 'text', placeholder: 'e.g. Driveway paving, Pool coping, Retaining wall' },
+              { key: 'scope', label: 'Job Details', type: 'text', placeholder: 'e.g. 40sqm driveway, exposed aggregate finish' },
+              { key: 'jobValue', label: 'Job Value ($)', type: 'number', placeholder: '' },
+              { key: 'estimatedCompletion', label: 'Est. Completion', type: 'date', placeholder: '' },
+            ].map(({ key, label, type, placeholder }) => (
               <div key={key}>
                 <label className="text-gray-400 text-xs mb-1 block">
                   {label}
@@ -645,7 +645,8 @@ export default function JobsPage() {
                   onChange={e => setNewJob(prev => ({
                     ...prev, [key]: e.target.value
                   }))}
-                  className="w-full bg-[#0F0F0F] border border-[#1F2937] rounded-lg px-3 py-2.5 text-white text-sm focus:border-[#F97316] outline-none"
+                  placeholder={placeholder}
+                  className="w-full bg-[#0F0F0F] border border-[#1F2937] rounded-lg px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:border-[#F97316] outline-none"
                 />
               </div>
             ))}
@@ -661,6 +662,7 @@ export default function JobsPage() {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     ...newJob,
+                    tradieSlug: session?.user?.tradieSlug,
                     jobValue: newJob.jobValue ? Number(newJob.jobValue) : null,
                   }),
                 })

@@ -84,6 +84,16 @@ WHEN ${tradieName.toUpperCase()} SENDS A PHOTO:
 - Ask which job it belongs to if not already specified
 - Confirm it's saved: "Saved ✓ [your description] — which job is this for?"
 
+WHEN ${tradieName.toUpperCase()} WANTS TO CREATE OR SCHEDULE A NEW JOB:
+${tradieName} might say: "create a new job", "add a job", "schedule Sarah for interior painting", "I have a new lead from Dave in Bondi", etc.
+When you identify this intent:
+1. Ask conversationally for: client name (required), phone (optional), type of work (required), suburb/location (required), estimated value (optional), estimated completion date (optional)
+2. Collect info one field at a time in natural conversation
+3. Once you have minimum: client name + type of work + suburb, you can create the job
+4. Return action: "create_job"
+5. Include: clientName, clientPhone (if provided), service, suburb, jobValue (if provided), estimatedCompletion (if provided)
+6. Confirm in reply: "Done — I've added [Client] in [Suburb] to your jobs. Type: [Service]"
+
 WHEN ${tradieName.toUpperCase()} ASKS ABOUT A JOB'S HISTORY:
 - "what happened on Sarah's job?"
 - "give me a summary of the Bondi kitchen"
@@ -153,11 +163,16 @@ If ${tradieName} asks you to send an SMS outside of business hours:
 RESPONSE FORMAT — always return valid JSON:
 {
   "reply": "your message to ${tradieName} (max 2 sentences, casual)",
-  "action": "none" | "update_job_status" | "update_job_details" | "log_media" | "query_complete",
+  "action": "none" | "update_job_status" | "update_job_details" | "create_job" | "log_media" | "query_complete",
   "jobId": "notion_page_id if job identified",
   "jobName": "human readable job name",
   "newStatus": "tap status if updating",
   "clientName": "client name if known",
+  "clientPhone": "phone if creating job",
+  "service": "type of work if creating job",
+  "suburb": "location if creating job",
+  "jobValue": "estimated value if creating job",
+  "estimatedCompletion": "YYYY-MM-DD if creating job",
   "updates": { "Service": "value", "Notes": "value", "Status": "value", "Scope": "value" },
   "orbitContext": "extra context for ORBIT (e.g. 'stuck in traffic, about 30 mins away')"
 }`;
@@ -838,6 +853,31 @@ ${JSON.stringify(contextData, null, 2)}`;
         }
       } catch (err) {
         console.error('Job update error:', err);
+      }
+    }
+
+    if (alfredResult.action === 'create_job' && alfredResult.clientName && alfredResult.service && alfredResult.suburb) {
+      try {
+        const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3001';
+        const createRes = await fetch(`${baseUrl}/api/jobs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientName: alfredResult.clientName,
+            clientPhone: alfredResult.clientPhone || '',
+            service: alfredResult.service,
+            suburb: alfredResult.suburb,
+            jobValue: alfredResult.jobValue ? Number(alfredResult.jobValue) : null,
+            estimatedCompletion: alfredResult.estimatedCompletion || null,
+            tradieSlug,
+          }),
+        });
+        const createData = await createRes.json();
+        if (createData.success) {
+          console.log(`ALFRED: Created job for ${alfredResult.clientName}`);
+        }
+      } catch (err) {
+        console.error('Job creation error:', err);
       }
     }
 

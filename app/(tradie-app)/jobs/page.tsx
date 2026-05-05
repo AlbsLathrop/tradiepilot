@@ -86,7 +86,10 @@ export default function JobsPage() {
     jobValue: '', estimatedCompletion: ''
   })
 
-  const tabs = ['All', 'SCHEDULED', 'IN PROGRESS', 'RUNNING LATE', 'COMPLETE', 'INVOICED', 'PAID']
+  const tabs = ['All', 'SCHEDULED', 'IN PROGRESS', 'BEHIND SCHEDULE', 'COMPLETE', 'INVOICED', 'PAID']
+  const tabToStatusMap: Record<string, string> = {
+    'BEHIND SCHEDULE': 'RUNNING LATE'
+  }
 
   const fetchJobs = (tradieSlug: string) => {
     fetch(`/api/jobs?tradieSlug=${tradieSlug}`)
@@ -107,7 +110,7 @@ export default function JobsPage() {
 
   const filteredJobs = activeTab === 'All'
     ? jobs
-    : jobs.filter(j => j.status === activeTab)
+    : jobs.filter(j => j.status === (tabToStatusMap[activeTab] || activeTab))
 
   const handleToggle = (id: string) => {
     setExpandedId(prev => prev === id ? null : id)
@@ -284,7 +287,7 @@ export default function JobsPage() {
                     </span>
                   )}
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${statusClass}`}>
-                    {job.status}
+                    {job.status === 'RUNNING LATE' ? 'BEHIND SCHEDULE' : job.status}
                   </span>
                   {job.invoiceStatus === 'SENT' && job.invoiceDueDays && job.invoiceDueDays > 14 && (
                     <span className="text-xs font-bold px-2 py-1 rounded-full
@@ -302,41 +305,16 @@ export default function JobsPage() {
               {isOpen && (
                 <div className="px-4 pb-4 space-y-4 border-t border-[#1F2937]">
 
-                  {/* Job Info */}
-                  <div className="pt-3 space-y-2">
-                    {job.scope && <InfoRow label="Scope" value={job.scope} />}
-                    {job.jobType && <InfoRow label="Type" value={job.jobType} />}
-                    {job.currentPhase && <InfoRow label="Phase" value={job.currentPhase} />}
-                    {job.materialsStatus && <InfoRow label="Materials" value={job.materialsStatus} />}
+                  {/* JOB DETAILS Section */}
+                  <div className="pt-4 space-y-2">
+                    <p className="text-[#F97316] text-xs font-bold uppercase tracking-wide mb-3">Job Details</p>
+                    {job.jobType && <InfoRow label="Type of Work" value={job.jobType} />}
+                    {job.scope && <InfoRow label="Job Details" value={job.scope} />}
+                    {job.jobValue && (
+                      <InfoRow label="Job Value" value={`$${job.jobValue.toLocaleString()}`} />
+                    )}
                     {job.estimatedCompletion && (
                       <InfoRow label="Est. Completion" value={job.estimatedCompletion} />
-                    )}
-                  </div>
-
-                  {/* Client & Site */}
-                  <div className="bg-[#0F0F0F] rounded-lg p-3 space-y-2">
-                    <p className="text-[#F97316] text-xs font-bold uppercase">Client & Site</p>
-                    {job.clientPhone && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">Phone</span>
-                        <div className="flex items-center gap-3">
-                          <a
-                            href={`tel:${job.clientPhone}`}
-                            className="text-[#F97316] text-sm font-medium"
-                          >
-                            {job.clientPhone}
-                          </a>
-                          {job.clientPhone && (
-                            <a
-                              href={`tel:${job.clientPhone}`}
-                              className="bg-green-600 hover:bg-green-700 text-white text-xs
-                              font-bold px-3 py-1.5 rounded-lg active:opacity-70 transition-colors inline-block"
-                            >
-                              📞 Call {job.clientName}
-                            </a>
-                          )}
-                        </div>
-                      </div>
                     )}
                     {job.address && (
                       <div className="flex items-start justify-between gap-4">
@@ -359,147 +337,69 @@ export default function JobsPage() {
                     )}
                   </div>
 
-                  {/* Team */}
-                  {(job.foreman || job.foremanPhone) && (
+                  {/* CLIENT Section */}
+                  <div className="border-t border-[#1F2937] pt-4">
+                    <p className="text-[#F97316] text-xs font-bold uppercase tracking-wide mb-3">Client</p>
                     <div className="bg-[#0F0F0F] rounded-lg p-3 space-y-2">
-                      <p className="text-[#F97316] text-xs font-bold uppercase">Team</p>
+                      {job.clientName && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400 text-sm">Name</span>
+                          <span className="text-white text-sm font-medium">{job.clientName}</span>
+                        </div>
+                      )}
+                      {job.clientPhone && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400 text-sm">Phone</span>
+                          <div className="flex items-center gap-3">
+                            <a
+                              href={`tel:${job.clientPhone}`}
+                              className="text-[#F97316] text-sm font-medium"
+                            >
+                              {job.clientPhone}
+                            </a>
+                            <a
+                              href={`tel:${job.clientPhone}`}
+                              className="bg-green-600 hover:bg-green-700 text-white text-xs
+                              font-bold px-3 py-1.5 rounded-lg active:opacity-70 transition-colors inline-block"
+                            >
+                              📞 Call
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* TEAM Section */}
+                  <div className="border-t border-[#1F2937] pt-4">
+                    <p className="text-[#F97316] text-xs font-bold uppercase tracking-wide mb-3">Team</p>
+                    <div className="bg-[#0F0F0F] rounded-lg p-3 space-y-2">
                       {job.foreman && (
                         <div className="flex justify-between items-center">
                           <span className="text-gray-400 text-sm">Foreman</span>
                           <div className="flex items-center gap-2">
                             <span className="text-white text-sm">{job.foreman}</span>
                             {job.foremanPhone && (
-                              <a href={`tel:${job.foremanPhone}`} className="text-[#F97316]">📞</a>
+                              <a href={`tel:${job.foremanPhone}`} className="text-[#F97316] text-sm">📞</a>
                             )}
                           </div>
                         </div>
                       )}
                     </div>
-                  )}
-
-                  {/* Notes */}
-                  {job.notes && (
-                    <div className="bg-[#0F0F0F] rounded-lg p-3">
-                      <p className="text-[#F97316] text-xs font-bold uppercase mb-1">Notes</p>
-                      <p className="text-gray-300 text-sm leading-relaxed">{job.notes}</p>
-                    </div>
-                  )}
-
-                  {/* Photo Gallery */}
-                  {job.photos && job.photos.length > 0 && (
-                    <div>
-                      <p className="text-[#F97316] text-xs font-bold uppercase mb-2">
-                        📷 Photos ({job.photos.length})
-                      </p>
-                      <div className="grid grid-cols-3 gap-1.5">
-                        {job.photos.map((photo: Photo, i: number) => (
-                          <div
-                            key={i}
-                            onClick={() => setLightbox(photo)}
-                            className="aspect-square rounded-lg overflow-hidden
-                            cursor-pointer active:opacity-70"
-                          >
-                            <img
-                              src={photo.url}
-                              alt={photo.description || `Photo ${i+1}`}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none'
-                              }}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Job Log */}
-                  {job.milestones && job.milestones.length > 0 && (
-                    <div className="border-t border-[#1F2937] pt-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setOpenLogId(openLogId === job.id ? null : job.id)
-                        }}
-                        className="w-full flex items-center justify-between py-2"
-                      >
-                        <span className="text-[#F97316] text-xs font-bold uppercase">
-                          📋 Job Log ({job.milestones.length} entries)
-                        </span>
-                        <span className="text-gray-500 text-xs">
-                          {openLogId === job.id ? '▲' : '▼'}
-                        </span>
-                      </button>
-
-                      {openLogId === job.id && (
-                        <div className="space-y-2 mt-2">
-                          {job.milestones.map((m: any, i: number) => (
-                            <div
-                              key={i}
-                              className="bg-[#0F0F0F] rounded-lg p-3 border-l-2 border-[#F97316]"
-                            >
-                              <div className="flex items-start justify-between gap-2 mb-1">
-                                <span className="text-white text-xs font-semibold leading-tight">
-                                  {m.event}
-                                </span>
-                                <span className="text-gray-500 text-[10px] shrink-0">
-                                  {m.date ? new Date(m.date).toLocaleDateString('en-AU', {
-                                    day: 'numeric',
-                                    month: 'short',
-                                  }) : ''}
-                                </span>
-                              </div>
-                              {m.note && (
-                                <p className="text-gray-400 text-xs leading-relaxed mb-1">
-                                  {m.note}
-                                </p>
-                              )}
-                              <div className="flex items-center gap-2">
-                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                                  m.type === 'ISSUE_FOUND'
-                                    ? 'bg-red-500/20 text-red-400'
-                                    : m.type === 'ISSUE_RESOLVED'
-                                      ? 'bg-green-500/20 text-green-400'
-                                      : m.type === 'PHASE_COMPLETE'
-                                        ? 'bg-purple-500/20 text-purple-400'
-                                        : m.type === 'VARIATION_APPROVED'
-                                          ? 'bg-orange-500/20 text-orange-400'
-                                          : m.type === 'JOB_STARTED'
-                                            ? 'bg-blue-500/20 text-blue-400'
-                                            : 'bg-gray-500/20 text-gray-400'
-                                }`}>
-                                  {m.type}
-                                </span>
-                                {m.loggedBy && (
-                                  <span className="text-gray-500 text-[10px]">
-                                    by {m.loggedBy}
-                                  </span>
-                                )}
-                                {m.clientNotified && (
-                                  <span className="text-green-400 text-[10px]">
-                                    ✓ notified
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  </div>
 
                   {/* Ask ALFRED Button */}
                   <a
                     href={`/chat?message=${encodeURIComponent(
                       `Give me a full update on the ${job.clientName} job in ${job.suburb}. What's the current status, what happened last, and what's coming up next?`
                     )}&jobId=${job.id}`}
-                    className="w-full block bg-[#1F2937] border border-[#F97316] text-[#F97316] text-sm font-bold py-3 rounded-xl text-center mb-4"
+                    className="w-full block bg-[#1F2937] border border-[#F97316] text-[#F97316] text-sm font-bold py-3 rounded-xl text-center"
                   >
                     🧠 Ask ALFRED about this job
                   </a>
 
                   {/* INVOICE */}
-                  <div className="border-t border-[#1F2937] pt-3">
+                  <div className="border-t border-[#1F2937] pt-4">
                     <button
                       onClick={(e) => {
                         e.stopPropagation()

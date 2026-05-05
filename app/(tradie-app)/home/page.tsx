@@ -18,6 +18,14 @@ interface DashboardData {
   reviewCount?: number
 }
 
+interface Job {
+  id: string
+  clientName: string
+  invoiceStatus: string
+  invoiceAmount: number | null
+  invoiceDate: string | null
+}
+
 export default function HomePage() {
   const { data: session } = useSession()
   const [data, setData] = useState<DashboardData | null>(null)
@@ -26,6 +34,13 @@ export default function HomePage() {
     typeof window !== 'undefined' && 'Notification' in window &&
     Notification.permission === 'default'
   )
+  const [showRevenueModal, setShowRevenueModal] = useState(false)
+  const [revenueDetails, setRevenueDetails] = useState<{
+    invoiced: number
+    paid: number
+    outstanding: number
+    jobs: Array<{ clientName: string; amount: number }>
+  } | null>(null)
 
   useEffect(() => {
     if (!session?.user?.tradieSlug) {
@@ -165,15 +180,39 @@ export default function HomePage() {
                 </p>
               </div>
             </Link>
-            <div className="bg-[#111827] border-l-4 border-[#F97316] rounded-xl p-5 col-span-2">
+            <button
+              onClick={async () => {
+                const res = await fetch(`/api/jobs?tradieSlug=${session?.user?.tradieSlug}`)
+                const jobsData = await res.json()
+                const jobs: Job[] = jobsData.jobs ?? []
+                const now = new Date()
+                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+                const monthJobs = jobs.filter((j) => {
+                  const invDate = j.invoiceDate ? new Date(j.invoiceDate) : null
+                  return invDate && invDate >= monthStart
+                })
+                const paid = monthJobs.filter((j) => j.invoiceStatus === 'PAID').reduce((sum, j) => sum + (j.invoiceAmount ?? 0), 0)
+                const invoiced = monthJobs.reduce((sum, j) => sum + (j.invoiceAmount ?? 0), 0)
+                const outstanding = invoiced - paid
+                setRevenueDetails({
+                  invoiced,
+                  paid,
+                  outstanding,
+                  jobs: monthJobs.map((j) => ({ clientName: j.clientName, amount: j.invoiceAmount ?? 0 }))
+                })
+                setShowRevenueModal(true)
+              }}
+              className="bg-[#111827] border-l-4 border-[#F97316] rounded-xl p-5 col-span-2 cursor-pointer
+              active:opacity-70 text-left transition-opacity"
+            >
               <p className="text-gray-400 text-xs font-bold uppercase tracking-wide mb-2">
                 Monthly Revenue
               </p>
               <p className="text-5xl font-bold text-white">
                 ${(data.monthRevenue ?? 0).toLocaleString()}
               </p>
-              <p className="text-gray-500 text-xs mt-2">jobs invoiced & paid</p>
-            </div>
+              <p className="text-gray-500 text-xs mt-2">jobs invoiced & paid • tap for details</p>
+            </button>
             <div className="bg-[#111827] border-l-4 border-[#F97316] rounded-xl p-5 cursor-pointer
               active:opacity-70">
               <p className="text-gray-400 text-xs font-bold uppercase tracking-wide mb-2">
@@ -186,7 +225,7 @@ export default function HomePage() {
             </div>
             <div className="bg-[#111827] border-l-4 border-[#F97316] rounded-xl p-5">
               <p className="text-gray-400 text-xs font-bold uppercase tracking-wide mb-2">
-                Satisfaction
+                Google Reviews
               </p>
               <p className="text-5xl font-bold text-yellow-400">
                 {data.avgScore ? `${data.avgScore}⭐` : '—'}
@@ -227,35 +266,6 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* QUICK ACCESS */}
-          <div className="bg-[#111827] rounded-xl p-4">
-            <p className="text-[#F97316] text-xs font-bold uppercase mb-3">
-              Quick Access
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <Link href="/chat" className="bg-[#0F0F0F] border
-              border-[#F97316] text-[#F97316] text-xs font-bold py-3
-              rounded-lg text-center">
-                🧠 Ask ALFRED
-              </Link>
-              <Link href="/jobs" className="bg-[#0F0F0F] border
-              border-gray-600 text-white text-xs font-bold py-3
-              rounded-lg text-center">
-                💼 All Jobs
-              </Link>
-              <Link href="/leads" className="bg-[#0F0F0F] border
-              border-gray-600 text-white text-xs font-bold py-3
-              rounded-lg text-center">
-                🎯 Leads
-              </Link>
-              <Link href="/settings" className="bg-[#0F0F0F] border
-              border-gray-600 text-white text-xs font-bold py-3
-              rounded-lg text-center">
-                ⚙️ Settings
-              </Link>
-            </div>
-          </div>
-
           {/* LAST ALFRED MESSAGE */}
           {data.lastComm && (
             <div className="bg-[#111827] rounded-xl p-4">
@@ -271,6 +281,47 @@ export default function HomePage() {
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* Revenue Modal */}
+      {showRevenueModal && revenueDetails && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-end">
+          <div className="bg-[#111827] rounded-t-2xl w-full p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center">
+              <h2 className="text-white font-bold text-lg">Monthly Revenue</h2>
+              <button onClick={() => setShowRevenueModal(false)} className="text-gray-400 text-xl">×</button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="bg-[#0F0F0F] rounded-lg p-4">
+                <p className="text-gray-400 text-xs uppercase font-bold mb-1">Total Invoiced</p>
+                <p className="text-3xl font-bold text-white">${revenueDetails.invoiced.toLocaleString()}</p>
+              </div>
+              <div className="bg-[#0F0F0F] rounded-lg p-4">
+                <p className="text-gray-400 text-xs uppercase font-bold mb-1">Total Paid</p>
+                <p className="text-3xl font-bold text-green-400">${revenueDetails.paid.toLocaleString()}</p>
+              </div>
+              <div className="bg-[#0F0F0F] rounded-lg p-4">
+                <p className="text-gray-400 text-xs uppercase font-bold mb-1">Outstanding</p>
+                <p className="text-3xl font-bold text-yellow-400">${revenueDetails.outstanding.toLocaleString()}</p>
+              </div>
+            </div>
+
+            {revenueDetails.jobs.length > 0 && (
+              <div>
+                <p className="text-[#F97316] text-xs font-bold uppercase mb-2">Contributing Jobs</p>
+                <div className="space-y-2">
+                  {revenueDetails.jobs.map((job, i) => (
+                    <div key={i} className="flex justify-between items-center bg-[#0F0F0F] rounded-lg p-3">
+                      <span className="text-white text-sm">{job.clientName}</span>
+                      <span className="text-gray-400 text-sm">${job.amount.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

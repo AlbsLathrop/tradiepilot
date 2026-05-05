@@ -24,10 +24,14 @@ interface TradiePilotConfig {
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
+    console.log('[SETTINGS GET] Session user:', session?.user)
+
     if (!session?.user?.tradieConfigId) {
+      console.log('[SETTINGS GET] Missing tradieConfigId')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    console.log('[SETTINGS GET] Fetching config for tradieConfigId:', session.user.tradieConfigId)
     const res = await notion.databases.query({
       database_id: process.env.NOTION_TRADIE_CONFIG_DB_ID!,
       filter: {
@@ -36,7 +40,10 @@ export async function GET(req: NextRequest) {
       },
       page_size: 1,
     })
+
+    console.log('[SETTINGS GET] Found configs:', res.results.length)
     if (!res.results.length) {
+      console.log('[SETTINGS GET] No config found')
       return NextResponse.json({ config: {} })
     }
     const p = (res.results[0] as NotionPage).properties
@@ -50,8 +57,10 @@ export async function GET(req: NextRequest) {
       tone: p['Tone']?.select?.name ?? 'Professional',
       twilioNumber: p['Twilio Number']?.phone_number ?? '+61468072974',
     }
+    console.log('[SETTINGS GET] Config loaded:', config)
     return NextResponse.json({ config })
   } catch (error: any) {
+    console.error('[SETTINGS GET] Error:', error?.message)
     return NextResponse.json({ error: error?.message, config: {} })
   }
 }

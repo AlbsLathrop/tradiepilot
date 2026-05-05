@@ -27,7 +27,7 @@ interface Job {
 }
 
 export default function HomePage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [showNotifBanner, setShowNotifBanner] = useState(
@@ -42,14 +42,29 @@ export default function HomePage() {
     jobs: Array<{ clientName: string; amount: number }>
   } | null>(null)
 
-  useEffect(() => {
-    if (!session?.user?.tradieSlug) {
-      console.log('[HOME] No tradieSlug available yet')
-      return
-    }
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-[#0F0F0F] text-white pb-24">
+        <div className="px-4 space-y-3 pt-8">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="bg-[#111827] rounded-xl h-24 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
+  if (!session?.user?.tradieSlug) {
+    return (
+      <div className="min-h-screen bg-[#0F0F0F] text-white flex items-center justify-center">
+        <p className="text-gray-400">Unable to load dashboard</p>
+      </div>
+    )
+  }
+
+  useEffect(() => {
     setLoading(true)
-    console.log('[HOME] Fetching dashboard for:', session.user.tradieSlug)
+    console.log('[HOME] Session ready, fetching dashboard for:', session.user.tradieSlug)
 
     Promise.all([
       fetch(`/api/dashboard?tradieSlug=${session.user.tradieSlug}`).then(r => {

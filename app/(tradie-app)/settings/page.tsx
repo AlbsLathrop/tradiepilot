@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { signOut } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 
 interface TradiePilotConfig {
   businessName: string
@@ -15,6 +15,7 @@ interface TradiePilotConfig {
 }
 
 export default function SettingsPage() {
+  const { data: session, status } = useSession()
   const [config, setConfig] = useState<TradiePilotConfig | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -25,11 +26,42 @@ export default function SettingsPage() {
     setTimeout(() => setToast(null), 3000)
   }
 
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-[#0F0F0F] text-white pb-24">
+        <div className="px-4 space-y-3 pt-8">
+          {[1,2,3].map(i => (
+            <div key={i} className="bg-[#111827] rounded-xl h-16 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (!session?.user?.tradieSlug) {
+    return (
+      <div className="min-h-screen bg-[#0F0F0F] text-white flex items-center justify-center">
+        <p className="text-gray-400">Unable to load settings</p>
+      </div>
+    )
+  }
+
   useEffect(() => {
+    console.log('[SETTINGS] Session ready, fetching config')
     fetch('/api/settings')
-      .then(r => r.json())
-      .then(d => { setConfig(d.config); setLoading(false) })
-      .catch(() => setLoading(false))
+      .then(r => {
+        if (!r.ok) throw new Error(`Settings API: ${r.status}`)
+        return r.json()
+      })
+      .then(d => {
+        console.log('[SETTINGS] Config loaded:', d.config)
+        setConfig(d.config)
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error('[SETTINGS] Fetch error:', err)
+        setLoading(false)
+      })
   }, [])
 
   const handleSave = async () => {

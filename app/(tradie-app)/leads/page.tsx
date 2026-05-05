@@ -48,7 +48,7 @@ function daysSince(dateStr: string): number {
 }
 
 export default function LeadsPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -63,16 +63,44 @@ export default function LeadsPage() {
   })
 
   const fetchLeads = (tradieSlug: string) => {
+    console.log('[LEADS] Fetching leads for:', tradieSlug)
     fetch(`/api/leads?tradieSlug=${tradieSlug}`)
-      .then(r => r.json())
-      .then(d => { setLeads(d.leads ?? []); setLoading(false) })
-      .catch(() => setLoading(false))
+      .then(r => {
+        if (!r.ok) throw new Error(`Leads API: ${r.status}`)
+        return r.json()
+      })
+      .then(d => {
+        console.log('[LEADS] Received leads:', d.leads?.length ?? 0)
+        setLeads(d.leads ?? [])
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error('[LEADS] Fetch error:', err)
+        setLoading(false)
+      })
+  }
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-[#0F0F0F] text-white pb-24">
+        <div className="px-4 space-y-3 pt-8">
+          {[1,2,3].map(i => (
+            <div key={i} className="bg-[#111827] rounded-xl h-20 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (!session?.user?.tradieSlug) {
+    return (
+      <div className="min-h-screen bg-[#0F0F0F] text-white flex items-center justify-center">
+        <p className="text-gray-400">Unable to load leads</p>
+      </div>
+    )
   }
 
   useEffect(() => {
-    if (!session?.user?.tradieSlug) {
-      return
-    }
     fetchLeads(session.user.tradieSlug)
   }, [session?.user?.tradieSlug])
 

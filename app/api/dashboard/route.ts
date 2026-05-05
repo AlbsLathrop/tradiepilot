@@ -35,17 +35,25 @@ export async function GET(request: Request) {
     })
     const jobs = jobsRes.results as JobRecord[]
 
-    // Fetch leads
+    // Fetch leads (filter by tradieSlug)
     const leadsRes = await notion.databases.query({
       database_id: process.env.NOTION_LEADS_DB_ID!,
+      filter: {
+        property: 'Tradie Config ID',
+        rich_text: { equals: tradieSlug },
+      },
     })
     const leads = leadsRes.results as LeadRecord[]
 
-    // Fetch last comm
+    // Fetch last comm (for this tradie)
     let lastComm = null
     try {
       const commsRes = await notion.databases.query({
         database_id: process.env.NOTION_COMMUNICATION_LOG_DB_ID!,
+        filter: {
+          property: 'Tradie Config ID',
+          rich_text: { equals: tradieSlug },
+        },
         sorts: [{ property: 'Timestamp', direction: 'descending' }],
         page_size: 1,
       })
@@ -119,7 +127,7 @@ export async function GET(request: Request) {
       (l) => l.properties['Status']?.select?.name === 'Qualified'
     ).length
 
-    return NextResponse.json({
+    const response = {
       activeJobs,
       inProgressJobs,
       runningLate,
@@ -129,7 +137,11 @@ export async function GET(request: Request) {
       qualifiedLeads,
       smsSentToday: 0,
       lastComm,
-    })
+    }
+
+    console.log('[DASHBOARD]', tradieSlug, 'Jobs:', jobs.length, 'Leads:', leads.length, 'Response:', response)
+
+    return NextResponse.json(response)
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message ?? 'Unknown error' },

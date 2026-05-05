@@ -92,19 +92,35 @@ export default function JobsPage() {
   }
 
   const fetchJobs = (tradieSlug: string) => {
+    console.log('[JOBS] Fetching jobs for:', tradieSlug)
     fetch(`/api/jobs?tradieSlug=${tradieSlug}`)
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.json()
+      })
       .then(data => {
-        setJobs(data.jobs ?? [])
+        console.log('[JOBS] Data received:', data)
+        if (data.error) {
+          console.error('[JOBS] API error:', data.error)
+          setJobs([])
+        } else {
+          setJobs(data.jobs ?? [])
+        }
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch((err) => {
+        console.error('[JOBS] Fetch error:', err)
+        setJobs([])
+        setLoading(false)
+      })
   }
 
   useEffect(() => {
     if (!session?.user?.tradieSlug) {
+      console.log('[JOBS] No tradieSlug available yet')
       return
     }
+    setLoading(true)
     fetchJobs(session.user.tradieSlug)
   }, [session?.user?.tradieSlug])
 

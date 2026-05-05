@@ -44,14 +44,30 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!session?.user?.tradieSlug) {
+      console.log('[HOME] No tradieSlug available yet')
       return
     }
 
+    setLoading(true)
+    console.log('[HOME] Fetching dashboard for:', session.user.tradieSlug)
+
     Promise.all([
-      fetch(`/api/dashboard?tradieSlug=${session.user.tradieSlug}`).then(r => r.json()),
-      fetch(`/api/satisfaction?tradieSlug=${session.user.tradieSlug}`).then(r => r.json())
+      fetch(`/api/dashboard?tradieSlug=${session.user.tradieSlug}`).then(r => {
+        if (!r.ok) throw new Error(`Dashboard: ${r.status}`)
+        return r.json()
+      }),
+      fetch(`/api/satisfaction?tradieSlug=${session.user.tradieSlug}`).then(r => {
+        if (!r.ok) throw new Error(`Satisfaction: ${r.status}`)
+        return r.json()
+      })
     ])
       .then(([dashData, satData]) => {
+        console.log('[HOME] Dashboard data received:', dashData)
+        if (dashData.error) {
+          console.error('[HOME] Dashboard error:', dashData.error)
+          setLoading(false)
+          return
+        }
         setData({
           ...dashData,
           avgScore: satData.average,
@@ -59,7 +75,10 @@ export default function HomePage() {
         })
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch((err) => {
+        console.error('[HOME] Fetch error:', err)
+        setLoading(false)
+      })
   }, [session?.user?.tradieSlug])
 
   const greeting = () => {

@@ -138,59 +138,60 @@ export default function HomePage() {
           {/* STATS ROW */}
           <div className="grid grid-cols-2 gap-3">
             <Link href="/jobs">
-              <div className="bg-[#111827] rounded-xl p-4 cursor-pointer
+              <div className="bg-[#111827] border-l-4 border-[#F97316] rounded-xl p-5 cursor-pointer
               active:opacity-70">
-                <p className="text-gray-400 text-xs uppercase mb-1">
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-wide mb-2">
                   Active Jobs
                 </p>
-                <p className="text-3xl font-bold text-[#F97316]">
+                <p className="text-5xl font-bold text-[#F97316]">
                   {data.activeJobs ?? 0}
                 </p>
-                <p className="text-gray-500 text-xs mt-1">
+                <p className="text-gray-500 text-xs mt-2">
                   {data.inProgressJobs ?? 0} in progress
                 </p>
               </div>
             </Link>
             <Link href="/leads">
-              <div className="bg-[#111827] rounded-xl p-4 cursor-pointer
+              <div className="bg-[#111827] border-l-4 border-[#F97316] rounded-xl p-5 cursor-pointer
               active:opacity-70">
-                <p className="text-gray-400 text-xs uppercase mb-1">
+                <p className="text-gray-400 text-xs font-bold uppercase tracking-wide mb-2">
                   New Leads
                 </p>
-                <p className="text-3xl font-bold text-green-400">
+                <p className="text-5xl font-bold text-green-400">
                   {data.newLeads ?? 0}
                 </p>
-                <p className="text-gray-500 text-xs mt-1">
+                <p className="text-gray-500 text-xs mt-2">
                   {data.qualifiedLeads ?? 0} qualified
                 </p>
               </div>
             </Link>
-            <div className="bg-[#111827] rounded-xl p-4">
-              <p className="text-gray-400 text-xs uppercase mb-1">
-                Month Revenue
+            <div className="bg-[#111827] border-l-4 border-[#F97316] rounded-xl p-5 col-span-2">
+              <p className="text-gray-400 text-xs font-bold uppercase tracking-wide mb-2">
+                Monthly Revenue
               </p>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-5xl font-bold text-white">
                 ${(data.monthRevenue ?? 0).toLocaleString()}
               </p>
-              <p className="text-gray-500 text-xs mt-1">jobs invoiced</p>
+              <p className="text-gray-500 text-xs mt-2">jobs invoiced & paid</p>
             </div>
-            <div className="bg-[#111827] rounded-xl p-4">
-              <p className="text-gray-400 text-xs uppercase mb-1">
+            <div className="bg-[#111827] border-l-4 border-[#F97316] rounded-xl p-5 cursor-pointer
+              active:opacity-70">
+              <p className="text-gray-400 text-xs font-bold uppercase tracking-wide mb-2">
                 SMS Sent Today
               </p>
-              <p className="text-3xl font-bold text-blue-400">
+              <p className="text-5xl font-bold text-blue-400">
                 {data.smsSentToday ?? 0}
               </p>
-              <p className="text-gray-500 text-xs mt-1">by ALFRED</p>
+              <p className="text-gray-500 text-xs mt-2">sent by ALFRED</p>
             </div>
-            <div className="bg-[#111827] rounded-xl p-4">
-              <p className="text-gray-400 text-xs uppercase mb-1">
+            <div className="bg-[#111827] border-l-4 border-[#F97316] rounded-xl p-5">
+              <p className="text-gray-400 text-xs font-bold uppercase tracking-wide mb-2">
                 Satisfaction
               </p>
-              <p className="text-2xl font-bold text-yellow-400">
+              <p className="text-5xl font-bold text-yellow-400">
                 {data.avgScore ? `${data.avgScore}⭐` : '—'}
               </p>
-              <p className="text-gray-500 text-xs mt-1">
+              <p className="text-gray-500 text-xs mt-2">
                 {data.reviewCount ?? 0} reviews
               </p>
             </div>

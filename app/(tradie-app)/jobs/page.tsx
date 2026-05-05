@@ -54,6 +54,7 @@ const STATUS_COLORS: Record<string, string> = {
   'SCHEDULED': 'bg-purple-500 text-white',
   'COMPLETE': 'bg-green-500 text-white',
   'INVOICED': 'bg-teal-500 text-white',
+  'PAID': 'bg-emerald-500 text-white',
   'DAY DONE': 'bg-blue-500 text-white',
 }
 
@@ -85,7 +86,7 @@ export default function JobsPage() {
     jobValue: '', estimatedCompletion: ''
   })
 
-  const tabs = ['All', 'SCHEDULED', 'IN PROGRESS', 'RUNNING LATE', 'COMPLETE', 'INVOICED']
+  const tabs = ['All', 'SCHEDULED', 'IN PROGRESS', 'RUNNING LATE', 'COMPLETE', 'INVOICED', 'PAID']
 
   const fetchJobs = (tradieSlug: string) => {
     fetch(`/api/jobs?tradieSlug=${tradieSlug}`)

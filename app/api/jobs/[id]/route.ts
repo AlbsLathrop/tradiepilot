@@ -106,11 +106,26 @@ export async function PATCH(
 
     const updates: Record<string, any> = {}
 
-    if (body.currentPhase) {
-      updates['Current Phase'] = { select: { name: body.currentPhase } }
+    if (body.jobType) {
+      updates['Job Type'] = { select: { name: body.jobType } }
+    }
+    if (body.scope !== undefined) {
+      updates['Scope'] = { rich_text: [{ text: { content: body.scope } }] }
+    }
+    if (body.estimatedCompletion) {
+      updates['Estimated Completion'] = { date: { start: body.estimatedCompletion } }
     }
     if (body.notes !== undefined) {
       updates['Notes'] = { rich_text: [{ text: { content: body.notes } }] }
+    }
+    if (body.leadingHand !== undefined) {
+      updates['Leading Hand'] = { rich_text: [{ text: { content: body.leadingHand } }] }
+    }
+    if (body.leadingHandPhone !== undefined) {
+      updates['Leading Hand Phone'] = { phone_number: body.leadingHandPhone }
+    }
+    if (body.currentPhase) {
+      updates['Current Phase'] = { select: { name: body.currentPhase } }
     }
     if (body.materialsStatus !== undefined) {
       updates['Materials Status'] = { select: { name: body.materialsStatus } }

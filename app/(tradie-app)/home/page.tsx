@@ -65,8 +65,7 @@ export default function HomePage() {
   useEffect(() => {
     if (!session?.user?.tradieSlug) return
 
-    setLoading(true)
-    console.log('[HOME] Session ready, fetching dashboard for:', session?.user?.tradieSlug)
+    console.log('[HOME] Fetching dashboard for:', session?.user?.tradieSlug)
 
     Promise.all([
       fetch(`/api/dashboard?tradieSlug=${session?.user?.tradieSlug}`).then(r => {
@@ -96,7 +95,7 @@ export default function HomePage() {
         console.error('[HOME] Fetch error:', err)
         setLoading(false)
       })
-  }, [session?.user?.tradieSlug])
+  }, [status, session?.user?.tradieSlug])
 
   const greeting = () => {
     const h = new Date().getHours()

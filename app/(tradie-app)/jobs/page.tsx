@@ -31,6 +31,8 @@ interface Job {
   clientPhone: string
   foreman: string
   foremanPhone: string
+  leadingHand?: string
+  leadingHandPhone?: string
   notes: string
   siteAccessNotes: string
   materialsStatus: string
@@ -80,6 +82,8 @@ export default function JobsPage() {
   const [openInvoiceId, setOpenInvoiceId] = useState<string | null>(null)
   const [showNewJob, setShowNewJob] = useState(false)
   const [lightbox, setLightbox] = useState<Photo | null>(null)
+  const [editingField, setEditingField] = useState<string | null>(null)
+  const [editValues, setEditValues] = useState<Record<string, any>>({})
   const [newJob, setNewJob] = useState({
     clientName: '', clientPhone: '', address: '',
     suburb: '', service: '', scope: '',
@@ -177,6 +181,26 @@ export default function JobsPage() {
   const showToast = (msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
+  }
+
+  const handleSaveEdit = async (job: Job, fieldKey: string) => {
+    const value = editValues[`${job.id}-${fieldKey}`]
+    if (value === undefined || value === null) return
+
+    try {
+      await fetch(`/api/jobs/${job.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [fieldKey]: value }),
+      })
+      setJobs(prev => prev.map(j =>
+        j.id === job.id ? { ...j, [fieldKey]: value } : j
+      ))
+      setEditingField(null)
+      showToast('✓ Saved')
+    } catch {
+      showToast('Failed to save')
+    }
   }
 
   const handleInvoiceUpdate = async (job: Job, status: string) => {
@@ -324,14 +348,73 @@ export default function JobsPage() {
                   {/* JOB DETAILS Section */}
                   <div className="pt-4 space-y-2">
                     <p className="text-[#F97316] text-xs font-bold uppercase tracking-wide mb-3">Job Details</p>
-                    {job.jobType && <InfoRow label="Type of Work" value={job.jobType} />}
-                    {job.scope && <InfoRow label="Job Details" value={job.scope} />}
+                    <EditableField
+                      label="Type of Work"
+                      value={job.jobType || ''}
+                      jobId={job.id}
+                      fieldKey="jobType"
+                      editingField={editingField}
+                      editValues={editValues}
+                      onEdit={(jid, field) => {
+                        setEditingField(`${jid}-${field}`)
+                        setEditValues(p => ({
+                          ...p,
+                          [`${jid}-${field}`]: job.jobType || ''
+                        }))
+                      }}
+                      onSave={() => handleSaveEdit(job, 'jobType')}
+                      onCancel={() => setEditingField(null)}
+                      onChangeValue={(val) => setEditValues(p => ({
+                        ...p,
+                        [`${job.id}-jobType`]: val
+                      }))}
+                    />
+                    <EditableField
+                      label="Job Details"
+                      value={job.scope || ''}
+                      jobId={job.id}
+                      fieldKey="scope"
+                      editingField={editingField}
+                      editValues={editValues}
+                      onEdit={(jid, field) => {
+                        setEditingField(`${jid}-${field}`)
+                        setEditValues(p => ({
+                          ...p,
+                          [`${jid}-${field}`]: job.scope || ''
+                        }))
+                      }}
+                      onSave={() => handleSaveEdit(job, 'scope')}
+                      onCancel={() => setEditingField(null)}
+                      onChangeValue={(val) => setEditValues(p => ({
+                        ...p,
+                        [`${job.id}-scope`]: val
+                      }))}
+                    />
                     {job.jobValue && (
                       <InfoRow label="Job Value" value={`$${job.jobValue.toLocaleString()}`} />
                     )}
-                    {job.estimatedCompletion && (
-                      <InfoRow label="Est. Completion" value={job.estimatedCompletion} />
-                    )}
+                    <EditableField
+                      label="Est. Completion"
+                      value={job.estimatedCompletion || ''}
+                      jobId={job.id}
+                      fieldKey="estimatedCompletion"
+                      type="date"
+                      editingField={editingField}
+                      editValues={editValues}
+                      onEdit={(jid, field) => {
+                        setEditingField(`${jid}-${field}`)
+                        setEditValues(p => ({
+                          ...p,
+                          [`${jid}-${field}`]: job.estimatedCompletion || ''
+                        }))
+                      }}
+                      onSave={() => handleSaveEdit(job, 'estimatedCompletion')}
+                      onCancel={() => setEditingField(null)}
+                      onChangeValue={(val) => setEditValues(p => ({
+                        ...p,
+                        [`${job.id}-estimatedCompletion`]: val
+                      }))}
+                    />
                     {job.address && (
                       <div className="flex items-start justify-between gap-4">
                         <span className="text-gray-400 text-sm shrink-0">Address</span>
@@ -351,6 +434,28 @@ export default function JobsPage() {
                         <p className="text-gray-300 text-xs mt-1">{job.siteAccessNotes}</p>
                       </div>
                     )}
+                    <EditableField
+                      label="Notes"
+                      value={job.notes || ''}
+                      jobId={job.id}
+                      fieldKey="notes"
+                      editingField={editingField}
+                      editValues={editValues}
+                      onEdit={(jid, field) => {
+                        setEditingField(`${jid}-${field}`)
+                        setEditValues(p => ({
+                          ...p,
+                          [`${jid}-${field}`]: job.notes || ''
+                        }))
+                      }}
+                      onSave={() => handleSaveEdit(job, 'notes')}
+                      onCancel={() => setEditingField(null)}
+                      onChangeValue={(val) => setEditValues(p => ({
+                        ...p,
+                        [`${job.id}-notes`]: val
+                      }))}
+                      isTextarea
+                    />
                   </div>
 
                   {/* CLIENT Section */}
@@ -389,7 +494,7 @@ export default function JobsPage() {
                   {/* TEAM Section */}
                   <div className="border-t border-[#1F2937] pt-4">
                     <p className="text-[#F97316] text-xs font-bold uppercase tracking-wide mb-3">Team</p>
-                    <div className="bg-[#0F0F0F] rounded-lg p-3 space-y-2">
+                    <div className="bg-[#0F0F0F] rounded-lg p-3 space-y-3">
                       {job.foreman && (
                         <div className="flex justify-between items-center">
                           <span className="text-gray-400 text-sm">Foreman</span>
@@ -400,6 +505,91 @@ export default function JobsPage() {
                             )}
                           </div>
                         </div>
+                      )}
+                      {job.leadingHand ? (
+                        <div className="flex justify-between items-center cursor-pointer"
+                          onClick={() => {
+                            if (editingField === `${job.id}-leadingHand`) {
+                              setEditingField(null)
+                            } else {
+                              setEditingField(`${job.id}-leadingHand`)
+                              setEditValues(p => ({
+                                ...p,
+                                [`${job.id}-leadingHand`]: job.leadingHand || '',
+                                [`${job.id}-leadingHandPhone`]: job.leadingHandPhone || ''
+                              }))
+                            }
+                          }}>
+                          <span className="text-gray-400 text-sm">Leading Hand</span>
+                          {editingField === `${job.id}-leadingHand` ? (
+                            <div className="flex items-center gap-2 flex-1 ml-4 justify-end">
+                              <input
+                                type="text"
+                                value={editValues[`${job.id}-leadingHand`] || ''}
+                                onChange={(e) => setEditValues(p => ({
+                                  ...p,
+                                  [`${job.id}-leadingHand`]: e.target.value
+                                }))}
+                                placeholder="Name"
+                                className="bg-[#111827] border border-[#F97316] rounded px-2 py-1 text-white text-xs w-24"
+                              />
+                              <input
+                                type="tel"
+                                value={editValues[`${job.id}-leadingHandPhone`] || ''}
+                                onChange={(e) => setEditValues(p => ({
+                                  ...p,
+                                  [`${job.id}-leadingHandPhone`]: e.target.value
+                                }))}
+                                placeholder="Phone"
+                                className="bg-[#111827] border border-[#F97316] rounded px-2 py-1 text-white text-xs w-28"
+                              />
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const leadingHand = editValues[`${job.id}-leadingHand`]
+                                  const leadingHandPhone = editValues[`${job.id}-leadingHandPhone`]
+                                  fetch(`/api/jobs/${job.id}`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ leadingHand, leadingHandPhone }),
+                                  }).then(() => {
+                                    setJobs(prev => prev.map(j =>
+                                      j.id === job.id ? { ...j, leadingHand, leadingHandPhone } : j
+                                    ))
+                                    setEditingField(null)
+                                    showToast('✓ Saved')
+                                  }).catch(() => showToast('Failed to save'))
+                                }}
+                                className="text-green-400 text-xs font-bold">✓</button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setEditingField(null)
+                                }}
+                                className="text-gray-400 text-xs font-bold">✕</button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span className="text-white text-sm">{job.leadingHand}</span>
+                              {job.leadingHandPhone && (
+                                <a href={`tel:${job.leadingHandPhone}`} onClick={(e) => e.stopPropagation()} className="text-[#F97316] text-sm">📞</a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setEditingField(`${job.id}-leadingHand`)
+                            setEditValues(p => ({
+                              ...p,
+                              [`${job.id}-leadingHand`]: '',
+                              [`${job.id}-leadingHandPhone`]: ''
+                            }))
+                          }}
+                          className="w-full text-center text-gray-500 text-xs py-2 hover:text-[#F97316] transition-colors">
+                          + Tap to add Leading Hand
+                        </button>
                       )}
                     </div>
                   </div>
@@ -607,6 +797,74 @@ export default function JobsPage() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+interface EditableFieldProps {
+  label: string
+  value: string
+  jobId: string
+  fieldKey: string
+  type?: string
+  isTextarea?: boolean
+  editingField: string | null
+  editValues: Record<string, any>
+  onEdit: (jobId: string, fieldKey: string) => void
+  onSave: () => void
+  onCancel: () => void
+  onChangeValue: (val: string) => void
+}
+
+function EditableField({
+  label, value, jobId, fieldKey, type = 'text', isTextarea,
+  editingField, editValues, onEdit, onSave, onCancel, onChangeValue
+}: EditableFieldProps) {
+  const isEditing = editingField === `${jobId}-${fieldKey}`
+  const editValue = editValues[`${jobId}-${fieldKey}`] ?? value
+
+  if (isEditing) {
+    return (
+      <div className="flex items-end justify-between gap-4">
+        <label className="text-gray-400 text-sm shrink-0">{label}</label>
+        <div className="flex-1 flex gap-2 items-end">
+          {isTextarea ? (
+            <textarea
+              value={editValue}
+              onChange={(e) => onChangeValue(e.target.value)}
+              placeholder={label}
+              className="flex-1 bg-[#0F0F0F] border border-[#F97316] rounded px-3 py-2 text-white text-sm focus:outline-none"
+              rows={3}
+            />
+          ) : (
+            <input
+              type={type}
+              value={editValue}
+              onChange={(e) => onChangeValue(e.target.value)}
+              placeholder={label}
+              className="flex-1 bg-[#0F0F0F] border border-[#F97316] rounded px-3 py-2 text-white text-sm focus:outline-none"
+            />
+          )}
+          <button
+            onClick={onSave}
+            className="text-green-400 font-bold text-sm hover:text-green-300">✓</button>
+          <button
+            onClick={onCancel}
+            className="text-gray-400 font-bold text-sm hover:text-gray-300">✕</button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className="flex items-start justify-between gap-4 cursor-pointer group"
+      onClick={() => onEdit(jobId, fieldKey)}
+    >
+      <span className="text-gray-400 text-sm shrink-0">{label}</span>
+      <span className="text-white text-sm text-right group-hover:text-[#F97316] transition-colors">
+        {value || '—'}
+      </span>
     </div>
   )
 }

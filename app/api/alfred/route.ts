@@ -107,7 +107,7 @@ WHEN JOB IS AMBIGUOUS:
 - If you can't identify the job clearly, ask: "Which job? [list 2-3 active job names]"
 - Keep it short: "Running late on which job — Sarah's kitchen or the Bondi reno?"
 
-FIXER ONBOARDING MODE — When Joey (or Benny) says 'onboard new tradie',
+FIXER ONBOARDING MODE — When ${tradieName} (or an admin) says 'onboard new tradie',
 'setup new account', 'add new tradie', etc:
 Run this 10-question interview in chat (one question per message):
 1. What's the business name?
@@ -121,7 +121,7 @@ Run this 10-question interview in chat (one question per message):
 9. What Twilio number should they use? (or just type 'new' if they need a new one)
 10. Confirm: "Setting up [name] as [trade] in [area] — correct? (yes/no)"
 
-Once Joey confirms YES on Q10, call the onboarding API:
+Once ${tradieName} confirms YES on Q10, call the onboarding API:
 - Generate tradieConfigId as: firstname-trade (e.g. 'ben-stonemason', 'sarah-painter')
 - POST to /api/onboarding with all data
 - Reply: "✓ Done! [BusinessName] is ready. Login: [email]"
@@ -133,7 +133,7 @@ WHEN ${tradieName.toUpperCase()} ASKS YOU TO SEND A MESSAGE TO A CLIENT:
 ${tradieName} might say: "Tell Sarah I'll be there at 2pm", "Text Dave the job is done", "Message Emma about the paint color", etc.
 When you identify this intent:
 1. Find the client's phone number from the jobs or leads context
-2. Write the SMS text (max 160 chars, friendly, like Joey would say it)
+2. Write the SMS text (max 160 chars, friendly, like ${tradieName} would say it)
 3. Reply in EXACTLY this format (no markdown, plain text):
 [SMS_READY]
 TO: +61XXXXXXXXX
@@ -141,11 +141,11 @@ NAME: [Client Name]
 MESSAGE: [the SMS text]
 [/SMS_READY]
 
-4. Then ask Joey: "Ready to send this to [Name] — shall I send it?"
-5. Wait for Joey to confirm by saying "yes", "send it", "go ahead", "yep", "do it", or similar
-6. When Joey confirms, reply with EXACTLY: [SEND_SMS]
+4. Then ask ${tradieName}: "Ready to send this to [Name] — shall I send it?"
+5. Wait for ${tradieName} to confirm by saying "yes", "send it", "go ahead", "yep", "do it", or similar
+6. When ${tradieName} confirms, reply with EXACTLY: [SEND_SMS]
 
-Do NOT send without Joey's confirmation.
+Do NOT send without ${tradieName}'s confirmation.
 
 DARK HOURS RULE: You must NEVER send SMS or initiate calls outside of business hours (7am–8pm Sydney time).
 
@@ -155,10 +155,10 @@ If a client or foreman contacts ${tradieName} outside of these hours:
 3. Log the message in Communication Log for ${tradieName} to see tomorrow
 
 If ${tradieName} asks you to send an SMS outside of business hours:
-1. Warn him: 'It's currently [time] — outside business hours (7am-8pm Sydney time)'
+1. Warn them: 'It's currently [time] — outside business hours (7am-8pm Sydney time)'
 2. Ask: 'Should I schedule this for 7am tomorrow instead?'
-3. If Joey says yes, note it in the reply for Joey to send manually
-4. If Joey says send anyway, refuse and explain why it's a bad idea
+3. If ${tradieName} says yes, note it in the reply for them to send manually
+4. If ${tradieName} says send anyway, refuse and explain why it's a bad idea
 
 RESPONSE FORMAT — always return valid JSON:
 {
@@ -575,7 +575,7 @@ export async function POST(request: NextRequest) {
       leadsStats,
     };
 
-    const textContent = `Joey says: "${message || 'Uploaded media'}"
+    const textContent = `${tradieName} says: "${message || 'Uploaded media'}"
 ${brainContext ? `\nJOB BRAIN for ${mentionedJob?.name}:\n${brainContext}` : ''}
 ${milestoneContext}
 ${leadLogsContext}
@@ -613,7 +613,7 @@ ${JSON.stringify(contextData, null, 2)}`;
     }
 
     if (inDarkHours) {
-      systemPrompt += `\n\n⚠️ DARK HOURS ACTIVE: Current Sydney time is ${sydneyTime} (outside 7am-8pm). Do not send SMS or initiate calls. Warn Joey if he tries to send an SMS.`
+      systemPrompt += `\n\n⚠️ DARK HOURS ACTIVE: Current Sydney time is ${sydneyTime} (outside 7am-8pm). Do not send SMS or initiate calls. Warn ${tradieName} if they try to send an SMS.`
     }
     systemPrompt += globalMilestoneContext
 
@@ -683,7 +683,7 @@ ${JSON.stringify(contextData, null, 2)}`;
       }
     }
 
-    // STEP 2: Check if Joey confirmed SMS send
+    // STEP 2: Check if tradie confirmed SMS send
     const confirmationWords = ['yes', 'send', 'go ahead', 'yep', 'do it', 'send it'];
     const isConfirming = message && confirmationWords.some(word => message.toLowerCase().match(new RegExp(`^(${word}|${word}s?|${word}\\s+it)$`)));
 

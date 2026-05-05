@@ -55,6 +55,7 @@ async function saveToMediaDB(data: {
   jobName: string;
   stage: string;
   description: string;
+  uploadedBy?: string;
 }) {
   if (!process.env.NOTION_MEDIA_DB_ID) return null;
 
@@ -69,7 +70,7 @@ async function saveToMediaDB(data: {
         'Stage': { select: { name: data.stage } },
         'Auto Description': { rich_text: [{ text: { content: data.description } }] },
         'Tags': { multi_select: [{ name: data.stage === 'Issue' ? 'Issue' : 'Completed Work' }] },
-        'Uploaded By': { rich_text: [{ text: { content: 'Joey' } }] },
+        'Uploaded By': { rich_text: [{ text: { content: data.uploadedBy || 'TradiePilot' } }] },
         'Sent To Client': { checkbox: false },
       },
     });
@@ -121,6 +122,7 @@ export async function POST(request: NextRequest) {
 
     // Save to Media DB
     const title = `${jobName} — ${stage} — ${new Date().toLocaleDateString('en-AU')}`;
+    const tradieName = formData.get('tradieName') as string || 'TradiePilot';
     const mediaDbId = await saveToMediaDB({
       title,
       mediaUrl: blob.url,
@@ -129,6 +131,7 @@ export async function POST(request: NextRequest) {
       jobName,
       stage,
       description,
+      uploadedBy: tradieName,
     });
 
     return NextResponse.json({

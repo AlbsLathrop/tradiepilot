@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { jobId, clientName, clientPhone, suburb, callType, tradieConfigId } = await req.json()
+  const { jobId, clientName, clientPhone, suburb, callType, tradieConfigId, tradieName = 'your business' } = await req.json()
 
   const validationError = validateRequired({ jobId, clientName, clientPhone }, ['jobId', 'clientName', 'clientPhone'])
   if (validationError) {
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       max_tokens: 300,
       messages: [{
         role: 'user',
-        content: `You are ALFRED, calling on behalf of Joey (Australian tradie).
+        content: `You are ALFRED, calling on behalf of ${tradieName} (Australian tradie).
 Write a SHORT, natural voicemail/call script for this situation:
 
 Client: ${clientName}
@@ -65,7 +65,7 @@ Call type: ${callType || 'general update'}
 Rules:
 - Max 3 sentences
 - Friendly, professional Australian tone
-- End with: "Give Joey a call back on this number if you need anything. Cheers."
+- End with: "Give ${tradieName} a call back on this number if you need anything. Cheers."
 - NO robotic language — sound like a real person calling
 - Don't say "I am an AI"
 
@@ -75,8 +75,8 @@ Just write the script, no labels or preamble.`
 
     const script = scriptRes.content[0].type === 'text'
       ? scriptRes.content[0].text.trim()
-      : `Hey ${clientName}, it's Joey's team calling about your job in ${suburb}.
-         Just wanted to touch base. Give Joey a call back if you need anything. Cheers.`
+      : `Hey ${clientName}, it's ${tradieName}'s team calling about your job in ${suburb}.
+         Just wanted to touch base. Give ${tradieName} a call back if you need anything. Cheers.`
 
     // STEP 2: Make the call via Twilio with TTS
     const call = await twilioClient.calls.create({

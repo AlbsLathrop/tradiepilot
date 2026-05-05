@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
           process.env.TWILIO_AUTH_TOKEN
         )
 
-        const smsBody = `Hi ${clientName}, running a bit behind today but on the way. Thanks for your patience! — TradiePilot`
+        const smsBody = `Hi ${clientName}, ${tradieName} is running a bit behind today but on the way. Thanks for your patience! — TradiePilot`
 
         await twilio.messages.create({
           body: smsBody,

@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
           select: { name: eventType ?? 'NOTE' }
         },
         'By': {
-          select: { name: by ?? 'Joey' }
+          select: { name: by ?? 'TradiePilot' }
         },
       }
     })

@@ -97,9 +97,9 @@ export async function POST(req: NextRequest) {
       max_tokens: 200,
       messages: [{
         role: 'user',
-        content: `Write a friendly Monday morning SMS summary for ${tradieName || 'your tradie'}, an Australian tradie. Keep it under 160 chars.
+        content: `Write a friendly Monday morning SMS summary for ${tradieName}, an Australian tradie. Keep it under 160 chars.
 Stats: ${activeJobs} active jobs, ${newLeads} new leads, $${weekRevenue.toLocaleString()} invoiced, ${overdueInvoices} overdue invoices, ${runningLate.length > 0 ? 'Running late: ' + runningLate.join(', ') : 'no late jobs'}.
-Start with "Morning ${tradieName || 'Joey'}!" Be direct, no fluff. Australian tone.`
+Start with "Morning ${tradieName}!" Be direct, no fluff. Australian tone.`
       }]
     })
 

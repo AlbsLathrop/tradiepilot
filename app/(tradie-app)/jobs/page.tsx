@@ -121,7 +121,7 @@ export default function JobsPage() {
       return
     }
     setLoading(true)
-    fetchJobs(session.user.tradieSlug)
+    fetchJobs(session?.user?.tradieSlug)
   }, [session?.user?.tradieSlug])
 
   const filteredJobs = activeTab === 'All'
@@ -162,7 +162,7 @@ export default function JobsPage() {
         // Refresh jobs to show new milestone
         setTimeout(() => {
           if (session?.user?.tradieSlug) {
-            fetchJobs(session.user.tradieSlug)
+            fetchJobs(session?.user?.tradieSlug)
           }
         }, 1500)
       } else {
@@ -593,7 +593,7 @@ export default function JobsPage() {
                     jobValue: '', estimatedCompletion: ''
                   })
                   if (session?.user?.tradieSlug) {
-                    fetchJobs(session.user.tradieSlug)
+                    fetchJobs(session?.user?.tradieSlug)
                   }
                 } else {
                   setToast('Failed to create job')

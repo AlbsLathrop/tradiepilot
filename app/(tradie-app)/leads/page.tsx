@@ -101,7 +101,8 @@ export default function LeadsPage() {
   }
 
   useEffect(() => {
-    fetchLeads(session.user.tradieSlug)
+    if (!session?.user?.tradieSlug) return
+    fetchLeads(session?.user?.tradieSlug)
   }, [session?.user?.tradieSlug])
 
   const filtered = activeTab === 'All'

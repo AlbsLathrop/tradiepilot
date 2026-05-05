@@ -38,7 +38,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (session?.user?.tradieSlug) {
-      setTradieSlug(session.user.tradieSlug);
+      setTradieSlug(session?.user?.tradieSlug);
     }
   }, [session?.user?.tradieSlug]);
 

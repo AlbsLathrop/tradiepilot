@@ -182,7 +182,7 @@ export default function LeadsPage() {
       })
       setQuickNote(prev => ({ ...prev, [lead.id]: '' }))
       if (session?.user?.tradieSlug) {
-        fetchLeads(session.user.tradieSlug)
+        fetchLeads(session?.user?.tradieSlug)
       }
       showToast('✓ Note added')
     } catch {
@@ -631,7 +631,7 @@ export default function LeadsPage() {
                     service: '', source: '', notes: ''
                   })
                   if (session?.user?.tradieSlug) {
-                    fetchLeads(session.user.tradieSlug)
+                    fetchLeads(session?.user?.tradieSlug)
                   }
                 } else {
                   showToast('Failed to create lead')

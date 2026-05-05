@@ -26,27 +26,12 @@ export default function SettingsPage() {
     setTimeout(() => setToast(null), 3000)
   }
 
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-[#0F0F0F] text-white pb-24">
-        <div className="px-4 space-y-3 pt-8">
-          {[1,2,3].map(i => (
-            <div key={i} className="bg-[#111827] rounded-xl h-16 animate-pulse" />
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  if (!session?.user?.tradieSlug) {
-    return (
-      <div className="min-h-screen bg-[#0F0F0F] text-white flex items-center justify-center">
-        <p className="text-gray-400">Unable to load settings</p>
-      </div>
-    )
-  }
-
   useEffect(() => {
+    if (status !== 'authenticated') return
+    if (!session?.user?.tradieSlug) {
+      setLoading(false)
+      return
+    }
     console.log('[SETTINGS] Session ready, fetching config')
     fetch('/api/settings')
       .then(r => {
@@ -62,7 +47,7 @@ export default function SettingsPage() {
         console.error('[SETTINGS] Fetch error:', err)
         setLoading(false)
       })
-  }, [])
+  }, [status, session?.user?.tradieSlug])
 
   const handleSave = async () => {
     setSaving(true)
@@ -79,12 +64,26 @@ export default function SettingsPage() {
     setSaving(false)
   }
 
+  if (status === 'loading' || loading) {
+    return (
+      <div className="min-h-screen bg-[#0F0F0F] text-white pb-24">
+        <div className="px-4 space-y-3 pt-8">
+          {[1,2,3].map(i => (
+            <div key={i} className="bg-[#111827] rounded-xl h-16 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (status === 'unauthenticated') {
+    return null
+  }
+
   return (
     <div className="min-h-screen bg-[#0F0F0F] text-white pb-24">
       {toast && (
-        <div className="fixed top-4 left-4 right-4 z-50
-        bg-[#F97316] text-white text-center py-3 px-4
-        rounded-xl text-sm font-medium">
+        <div className="fixed top-4 left-4 right-4 z-50 bg-[#F97316] text-white text-center py-3 px-4 rounded-xl text-sm font-medium">
           {toast}
         </div>
       )}
@@ -94,16 +93,7 @@ export default function SettingsPage() {
         <p className="text-gray-400 text-sm">Your TradiePilot config</p>
       </div>
 
-      {loading && (
-        <div className="px-4 space-y-3">
-          {[1,2,3].map(i => (
-            <div key={i} className="bg-[#111827] rounded-xl h-16
-            animate-pulse" />
-          ))}
-        </div>
-      )}
-
-      {!loading && config && (
+      {config && (
         <div className="px-4 space-y-4">
 
           <Section title="Business Profile">

@@ -124,6 +124,12 @@ export async function PATCH(
     if (body.leadingHandPhone !== undefined) {
       updates['Leading Hand Phone'] = { phone_number: body.leadingHandPhone }
     }
+    if (body.teamMembers !== undefined) {
+      updates['Team Members'] = { rich_text: [{ text: { content: body.teamMembers } }] }
+    }
+    if (body.foremanName !== undefined) {
+      updates['Foreman Name'] = { rich_text: [{ text: { content: body.foremanName } }] }
+    }
     if (body.currentPhase) {
       updates['Current Phase'] = { select: { name: body.currentPhase } }
     }

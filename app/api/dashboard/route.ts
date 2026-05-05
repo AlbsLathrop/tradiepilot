@@ -116,32 +116,9 @@ export async function GET(request: Request) {
       return ts >= weekAgo && c.sender === 'ALFRED'
     }).length
 
-    // Fetch reviews
+    // Fetch reviews (satisfaction DB not yet configured)
     let reviewCount = 0
     let reviewRating: number | null = null
-
-    try {
-      if (NOTION_DB.SATISFACTION) {
-        const satRes = await notion.databases.query({
-          database_id: NOTION_DB.SATISFACTION,
-          filter: {
-            property: 'Tradie Config ID',
-            rich_text: { equals: tradieSlug }
-          },
-        })
-
-        if ((satRes.results as any[]).length > 0) {
-          const reviews = (satRes.results as any[])
-          reviewCount = reviews.length
-          if (reviewCount > 0) {
-            const scores = reviews.map(r => r.properties['Rating']?.number ?? 0)
-            reviewRating = scores.reduce((a, b) => a + b, 0) / reviewCount
-          }
-        }
-      }
-    } catch {
-      // Skip if satisfaction DB not available
-    }
 
     // Attention jobs
     const attentionJobs = jobs.filter(j => {

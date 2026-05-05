@@ -332,7 +332,7 @@ export default function JobsPage() {
                               className="bg-green-600 hover:bg-green-700 text-white text-xs
                               font-bold px-3 py-1.5 rounded-lg active:opacity-70 transition-colors inline-block"
                             >
-                              📞 ALFRED Call
+                              📞 Call {job.clientName}
                             </a>
                           )}
                         </div>

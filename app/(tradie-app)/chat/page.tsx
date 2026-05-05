@@ -22,9 +22,19 @@ interface Job {
   suburb: string;
 }
 
+interface JobContext {
+  id: string;
+  clientName: string;
+  suburb: string;
+  service: string;
+  status: string;
+  jobValue: number | null;
+}
+
 export default function ChatPage() {
   const { data: session } = useSession();
   const [tradieSlug, setTradieSlug] = useState('');
+  const [jobContext, setJobContext] = useState<JobContext | null>(null);
 
   useEffect(() => {
     if (session?.user?.tradieSlug) {
@@ -106,7 +116,28 @@ export default function ChatPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const jobId = params.get('jobId');
     const preloadedMessage = params.get('message');
+
+    if (jobId && tradieSlug) {
+      fetch(`/api/jobs?tradieSlug=${tradieSlug}`)
+        .then(r => r.json())
+        .then(data => {
+          const job = data.jobs?.find((j: any) => j.id === jobId);
+          if (job) {
+            setJobContext({
+              id: job.id,
+              clientName: job.clientName,
+              suburb: job.suburb,
+              service: job.service,
+              status: job.status,
+              jobValue: job.jobValue,
+            });
+          }
+        })
+        .catch(() => {});
+    }
+
     if (preloadedMessage) {
       setInput(preloadedMessage);
       setTimeout(() => {
@@ -114,7 +145,7 @@ export default function ChatPage() {
         window.history.replaceState({}, '', '/chat');
       }, 300);
     }
-  }, []);
+  }, [tradieSlug]);
 
   const startRecording = async () => {
     try {
@@ -284,6 +315,10 @@ export default function ChatPage() {
         conversationHistory: recentMessages,
       };
 
+      if (jobContext) {
+        alfredPayload.jobContext = jobContext;
+      }
+
       if (mediaUrl) {
         alfredPayload.mediaUrl = mediaUrl;
         alfredPayload.mediaType = mediaType;
@@ -364,6 +399,21 @@ export default function ChatPage() {
           Clear
         </button>
       </div>
+
+      {/* Job Context Banner */}
+      {jobContext && (
+        <div className="px-4 py-3 bg-[#1F2937] border-b border-[#374151] flex items-center justify-between">
+          <p className="text-[#9CA3AF] text-xs">
+            📋 Asking about: <span className="text-white font-semibold">{jobContext.clientName}</span> — {jobContext.service} in {jobContext.suburb} ({jobContext.status})
+          </p>
+          <button
+            onClick={() => setJobContext(null)}
+            className="text-[#6B7280] hover:text-[#9CA3AF] text-xs"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">

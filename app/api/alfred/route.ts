@@ -450,7 +450,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { message, mediaUrl, mediaType, tradieSlug, conversationHistory = [] } = body;
+    const { message, mediaUrl, mediaType, tradieSlug, conversationHistory = [], jobContext } = body;
 
     if (!message && !mediaUrl) {
       logValidationError('/api/alfred', ip, 'message', 'Message or media required');
@@ -503,7 +503,12 @@ export async function POST(request: NextRequest) {
       console.error('Error fetching tradie name:', err);
     }
 
-    const mentionedJob = message ? findJob(jobs, message) : null;
+    let mentionedJob = message ? findJob(jobs, message) : null;
+
+    // If jobContext is provided in request, prioritize it over message-based detection
+    if (jobContext && jobContext.id) {
+      mentionedJob = jobs.find(j => j.id === jobContext.id) || mentionedJob;
+    }
 
     // Read brain summary and milestones for identified job
     let brainContext = '';
@@ -587,6 +592,11 @@ ${JSON.stringify(contextData, null, 2)}`;
     const sydneyTime = getSydneyTime()
 
     let systemPrompt = buildAlfredSystemPrompt(tradieName)
+
+    if (jobContext) {
+      systemPrompt += `\n\n🎯 FOCUSED JOB CONTEXT:\nYou are currently helping with a specific job:\n- Client: ${jobContext.clientName}\n- Service: ${jobContext.service}\n- Suburb: ${jobContext.suburb}\n- Status: ${jobContext.status}\n${jobContext.jobValue ? `- Job Value: $${jobContext.jobValue.toLocaleString()}` : ''}\n\nAnswer questions specifically about this job. Reference this job in your replies.`
+    }
+
     if (inDarkHours) {
       systemPrompt += `\n\n⚠️ DARK HOURS ACTIVE: Current Sydney time is ${sydneyTime} (outside 7am-8pm). Do not send SMS or initiate calls. Warn Joey if he tries to send an SMS.`
     }

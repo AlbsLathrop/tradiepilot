@@ -45,29 +45,33 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (status !== 'authenticated') return
-    if (!session?.user?.tradieConfigId) {
-      console.log('[SETTINGS] tradieConfigId missing:', session?.user?.tradieConfigId)
-      setError('tradieConfigId not found in session')
+
+    console.log('SESSION:', JSON.stringify(session?.user))
+
+    if (!session?.user?.tradieSlug) {
+      console.log('[SETTINGS] tradieSlug missing:', session?.user?.tradieSlug)
+      setError('tradieSlug not found in session')
       setLoading(false)
       return
     }
-    console.log('[SETTINGS] Session ready, fetching config for:', session.user.tradieConfigId)
-    fetch('/api/tradie-config')
+
+    console.log('[SETTINGS] Fetching config for slug:', session.user.tradieSlug)
+    fetch(`/api/tradie-config?tradieSlug=${encodeURIComponent(session.user.tradieSlug)}`)
       .then(r => {
         if (!r.ok) throw new Error(`Tradie Config API: ${r.status}`)
         return r.json()
       })
       .then(d => {
-        console.log('[SETTINGS] Config loaded:', d.config)
+        console.log('[SETTINGS] Config loaded:', d)
         setConfig({
-          businessName: d.config.businessName ?? '',
-          tradeType: d.config.tradeType ?? '',
-          serviceArea: d.config.serviceArea ?? '',
-          minJobValue: d.config.minJobValue ?? 0,
-          hoursStart: d.config.hoursStart ?? '7:00',
-          hoursEnd: d.config.hoursEnd ?? '17:00',
-          tone: d.config.tone ?? 'Professional',
-          twilioNumber: d.config.twilioNumber ?? '',
+          businessName: d.businessName ?? '',
+          tradeType: d.trade ?? '',
+          serviceArea: d.serviceArea ?? '',
+          minJobValue: d.minJobValue ?? 0,
+          hoursStart: d.hoursStart ?? '7:00',
+          hoursEnd: d.hoursEnd ?? '17:00',
+          tone: d.tone ?? 'Professional',
+          twilioNumber: d.twilioNumber ?? '',
         })
         setError(null)
         setLoading(false)
@@ -77,7 +81,7 @@ export default function SettingsPage() {
         setError(err instanceof Error ? err.message : 'Failed to load settings')
         setLoading(false)
       })
-  }, [status, session?.user?.tradieConfigId])
+  }, [status, session?.user?.tradieSlug])
 
   const handleSave = async () => {
     setSaving(true)

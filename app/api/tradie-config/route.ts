@@ -1,91 +1,50 @@
 import { getServerSession } from 'next-auth/next'
-import { Client, isFullPage } from '@notionhq/client'
-import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints'
-import { NOTION_DB } from '@/lib/constants'
+import { Client } from '@notionhq/client'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY })
 
-function richText(page: PageObjectResponse, key: string): string {
-  const prop = page.properties[key] as any
-  return prop?.rich_text?.[0]?.plain_text ?? ''
-}
-
-function title(page: PageObjectResponse, key: string): string {
-  const prop = page.properties[key] as any
-  return prop?.title?.[0]?.plain_text ?? ''
-}
-
-function phone(page: PageObjectResponse, key: string): string {
-  const prop = page.properties[key] as any
-  return prop?.phone_number ?? ''
-}
-
-function number(page: PageObjectResponse, key: string): number | null {
-  const prop = page.properties[key] as any
-  return prop?.number ?? null
-}
-
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
+    const tradieSlug = session?.user?.tradieSlug
 
-    console.log('[tradie-config] Session user:', JSON.stringify(session?.user))
-    console.log('[tradie-config] tradieSlug:', session?.user?.tradieSlug)
-    console.log('[tradie-config] tradieConfigId:', session?.user?.tradieConfigId)
+    console.log('Settings API - tradieSlug:', tradieSlug)
 
-    if (!session?.user?.tradieSlug) {
-      return Response.json(
-        { error: 'Missing tradieSlug in session' },
-        { status: 400 }
-      )
+    if (!tradieSlug) {
+      return Response.json({ error: 'No tradieSlug in session' }, { status: 401 })
     }
 
-    console.log('[tradie-config] Querying Notion for slug:', session.user.tradieSlug)
-
-    const res = await notion.databases.query({
-      database_id: NOTION_DB.CONFIG,
+    const response = await notion.databases.query({
+      database_id: 'ff9248a4dd244ad9a0761281967750ea',
       filter: {
         property: 'Tradie Slug',
-        rich_text: { equals: session.user.tradieSlug },
-      },
-      page_size: 1,
+        rich_text: { equals: tradieSlug }
+      }
     })
 
-    console.log('[tradie-config] Query results:', {
-      resultCount: res.results.length,
-      hasError: false,
-    })
+    console.log('Notion results:', response.results.length)
 
-    if (res.results.length === 0) {
-      console.error('[tradie-config] No config found for slug:', session.user.tradieSlug)
-      return Response.json(
-        { error: 'No tradie config found' },
-        { status: 500 }
-      )
+    if (!response.results.length) {
+      return Response.json({ error: 'Tradie config not found' }, { status: 404 })
     }
 
-    const page = res.results[0] as PageObjectResponse
-    const config = {
-      businessName: title(page, 'Business Name'),
-      trade: richText(page, 'Trade') || richText(page, 'Trade Type'),
-      serviceArea: richText(page, 'Service Area'),
-      minJobValue: number(page, 'Min Job Value'),
-      phone: phone(page, 'Phone'),
-      googleReviewUrl: richText(page, 'Google Review URL'),
-    }
+    const page = response.results[0] as any
+    const props = page.properties
 
-    console.log('[tradie-config] Config loaded:', config)
+    console.log('Props keys:', Object.keys(props))
 
-    return Response.json({ config })
-  } catch (error) {
-    console.error('[tradie-config] Error:', {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
+    return Response.json({
+      businessName: props['Business Name']?.title?.[0]?.plain_text || '',
+      trade: props['Trade']?.select?.name || props['Trade Type']?.select?.name || '',
+      serviceArea: props['Service Area']?.rich_text?.[0]?.plain_text || '',
+      minJobValue: props['Min Job Value']?.number || 0,
+      phone: props['Phone']?.phone_number || '',
+      googleReviewUrl: props['Google Review URL']?.url || ''
     })
-    return Response.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    )
+
+  } catch (error: any) {
+    console.error('Settings API error:', error?.message, error?.code)
+    return Response.json({ error: error?.message }, { status: 500 })
   }
 }

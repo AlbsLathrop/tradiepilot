@@ -60,7 +60,9 @@ export default function ChatPage() {
 
         if (data.messages && data.messages.length > 0) {
           const loadedMessages = data.messages.map((m: any) => ({
-            ...m,
+            id: Math.random().toString(36).substr(2, 9),
+            role: m.role === 'user' ? 'joey' : m.role === 'assistant' ? 'alfred' : m.role,
+            content: m.content,
             timestamp: new Date(m.timestamp),
           }));
           setMessages(loadedMessages);
@@ -244,6 +246,20 @@ export default function ChatPage() {
 
       // Send to ALFRED
       setLoading(true);
+
+      // Save user message to history
+      if (tradieSlug) {
+        fetch('/api/alfred/chat-history', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tradieSlug,
+            role: 'user',
+            content: transcribeData.transcript,
+          }),
+        }).catch(err => console.error('Failed to save user message:', err));
+      }
+
       const alfredRes = await fetch('/api/alfred', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -260,18 +276,17 @@ export default function ChatPage() {
         };
         setMessages(prev => [...prev, alfredMsg]);
 
-        // Save to database
+        // Save ALFRED response to history
         if (tradieSlug) {
           fetch('/api/alfred/chat-history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              message: transcribeData.transcript,
-              reply: alfredData.reply,
-              action: alfredData.action,
               tradieSlug,
+              role: 'assistant',
+              content: alfredData.reply,
             }),
-          }).catch(err => console.error('Failed to save chat:', err));
+          }).catch(err => console.error('Failed to save ALFRED response:', err));
         }
       }
 
@@ -356,6 +371,19 @@ export default function ChatPage() {
       setMessages(prev => [...prev, userMsg]);
       setInput('');
       clearPendingFile();
+
+      // Save user message to history
+      if (tradieSlug) {
+        fetch('/api/alfred/chat-history', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tradieSlug,
+            role: 'user',
+            content: text || (mediaType ? `Shared a ${mediaType.toLowerCase()}` : 'File sent'),
+          }),
+        }).catch(err => console.error('Failed to save user message:', err));
+      }
 
       // Send to ALFRED
       const recentMessages = messages
@@ -445,18 +473,17 @@ export default function ChatPage() {
 
         setMessages(prev => [...prev, alfredMsg]);
 
-        // Save to database
+        // Save ALFRED response to history
         if (tradieSlug) {
           fetch('/api/alfred/chat-history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              message: text || (mediaType ? `Shared a ${mediaType.toLowerCase()}` : 'File sent'),
-              reply: replyText,
-              action: data.action,
               tradieSlug,
+              role: 'assistant',
+              content: replyText,
             }),
-          }).catch(err => console.error('Failed to save chat:', err));
+          }).catch(err => console.error('Failed to save ALFRED response:', err));
         }
       }
     } catch (err: any) {

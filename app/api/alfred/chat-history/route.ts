@@ -1,14 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client } from '@notionhq/client';
-
-const notion = new Client({ auth: process.env.NOTION_API_KEY! });
+import fs from 'fs/promises';
+import path from 'path';
 
 interface ChatMessage {
-  id: string;
-  role: 'joey' | 'alfred';
+  role: 'user' | 'assistant';
   content: string;
-  timestamp: Date;
-  action?: string;
+  timestamp: string;
+}
+
+const DATA_DIR = path.join(process.cwd(), 'data', 'chat-history');
+
+async function ensureDataDir() {
+  try {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+  } catch (err) {
+    console.error('Failed to create data directory:', err);
+  }
+}
+
+async function getChatFile(tradieSlug: string): Promise<string> {
+  return path.join(DATA_DIR, `${tradieSlug}.json`);
+}
+
+async function loadMessages(tradieSlug: string): Promise<ChatMessage[]> {
+  try {
+    await ensureDataDir();
+    const filePath = await getChatFile(tradieSlug);
+    const content = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(content);
+  } catch (err) {
+    // File doesn't exist or is empty
+    return [];
+  }
+}
+
+async function saveMessages(tradieSlug: string, messages: ChatMessage[]): Promise<void> {
+  try {
+    await ensureDataDir();
+    const filePath = await getChatFile(tradieSlug);
+    // Keep only last 100 messages
+    const trimmed = messages.slice(-100);
+    await fs.writeFile(filePath, JSON.stringify(trimmed, null, 2));
+  } catch (err) {
+    console.error('Failed to save messages:', err);
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -20,64 +55,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'tradieSlug required' }, { status: 400 });
     }
 
-    if (!process.env.NOTION_COMMUNICATION_LOG_DB_ID) {
-      return NextResponse.json({ messages: [] });
-    }
-
-    // Query Communication Log for this tradie's chat messages
-    const response = await notion.databases.query({
-      database_id: process.env.NOTION_COMMUNICATION_LOG_DB_ID,
-      filter: {
-        and: [
-          {
-            property: 'Tradie Config ID',
-            rich_text: { equals: tradieSlug },
-          },
-          {
-            property: 'Channel',
-            select: { equals: 'Cockpit Chat' },
-          },
-        ],
-      },
-      sorts: [{ timestamp: 'created_time', direction: 'ascending' }],
-      page_size: 50,
-    });
-
-    const messages: ChatMessage[] = response.results.map((page: any) => {
-      const isInbound = page.properties['Direction']?.select?.name === 'Inbound';
-      const messageText = page.properties['Message']?.title?.[0]?.plain_text || '';
-      const responseText = page.properties['Response Sent']?.rich_text?.[0]?.plain_text || '';
-      const timestamp = new Date(page.created_time);
-
-      const messages: ChatMessage[] = [];
-
-      // Add inbound message (joey/user)
-      if (isInbound && messageText) {
-        messages.push({
-          id: `${page.id}-inbound`,
-          role: 'joey',
-          content: messageText,
-          timestamp,
-        });
-      }
-
-      // Add response (alfred/assistant)
-      if (responseText) {
-        messages.push({
-          id: `${page.id}-response`,
-          role: 'alfred',
-          content: responseText,
-          timestamp: new Date(timestamp.getTime() + 100),
-          action: page.properties['Action Taken']?.rich_text?.[0]?.plain_text,
-        });
-      }
-
-      return messages;
-    }).flat();
-
+    const messages = await loadMessages(tradieSlug);
     return NextResponse.json({ messages });
   } catch (error) {
-    console.error('Chat history error:', error);
+    console.error('Chat history GET error:', error);
     return NextResponse.json({ messages: [] });
   }
 }
@@ -85,38 +66,38 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { message, reply, action, tradieSlug } = body;
+    const { tradieSlug, role, content } = body;
 
-    if (!tradieSlug || !message || !reply) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!tradieSlug || !role || !content) {
+      return NextResponse.json(
+        { error: 'Missing required fields: tradieSlug, role, content' },
+        { status: 400 }
+      );
     }
 
-    if (!process.env.NOTION_COMMUNICATION_LOG_DB_ID) {
-      return NextResponse.json({ success: true });
+    if (!['user', 'assistant'].includes(role)) {
+      return NextResponse.json(
+        { error: 'role must be "user" or "assistant"' },
+        { status: 400 }
+      );
     }
 
-    // Save to Communication Log
-    const commProps: any = {
-      'Message': { title: [{ text: { content: message.slice(0, 100) } }] },
-      'Direction': { select: { name: 'Inbound' } },
-      'Channel': { select: { name: 'Cockpit Chat' } },
-      'Agent': { select: { name: 'ALFRED' } },
-      'Response Sent': { rich_text: [{ text: { content: reply.slice(0, 500) } }] },
-      'Tradie Config ID': { rich_text: [{ text: { content: tradieSlug } }] },
-    };
+    // Load existing messages
+    const messages = await loadMessages(tradieSlug);
 
-    if (action) {
-      commProps['Action Taken'] = { rich_text: [{ text: { content: action } }] };
-    }
-
-    await notion.pages.create({
-      parent: { database_id: process.env.NOTION_COMMUNICATION_LOG_DB_ID },
-      properties: commProps,
+    // Add new message
+    messages.push({
+      role,
+      content,
+      timestamp: new Date().toISOString(),
     });
+
+    // Save updated messages
+    await saveMessages(tradieSlug, messages);
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Chat history save error:', error);
-    return NextResponse.json({ success: true });
+    console.error('Chat history POST error:', error);
+    return NextResponse.json({ success: false, error: 'Failed to save message' }, { status: 500 });
   }
 }

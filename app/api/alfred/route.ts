@@ -609,6 +609,7 @@ ${JSON.stringify(contextData, null, 2)}`;
             to: toMatch[1].trim(),
             name: nameMatch?.[1]?.trim() ?? 'Client',
             message: msgMatch[1].trim(),
+            newStatus: alfredResult.newStatus,
           }
         });
       }
@@ -623,8 +624,10 @@ ${JSON.stringify(contextData, null, 2)}`;
         new Date().toLocaleString('en-US', { timeZone: 'Australia/Sydney' })
       ).getHours()
 
-      if (sydneyHour < 7 || sydneyHour >= 20) {
-        // Log to Milestone Log but DON'T send SMS
+      const isRunningLate = body.pendingSMS?.newStatus === 'RUNNING_LATE'
+
+      if ((sydneyHour < 7 || sydneyHour >= 20) && !isRunningLate) {
+        // Log to Milestone Log but DON'T send SMS (unless it's Running Late)
         try {
           await notion.pages.create({
             parent: { database_id: process.env.NOTION_COMMUNICATION_LOG_DB_ID! },

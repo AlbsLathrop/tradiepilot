@@ -34,7 +34,7 @@ interface JobContext {
 }
 
 export default function ChatPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [tradieSlug, setTradieSlug] = useState('');
   const [jobContext, setJobContext] = useState<JobContext | null>(null);
   const [messagesLoaded, setMessagesLoaded] = useState(false);
@@ -148,7 +148,7 @@ export default function ChatPage() {
   }, []);
 
   useEffect(() => {
-    if (preloadedMessageProcessed) return;
+    if (preloadedMessageProcessed || status !== 'authenticated' || !tradieSlug) return;
 
     const params = new URLSearchParams(window.location.search);
     const jobId = params.get('jobId');
@@ -181,7 +181,7 @@ export default function ChatPage() {
         window.history.replaceState({}, '', '/chat');
       }, 300);
     }
-  }, [tradieSlug]);
+  }, [status, tradieSlug, sendMessage]);
 
   const startRecording = async () => {
     try {
@@ -303,6 +303,10 @@ export default function ChatPage() {
   };
 
   const sendMessage = async (text: string) => {
+    if (status !== 'authenticated' || !tradieSlug) {
+      console.warn('Chat not ready: session not authenticated or tradieSlug missing');
+      return;
+    }
     if ((!text.trim() && !pendingFile) || loading || uploading) return;
 
     setLoading(true);

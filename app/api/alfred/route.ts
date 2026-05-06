@@ -403,9 +403,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message or media required' }, { status: 400 });
     }
 
-    if (typeof tradieSlug !== 'string' || !tradieSlug.trim()) {
-      logValidationError('/api/alfred', ip, 'tradieSlug', 'Invalid tradie slug');
-      return NextResponse.json({ error: 'Invalid tradie slug' }, { status: 400 });
+    if (typeof tradieSlug !== 'string' || !tradieSlug.trim() || tradieSlug === 'undefined') {
+      logValidationError('/api/alfred', ip, 'tradieSlug', `Invalid tradie slug: ${JSON.stringify(tradieSlug)}`);
+      return NextResponse.json({ error: 'Tradie session not ready. Please refresh.' }, { status: 401 });
     }
 
     // Route config commands to FIXER

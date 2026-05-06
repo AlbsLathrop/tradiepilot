@@ -827,9 +827,14 @@ ${JSON.stringify(contextData, null, 2)}`;
     });
 
   } catch (error: any) {
-    console.error('ALFRED error:', error);
+    console.error('ALFRED error:', {
+      message: error.message,
+      status: error.status,
+      type: error.type,
+      stack: error.stack?.split('\n').slice(0, 3),
+    });
     return NextResponse.json(
-      { error: 'Something went wrong. Please try again.' },
+      { error: `ALFRED error: ${error.message || 'Unknown error'}` },
       { status: 500 }
     );
   }

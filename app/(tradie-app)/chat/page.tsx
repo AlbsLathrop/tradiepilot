@@ -51,6 +51,11 @@ export default function ChatPage() {
     const loadChatHistory = async () => {
       try {
         const res = await fetch(`/api/alfred/chat-history?tradieSlug=${tradieSlug}`);
+        if (!res.ok) {
+          console.error('Failed to load chat history:', res.status);
+          setMessagesLoaded(true);
+          return;
+        }
         const data = await res.json();
 
         if (data.messages && data.messages.length > 0) {
@@ -68,7 +73,7 @@ export default function ChatPage() {
     };
 
     loadChatHistory();
-  }, [tradieSlug, messagesLoaded]);
+  }, [tradieSlug]);
 
   const getDefaultMessage = () => {
     const name = session?.user?.name || 'mate';
@@ -382,7 +387,16 @@ export default function ChatPage() {
         body: JSON.stringify(alfredPayload),
       });
 
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || `API error: ${res.status}`);
+      }
+
       const data = await res.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'ALFRED request failed');
+      }
 
       // Handle pending SMS
       if (data.pendingSMS) {

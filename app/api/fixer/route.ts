@@ -48,12 +48,12 @@ export async function POST(request: NextRequest) {
       messages: [{ role: 'user', content: `Tradie (${tradieConfigId}) says: "${message}"` }],
     });
 
-    const rawText = claudeResponse.content[0].type === 'text'
-      ? claudeResponse.content[0].text.trim() : '';
+    const rawText = claudeResponse.content?.[0]?.type === 'text'
+      ? claudeResponse.content[0].text?.trim() || '' : '';
 
     let fixerResult: any;
     try {
-      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      const jsonMatch = rawText?.match(/\{[\s\S]*\}/);
       fixerResult = JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
     } catch {
       return NextResponse.json({

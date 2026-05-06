@@ -63,7 +63,7 @@ WHEN ${tradieName.toUpperCase()} SENDS A JOB UPDATE ("running late", "on the way
    - "waiting on materials", "materials delayed" → AWAITING_MATERIALS
    - "issue on site", "problem on site", "found an issue" → ISSUE_ON_SITE
 3. Confirm the job you identified in your reply
-4. Include what context (extra info Joey provided) to pass to ORBIT
+4. Include what context (extra info ${tradieName} provided) to pass to ORBIT
 
 WHEN ${tradieName.toUpperCase()} WANTS TO UPDATE JOB DETAILS:
 - "change the Paddington job service to interior painting", "update notes on Sarah's job", etc.
@@ -489,7 +489,7 @@ export async function POST(request: NextRequest) {
       await logToCommLog(message, fixerData.reply || 'Config updated', 'fixer_config');
       return NextResponse.json({
         success: true,
-        reply: fixerData.reply || 'Done ✓',
+        reply: fixerData.reply || 'Config updated',
         action: 'fixer_config',
       });
     }
@@ -650,23 +650,23 @@ ${JSON.stringify(contextData, null, 2)}`;
       messages: claudeMessages,
     });
 
-    const rawText = claudeResponse.content[0].type === 'text' ? claudeResponse.content[0].text.trim() : '';
+    const rawText = claudeResponse.content?.[0]?.type === 'text' ? claudeResponse.content[0].text?.trim() || '' : '';
 
     let alfredResult: any;
     try {
-      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      const jsonMatch = rawText?.match(/\{[\s\S]*\}/);
       alfredResult = JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
     } catch {
-      alfredResult = { reply: rawText || "Done ✓", action: 'none' };
+      alfredResult = { reply: rawText || "I got that, let me help", action: 'none' };
     }
 
     // STEP 1: Check if ALFRED prepared an SMS
-    const smsMatch = rawText.match(/\[SMS_READY\]([\s\S]*?)\[\/SMS_READY\]/);
-    if (smsMatch) {
+    const smsMatch = rawText?.match(/\[SMS_READY\]([\s\S]*?)\[\/SMS_READY\]/);
+    if (smsMatch?.[1]) {
       const smsBlock = smsMatch[1];
-      const toMatch = smsBlock.match(/TO:\s*(\+\d+)/);
-      const nameMatch = smsBlock.match(/NAME:\s*(.+?)(?:\n|$)/);
-      const msgMatch = smsBlock.match(/MESSAGE:\s*(.+?)(?:\n|$)/);
+      const toMatch = smsBlock?.match(/TO:\s*(\+\d+)/);
+      const nameMatch = smsBlock?.match(/NAME:\s*(.+?)(?:\n|$)/);
+      const msgMatch = smsBlock?.match(/MESSAGE:\s*(.+?)(?:\n|$)/);
 
       if (toMatch && msgMatch) {
         const cleanReply = rawText.replace(/\[SMS_READY\][\s\S]*?\[\/SMS_READY\]/, '').trim();

@@ -42,6 +42,31 @@ export default function ChatPage() {
     }
   }, [session?.user?.tradieSlug]);
 
+  useEffect(() => {
+    if (!tradieSlug || messagesLoaded) return;
+
+    const loadChatHistory = async () => {
+      try {
+        const res = await fetch(`/api/alfred/chat-history?tradieSlug=${tradieSlug}`);
+        const data = await res.json();
+
+        if (data.messages && data.messages.length > 0) {
+          const loadedMessages = data.messages.map((m: any) => ({
+            ...m,
+            timestamp: new Date(m.timestamp),
+          }));
+          setMessages(loadedMessages);
+        }
+      } catch (err) {
+        console.error('Failed to load chat history:', err);
+      } finally {
+        setMessagesLoaded(true);
+      }
+    };
+
+    loadChatHistory();
+  }, [tradieSlug, messagesLoaded]);
+
   const getDefaultMessage = () => {
     const name = session?.user?.name || 'mate';
     return {
@@ -65,6 +90,7 @@ export default function ChatPage() {
 
     return [getDefaultMessage()];
   });
+  const [messagesLoaded, setMessagesLoaded] = useState(false);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -216,12 +242,27 @@ export default function ChatPage() {
       const alfredData = await alfredRes.json();
 
       if (alfredData.reply) {
-        setMessages(prev => [...prev, {
+        const alfredMsg = {
           id: (Date.now() + 1).toString(),
-          role: 'alfred',
+          role: 'alfred' as const,
           content: alfredData.reply,
           timestamp: new Date(),
-        }]);
+        };
+        setMessages(prev => [...prev, alfredMsg]);
+
+        // Save to database
+        if (tradieSlug) {
+          fetch('/api/alfred/chat-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: transcribeData.transcript,
+              reply: alfredData.reply,
+              action: alfredData.action,
+              tradieSlug,
+            }),
+          }).catch(err => console.error('Failed to save chat:', err));
+        }
       }
 
     } catch (err: any) {
@@ -380,6 +421,20 @@ export default function ChatPage() {
         };
 
         setMessages(prev => [...prev, alfredMsg]);
+
+        // Save to database
+        if (tradieSlug) {
+          fetch('/api/alfred/chat-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: text || (mediaType ? `Shared a ${mediaType.toLowerCase()}` : 'File sent'),
+              reply: replyText,
+              action: data.action,
+              tradieSlug,
+            }),
+          }).catch(err => console.error('Failed to save chat:', err));
+        }
       }
     } catch (err: any) {
       const errorMsg = err.name === 'AbortError'

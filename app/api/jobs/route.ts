@@ -100,6 +100,7 @@ export async function GET(request: Request) {
           byJob[jid].push({
             url,
             description: m.properties?.['Description']?.rich_text?.[0]?.plain_text ?? '',
+            category: m.properties?.['Category']?.select?.name ?? 'Progress',
             createdAt: (m as any).created_time ?? '',
           })
         })

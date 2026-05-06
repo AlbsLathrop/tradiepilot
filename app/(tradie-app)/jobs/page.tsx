@@ -16,7 +16,7 @@ interface Milestone {
 interface Photo {
   url: string
   description: string
-  type: string
+  category?: string
   createdAt: string
 }
 
@@ -71,6 +71,141 @@ const QUICK_ACTIONS = [
   'JOB COMPLETE',
   'VARIATION REQUEST',
 ]
+
+interface PhotosSectionProps {
+  jobId: string
+  clientName: string
+  photos: Photo[]
+  tradieSlug: string
+}
+
+function PhotosSection({ jobId, clientName, photos, tradieSlug }: PhotosSectionProps) {
+  const [activeTab, setActiveTab] = useState<string>('Progress')
+  const [uploading, setUploading] = useState(false)
+  const [lightbox, setLightbox] = useState<Photo | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+
+  const tabs = ['Before', 'Progress', 'After']
+  const filteredPhotos = photos.filter(p => (p.category || 'Progress') === activeTab)
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('category', activeTab)
+      formData.append('tradieSlug', tradieSlug)
+
+      const res = await fetch(`/api/jobs/${jobId}/photos`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (res.ok) {
+        setToast('Photo uploaded!')
+        // Refresh photos by reloading page or updating state
+        setTimeout(() => window.location.reload(), 1500)
+      } else {
+        setToast('Upload failed')
+      }
+    } catch (err) {
+      setToast('Error uploading photo')
+    } finally {
+      setUploading(false)
+      setTimeout(() => setToast(null), 2000)
+    }
+  }
+
+  return (
+    <div className="border-t border-[#1F2937] pt-4">
+      <p className="text-[#06B6D4] text-xs font-bold uppercase mb-3">Photos</p>
+
+      {/* Tabs */}
+      <div className="flex gap-1 mb-4">
+        {tabs.map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 text-xs font-bold py-2 px-2 rounded-lg transition-colors ${
+              activeTab === tab
+                ? 'bg-[#06B6D4] text-white'
+                : 'bg-[#1F2937] text-gray-400 border border-[#06B6D4]/30'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Photo Grid */}
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        {filteredPhotos.map((photo, idx) => (
+          <button
+            key={idx}
+            onClick={() => setLightbox(photo)}
+            className="aspect-square bg-[#1F2937] rounded-lg overflow-hidden border border-[#06B6D4]/20 hover:border-[#06B6D4]/50 transition-colors"
+          >
+            <img
+              src={photo.url}
+              alt={photo.description || 'Job photo'}
+              className="w-full h-full object-cover"
+            />
+          </button>
+        ))}
+
+        {/* Upload Button */}
+        <label className="aspect-square bg-[#1F2937] rounded-lg border-2 border-dashed border-[#06B6D4]/40 hover:border-[#06B6D4] transition-colors flex items-center justify-center cursor-pointer">
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleUpload}
+            disabled={uploading}
+            className="hidden"
+          />
+          <div className="text-center">
+            <div className="text-2xl mb-1">{uploading ? '⏳' : '+'}</div>
+            <div className="text-[10px] text-gray-400 font-medium">Add photo</div>
+          </div>
+        </label>
+      </div>
+
+      {filteredPhotos.length === 0 && (
+        <p className="text-gray-500 text-xs text-center py-2">No photos yet</p>
+      )}
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <img
+            src={lightbox.url}
+            alt={lightbox.description}
+            className="max-w-full max-h-[75vh] rounded-lg object-contain"
+          />
+          {lightbox.description && (
+            <p className="text-white text-sm mt-4 text-center px-4">
+              {lightbox.description}
+            </p>
+          )}
+          <p className="text-gray-500 text-xs mt-2">Tap anywhere to close</p>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-4 left-4 right-4 bg-[#06B6D4] text-white text-sm font-bold py-2 px-3 rounded-lg text-center z-40">
+          {toast}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function JobsPage() {
   const { data: session } = useSession()
@@ -602,6 +737,16 @@ export default function JobsPage() {
                       <p className="text-gray-500 text-sm">No activity yet</p>
                     )}
                   </div>
+
+                  {/* PHOTOS Section */}
+                  {job.photos && job.photos.length > 0 && (
+                    <PhotosSection
+                      jobId={job.id}
+                      clientName={job.clientName}
+                      photos={job.photos}
+                      tradieSlug={session?.user?.tradieSlug || ''}
+                    />
+                  )}
 
                   {/* Ask ALFRED Button */}
                   <a

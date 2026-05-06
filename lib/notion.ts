@@ -94,6 +94,14 @@ export interface TradieConfig {
   phone: string
   businessName: string
   suburb: string
+  tradeType: string
+  serviceArea: string
+  minJobValue: number | null
+  hoursStart: string
+  hoursEnd: string
+  tone: string
+  twilioNumber: string
+  googleReviewUrl: string
 }
 
 function toJob(page: PageObjectResponse): Job {
@@ -157,8 +165,16 @@ function toTradieConfig(page: PageObjectResponse): TradieConfig {
     id: page.id,
     name: title(page, 'Business Name'),
     phone: phone(page, 'Phone'),
-    businessName: richText(page, 'Business Name'),
+    businessName: title(page, 'Business Name'),
     suburb: richText(page, 'Suburb'),
+    tradeType: richText(page, 'Trade') || richText(page, 'Trade Type'),
+    serviceArea: richText(page, 'Service Area'),
+    minJobValue: number(page, 'Min Job Value'),
+    hoursStart: richText(page, 'Hours Start') || '7:00',
+    hoursEnd: richText(page, 'Hours End') || '17:00',
+    tone: richText(page, 'Tone') || 'Professional',
+    twilioNumber: phone(page, 'Twilio Number') || richText(page, 'Twilio Number'),
+    googleReviewUrl: richText(page, 'Google Review URL'),
   }
 }
 
@@ -242,6 +258,25 @@ export async function getTradieConfig(id: string): Promise<TradieConfig | null> 
 
   const page = res.results[0] as PageObjectResponse | undefined
   return page ? toTradieConfig(page) : null
+}
+
+export async function getTradieConfigById(pageId: string): Promise<TradieConfig | null> {
+  try {
+    const res = await notion.pages.retrieve({ page_id: pageId })
+
+    if (!isFullPage(res)) {
+      console.error('[getTradieConfigById] Page is not a full page:', { pageId })
+      return null
+    }
+
+    return toTradieConfig(res as PageObjectResponse)
+  } catch (error) {
+    console.error('[getTradieConfigById] Notion API error:', {
+      pageId,
+      error: error instanceof Error ? error.message : String(error),
+    })
+    return null
+  }
 }
 
 export async function updateJobStatus(jobId: string, status: JobStatus): Promise<void> {

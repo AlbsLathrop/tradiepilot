@@ -21,6 +21,22 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-[#0F0F0F] text-white pb-24">
+        <div className="px-4 space-y-3 pt-8">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-[#111827] rounded-xl h-16 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (status !== 'authenticated') {
+    return null
+  }
+
   const showToast = (msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
@@ -28,26 +44,35 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (status !== 'authenticated') return
-    if (!session?.user?.tradieSlug) {
+    if (!session?.user?.tradieConfigId) {
       setLoading(false)
       return
     }
     console.log('[SETTINGS] Session ready, fetching config')
-    fetch('/api/settings')
+    fetch('/api/tradie-config')
       .then(r => {
-        if (!r.ok) throw new Error(`Settings API: ${r.status}`)
+        if (!r.ok) throw new Error(`Tradie Config API: ${r.status}`)
         return r.json()
       })
       .then(d => {
         console.log('[SETTINGS] Config loaded:', d.config)
-        setConfig(d.config)
+        setConfig({
+          businessName: d.config.businessName ?? '',
+          tradeType: d.config.tradeType ?? '',
+          serviceArea: d.config.serviceArea ?? '',
+          minJobValue: d.config.minJobValue ?? 0,
+          hoursStart: d.config.hoursStart ?? '7:00',
+          hoursEnd: d.config.hoursEnd ?? '17:00',
+          tone: d.config.tone ?? 'Professional',
+          twilioNumber: d.config.twilioNumber ?? '',
+        })
         setLoading(false)
       })
       .catch(err => {
         console.error('[SETTINGS] Fetch error:', err)
         setLoading(false)
       })
-  }, [status, session?.user?.tradieSlug])
+  }, [status, session?.user?.tradieConfigId])
 
   const handleSave = async () => {
     setSaving(true)
@@ -64,20 +89,16 @@ export default function SettingsPage() {
     setSaving(false)
   }
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#0F0F0F] text-white pb-24">
         <div className="px-4 space-y-3 pt-8">
-          {[1,2,3].map(i => (
+          {[1, 2, 3].map(i => (
             <div key={i} className="bg-[#111827] rounded-xl h-16 animate-pulse" />
           ))}
         </div>
       </div>
     )
-  }
-
-  if (status === 'unauthenticated') {
-    return null
   }
 
   return (

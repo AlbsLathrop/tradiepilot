@@ -96,17 +96,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Save to Communication Log
+    const commProps: any = {
+      'Message': { title: [{ text: { content: message.slice(0, 100) } }] },
+      'Direction': { select: { name: 'Inbound' } },
+      'Channel': { select: { name: 'Cockpit Chat' } },
+      'Agent': { select: { name: 'ALFRED' } },
+      'Response Sent': { rich_text: [{ text: { content: reply.slice(0, 500) } }] },
+      'Tradie Config ID': { rich_text: [{ text: { content: tradieSlug } }] },
+    };
+
+    if (action) {
+      commProps['Action Taken'] = { rich_text: [{ text: { content: action } }] };
+    }
+
     await notion.pages.create({
       parent: { database_id: process.env.NOTION_COMMUNICATION_LOG_DB_ID },
-      properties: {
-        'Message': { title: [{ text: { content: message.slice(0, 100) } }] },
-        'Direction': { select: { name: 'Inbound' } },
-        'Channel': { select: { name: 'Cockpit Chat' } },
-        'Agent': { select: { name: 'ALFRED' } },
-        'Response Sent': { rich_text: [{ text: { content: reply.slice(0, 500) } }] },
-        'Action Taken': action ? { rich_text: [{ text: { content: action } }] } : undefined,
-        'Tradie Config ID': { rich_text: [{ text: { content: tradieSlug } }] },
-      },
+      properties: commProps,
     });
 
     return NextResponse.json({ success: true });

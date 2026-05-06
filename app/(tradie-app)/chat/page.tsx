@@ -181,7 +181,7 @@ export default function ChatPage() {
         window.history.replaceState({}, '', '/chat');
       }, 300);
     }
-  }, [status, tradieSlug, sendMessage]);
+  }, [status, tradieSlug]);
 
   const startRecording = async () => {
     try {

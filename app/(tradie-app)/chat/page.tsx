@@ -388,16 +388,16 @@ export default function ChatPage() {
       }
 
       // Clean ALFRED response: strip JSON code blocks and extract reply
-      let replyText = data.reply;
+      let replyText = data.reply || '';
 
       // First: extract reply from JSON wrapper with ```json blocks
-      const jsonWrapperMatch = replyText.match(/```json\s*\{[\s\S]*?"reply"\s*:\s*"([\s\S]*?)"\s*\}[\s\S]*?```/);
-      if (jsonWrapperMatch && jsonWrapperMatch[1]) {
+      const jsonWrapperMatch = replyText?.match(/```json\s*\{[\s\S]*?"reply"\s*:\s*"([\s\S]*?)"\s*\}[\s\S]*?```/);
+      if (jsonWrapperMatch?.[1]) {
         replyText = jsonWrapperMatch[1];
       }
 
       // Second: remove remaining JSON code blocks
-      replyText = replyText.replace(/```json[\s\S]*?```/g, '').trim();
+      replyText = replyText?.replace(/```json[\s\S]*?```/g, '')?.trim() || '';
 
       // Third: if reply is a bare JSON object, try to parse it
       if (replyText.startsWith('{') && replyText.endsWith('}')) {
@@ -618,7 +618,7 @@ export default function ChatPage() {
             type="text"
             value={input}
             onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && sendMessage(input)}
+            onKeyDown={e => e.key === 'Enter' && !loading && sendMessage(input)}
             placeholder="Message ALFRED..."
             className="flex-1 bg-transparent text-white text-sm placeholder-[#6B7280] outline-none"
             disabled={uploading}

@@ -215,12 +215,14 @@ export default function ChatPage() {
       });
       const alfredData = await alfredRes.json();
 
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        role: 'alfred',
-        content: alfredData.reply || 'Done ✓',
-        timestamp: new Date(),
-      }]);
+      if (alfredData.reply) {
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          role: 'alfred',
+          content: alfredData.reply,
+          timestamp: new Date(),
+        }]);
+      }
 
     } catch (err: any) {
       setMessages(prev => prev.map(m =>
@@ -345,7 +347,7 @@ export default function ChatPage() {
       }
 
       // Clean ALFRED response: strip JSON code blocks and extract reply
-      let replyText = data.reply || "Done ✓";
+      let replyText = data.reply;
 
       // First: extract reply from JSON wrapper with ```json blocks
       const jsonWrapperMatch = replyText.match(/```json\s*\{[\s\S]*?"reply"\s*:\s*"([\s\S]*?)"\s*\}[\s\S]*?```/);
@@ -368,15 +370,17 @@ export default function ChatPage() {
         }
       }
 
-      const alfredMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'alfred',
-        content: replyText,
-        timestamp: new Date(),
-        action: data.action,
-      };
+      if (replyText) {
+        const alfredMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'alfred',
+          content: replyText,
+          timestamp: new Date(),
+          action: data.action,
+        };
 
-      setMessages(prev => [...prev, alfredMsg]);
+        setMessages(prev => [...prev, alfredMsg]);
+      }
     } catch (err: any) {
       const errorMsg = err.name === 'AbortError'
         ? 'Upload timed out. Try a smaller file.'

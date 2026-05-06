@@ -41,7 +41,7 @@ function AlfredTab() {
 
     const loadHistory = async () => {
       try {
-        const res = await fetch(`/api/alfred/chat-history?tradieSlug=${session.user.tradieSlug}`)
+        const res = await fetch(`/api/alfred/chat-history?tradieSlug=${session?.user?.tradieSlug}`)
         const data = await res.json()
         if (data.messages && Array.isArray(data.messages)) {
           setMessages(
@@ -145,7 +145,7 @@ function AlfredTab() {
               message: input,
               reply: fullResponse,
               action: 'alfred_chat',
-              tradieSlug: session.user.tradieSlug,
+              tradieSlug: session?.user?.tradieSlug,
             }),
           })
         } catch (err) {

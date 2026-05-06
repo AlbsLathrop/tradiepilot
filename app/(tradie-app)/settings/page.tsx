@@ -20,6 +20,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   if (status === 'loading') {
     return (
@@ -45,10 +46,12 @@ export default function SettingsPage() {
   useEffect(() => {
     if (status !== 'authenticated') return
     if (!session?.user?.tradieConfigId) {
+      console.log('[SETTINGS] tradieConfigId missing:', session?.user?.tradieConfigId)
+      setError('tradieConfigId not found in session')
       setLoading(false)
       return
     }
-    console.log('[SETTINGS] Session ready, fetching config')
+    console.log('[SETTINGS] Session ready, fetching config for:', session.user.tradieConfigId)
     fetch('/api/tradie-config')
       .then(r => {
         if (!r.ok) throw new Error(`Tradie Config API: ${r.status}`)
@@ -66,10 +69,12 @@ export default function SettingsPage() {
           tone: d.config.tone ?? 'Professional',
           twilioNumber: d.config.twilioNumber ?? '',
         })
+        setError(null)
         setLoading(false)
       })
       .catch(err => {
         console.error('[SETTINGS] Fetch error:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load settings')
         setLoading(false)
       })
   }, [status, session?.user?.tradieConfigId])
@@ -113,6 +118,20 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold">Settings</h1>
         <p className="text-gray-400 text-sm">Your TradieFlow config</p>
       </div>
+
+      {error && (
+        <div className="mx-4 p-4 bg-red-500/20 border border-red-500 rounded-xl text-red-200 text-sm">
+          <p className="font-semibold">Error loading settings</p>
+          <p className="text-xs mt-1">{error}</p>
+        </div>
+      )}
+
+      {!loading && !config && !error && (
+        <div className="mx-4 p-4 bg-yellow-500/20 border border-yellow-500 rounded-xl text-yellow-200 text-sm">
+          <p className="font-semibold">No settings data available</p>
+          <p className="text-xs mt-1">Your tradie configuration could not be loaded. Please contact support.</p>
+        </div>
+      )}
 
       {config && (
         <div className="px-4 space-y-4">

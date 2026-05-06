@@ -202,25 +202,34 @@ export default async function StatusPage({
         {photos.length > 0 && (
           <div>
             <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wide mb-3">Photos</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {photos.map((photo) => (
-                <div
-                  key={photo.id}
-                  className="relative aspect-square rounded-lg overflow-hidden border border-white/10 hover:border-white/20 transition-colors group"
-                >
-                  <img
-                    src={photo.url}
-                    alt={photo.description || 'Job photo'}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  />
-                  {photo.description && (
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                      <p className="text-white text-xs">{photo.description}</p>
-                    </div>
-                  )}
+            {(['Before', 'Progress', 'After'] as const).map((category) => {
+              const categoryPhotos = photos.filter(p => p.category === category)
+              if (categoryPhotos.length === 0) return null
+              return (
+                <div key={category} className="mb-6">
+                  <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-2 px-1">{category}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {categoryPhotos.map((photo) => (
+                      <div
+                        key={photo.id}
+                        className="relative aspect-square rounded-lg overflow-hidden border border-white/10 hover:border-white/20 transition-colors group cursor-pointer"
+                      >
+                        <img
+                          src={photo.url}
+                          alt={photo.description || 'Job photo'}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                        {photo.description && (
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                            <p className="text-white text-xs">{photo.description}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
+              )
+            })}
           </div>
         )}
 

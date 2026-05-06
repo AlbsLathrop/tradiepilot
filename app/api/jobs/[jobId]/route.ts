@@ -8,12 +8,12 @@ const notion = new Client({ auth: process.env.NOTION_API_KEY })
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
-  const { id } = await params
+  const { jobId } = await params
 
   console.log('NOTION_API_KEY set:', !!process.env.NOTION_API_KEY)
-  console.log('Received ID:', id)
+  console.log('Received jobId:', jobId)
 
   const session = await getServerSession(authOptions)
 
@@ -23,7 +23,7 @@ export async function GET(
 
   try {
     // Fetch job page directly
-    const page = await notion.pages.retrieve({ page_id: id }) as any
+    const page = await notion.pages.retrieve({ page_id: jobId }) as any
     const props = page.properties
 
     const tradieConfigId = props['Tradie Config ID']?.rich_text?.[0]?.plain_text ?? ''
@@ -65,7 +65,7 @@ export async function GET(
       database_id: NOTION_DB.COMMS,
       filter: {
         property: 'Job ID',
-        rich_text: { equals: id }
+        rich_text: { equals: jobId }
       },
       sorts: [{ property: 'Timestamp', direction: 'descending' }],
       page_size: 3,
@@ -84,7 +84,7 @@ export async function GET(
       error: error?.message ?? 'unknown',
       code: error?.code,
       notionKeyExists: !!process.env.NOTION_API_KEY,
-      receivedId: id,
+      receivedJobId: jobId,
       stack: error?.stack?.split('\n')[0]
     }, { status: 500 })
   }
@@ -92,10 +92,10 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
   const session = await getServerSession(authOptions)
-  const { id } = await params
+  const { jobId } = await params
 
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -147,7 +147,7 @@ export async function PATCH(
     }
 
     await notion.pages.update({
-      page_id: id,
+      page_id: jobId,
       properties: updates,
     })
 
@@ -160,10 +160,10 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
   const session = await getServerSession(authOptions)
-  const { id } = await params
+  const { jobId } = await params
 
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -172,7 +172,7 @@ export async function DELETE(
   try {
     // Archive the page instead of hard delete
     await notion.pages.update({
-      page_id: id,
+      page_id: jobId,
       archived: true,
     })
 

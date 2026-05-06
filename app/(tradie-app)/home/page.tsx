@@ -20,7 +20,7 @@ interface DashboardData {
   reviewCount: number
   reviewRating: number | null
   attentionJobs: Array<{ id: string; clientName: string; suburb: string; status: string }>
-  todayJobs: Array<{ id: string; clientName: string; suburb: string; status: string }>
+  todayJobs: Array<{ id: string; clientName: string; suburb: string; service: string; status: string }>
 }
 
 export default function HomePage() {
@@ -209,11 +209,16 @@ export default function HomePage() {
         )}
 
         {/* Today's Jobs */}
-        {dashData.todayJobs?.length > 0 && (
-          <div className="bg-[#1F2937] rounded-xl p-4">
-            <p className="text-[#F97316] text-xs font-bold uppercase mb-3">
-              On Site Today
+        <div className="bg-[#1F2937] rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[#F97316] text-xs font-bold uppercase">
+              Today's Jobs
             </p>
+            <Link href="/jobs" className="text-gray-400 hover:text-white text-xs transition-colors">
+              View all →
+            </Link>
+          </div>
+          {dashData.todayJobs?.length > 0 ? (
             <div className="space-y-2">
               {dashData.todayJobs.map(job => (
                 <Link key={job.id} href={`/jobs?expand=${job.id}`}>
@@ -222,19 +227,19 @@ export default function HomePage() {
                       <p className="text-white text-sm font-medium">{job.clientName}</p>
                       <p className="text-gray-400 text-xs">{job.suburb}</p>
                     </div>
-                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                      job.status === 'RUNNING LATE'
-                        ? 'bg-red-500 text-white'
-                        : 'bg-cyan-500 text-white'
-                    }`}>
-                      {job.status}
-                    </span>
+                    {job.service && (
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#0F0F0F] text-[#F97316]">
+                        {job.service}
+                      </span>
+                    )}
                   </div>
                 </Link>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-gray-400 text-sm">No jobs scheduled today</p>
+          )}
+        </div>
       </div>
     </div>
   )

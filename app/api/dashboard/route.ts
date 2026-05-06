@@ -29,6 +29,7 @@ export async function GET(request: Request) {
         clientName: p['Client Name']?.title?.[0]?.plain_text ?? '',
         status: p['Status']?.select?.name ?? '',
         suburb: p['Suburb']?.rich_text?.[0]?.plain_text ?? '',
+        service: p['Service']?.rich_text?.[0]?.plain_text ?? '',
         jobValue: p['Job Value']?.number ?? null,
         estimatedCompletion: p['Estimated Completion']?.date?.start ?? null,
         invoiceStatus: p['Invoice Status']?.select?.name ?? 'NOT SENT',
@@ -144,7 +145,7 @@ export async function GET(request: Request) {
         }
       }
       return ['IN PROGRESS', 'RUNNING LATE', 'DAY DONE'].includes(j.status)
-    }).slice(0, 5)
+    }).slice(0, 3)
 
     return NextResponse.json({
       activeJobs,
@@ -171,6 +172,7 @@ export async function GET(request: Request) {
         id: j.id,
         clientName: j.clientName,
         suburb: j.suburb,
+        service: j.service,
         status: j.status
       }))
     })

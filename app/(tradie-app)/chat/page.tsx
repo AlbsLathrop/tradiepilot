@@ -344,10 +344,26 @@ export default function ChatPage() {
         setPendingSMS(null);
       }
 
+      // Clean ALFRED response: strip JSON code blocks and extract reply
+      let replyText = data.reply || "Done ✓";
+
+      // Remove markdown JSON code blocks
+      replyText = replyText.replace(/```json[\s\S]*?```/g, '').trim();
+
+      // If reply contains JSON object string, try to parse it
+      if (replyText.startsWith('{') && replyText.endsWith('}')) {
+        try {
+          const parsed = JSON.parse(replyText);
+          replyText = parsed.reply || replyText;
+        } catch {
+          // If parse fails, use as-is
+        }
+      }
+
       const alfredMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'alfred',
-        content: data.reply || "Done ✓",
+        content: replyText,
         timestamp: new Date(),
         action: data.action,
       };

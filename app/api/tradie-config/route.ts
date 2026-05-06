@@ -15,21 +15,18 @@ export async function GET(request: Request) {
       return Response.json({ error: 'No tradieSlug in session' }, { status: 401 })
     }
 
-    const response = await notion.databases.query({
-      database_id: 'ff9248a4dd244ad9a0761281967750ea',
-      filter: {
-        property: 'Tradie Slug',
-        rich_text: { equals: tradieSlug }
-      }
-    })
-
-    console.log('Notion results:', response.results.length)
-
-    if (!response.results.length) {
-      return Response.json({ error: 'Tradie config not found' }, { status: 404 })
+    const pageIdMap: Record<string, string> = {
+      'joey-tradie': '33d187ef12be81f39409c4ea79e3550f',
+      'ben-stonemason': '33c187ef12be8188a893f373a404cbbb'
     }
 
-    const page = response.results[0] as any
+    const pageId = pageIdMap[tradieSlug]
+
+    if (!pageId) {
+      return Response.json({ error: 'Unknown tradie slug' }, { status: 404 })
+    }
+
+    const page = await notion.pages.retrieve({ page_id: pageId }) as any
     const props = page.properties
 
     console.log('Props keys:', Object.keys(props))

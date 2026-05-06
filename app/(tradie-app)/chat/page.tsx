@@ -35,6 +35,7 @@ export default function ChatPage() {
   const { data: session } = useSession();
   const [tradieSlug, setTradieSlug] = useState('');
   const [jobContext, setJobContext] = useState<JobContext | null>(null);
+  const [messagesLoaded, setMessagesLoaded] = useState(false);
 
   useEffect(() => {
     if (session?.user?.tradieSlug) {
@@ -90,7 +91,6 @@ export default function ChatPage() {
 
     return [getDefaultMessage()];
   });
-  const [messagesLoaded, setMessagesLoaded] = useState(false);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);

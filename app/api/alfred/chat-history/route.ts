@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
+import { queryNotionDatabase } from '@/lib/notion';
+import { NOTION_DB } from '@/lib/constants';
+import { Client } from '@notionhq/client';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -8,41 +9,91 @@ interface ChatMessage {
   timestamp: string;
 }
 
-const DATA_DIR = path.join(process.cwd(), 'data', 'chat-history');
-
-async function ensureDataDir() {
-  try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-  } catch (err) {
-    console.error('Failed to create data directory:', err);
-  }
-}
-
-async function getChatFile(tradieSlug: string): Promise<string> {
-  return path.join(DATA_DIR, `${tradieSlug}.json`);
-}
+const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 async function loadMessages(tradieSlug: string): Promise<ChatMessage[]> {
   try {
-    await ensureDataDir();
-    const filePath = await getChatFile(tradieSlug);
-    const content = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(content);
+    const results = await queryNotionDatabase(NOTION_DB.COMMS, {
+      filter: {
+        and: [
+          {
+            property: 'Job',
+            rich_text: {
+              equals: tradieSlug,
+            },
+          },
+          {
+            property: 'Channel',
+            select: {
+              equals: 'App',
+            },
+          },
+        ],
+      },
+      sorts: [
+        {
+          property: 'Timestamp',
+          direction: 'ascending',
+        },
+      ],
+      page_size: 50,
+    });
+
+    return results.map((page: any) => {
+      const direction = page.properties?.Direction?.select?.name;
+      const role = direction === 'Outbound' ? 'user' : 'assistant';
+      const timestamp = page.properties?.Timestamp?.date?.start ?? new Date().toISOString();
+
+      return {
+        role,
+        content: page.properties?.['Message Content']?.rich_text?.[0]?.plain_text ?? '',
+        timestamp,
+      };
+    });
   } catch (err) {
-    // File doesn't exist or is empty
+    console.error('Failed to load messages from Notion:', err);
     return [];
   }
 }
 
-async function saveMessages(tradieSlug: string, messages: ChatMessage[]): Promise<void> {
+async function saveMessage(tradieSlug: string, role: 'user' | 'assistant', content: string): Promise<boolean> {
   try {
-    await ensureDataDir();
-    const filePath = await getChatFile(tradieSlug);
-    // Keep only last 100 messages
-    const trimmed = messages.slice(-100);
-    await fs.writeFile(filePath, JSON.stringify(trimmed, null, 2));
+    const timestamp = new Date().toISOString();
+    const direction = role === 'user' ? 'Outbound' : 'Inbound';
+
+    await notion.pages.create({
+      parent: { database_id: NOTION_DB.COMMS },
+      properties: {
+        'Log Entry': {
+          title: [{ text: { content: `[ALFRED] ${role === 'user' ? 'User' : 'Assistant'}` } }],
+        },
+        'Message Content': {
+          rich_text: [{ text: { content } }],
+        },
+        Job: {
+          rich_text: [{ text: { content: tradieSlug } }],
+        },
+        Timestamp: {
+          date: {
+            start: timestamp,
+          },
+        },
+        Channel: {
+          select: { name: 'App' },
+        },
+        Direction: {
+          select: { name: direction },
+        },
+        'Triggered By': {
+          select: { name: 'Manual' },
+        },
+      },
+    });
+
+    return true;
   } catch (err) {
-    console.error('Failed to save messages:', err);
+    console.error('Failed to save message to Notion:', err);
+    return false;
   }
 }
 
@@ -82,20 +133,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Load existing messages
-    const messages = await loadMessages(tradieSlug);
+    const success = await saveMessage(tradieSlug, role, content);
 
-    // Add new message
-    messages.push({
-      role,
-      content,
-      timestamp: new Date().toISOString(),
-    });
-
-    // Save updated messages
-    await saveMessages(tradieSlug, messages);
-
-    return NextResponse.json({ success: true });
+    if (success) {
+      return NextResponse.json({ success: true });
+    } else {
+      return NextResponse.json({ success: false, error: 'Failed to save message' }, { status: 500 });
+    }
   } catch (error) {
     console.error('Chat history POST error:', error);
     return NextResponse.json({ success: false, error: 'Failed to save message' }, { status: 500 });

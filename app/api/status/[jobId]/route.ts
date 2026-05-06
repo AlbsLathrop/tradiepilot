@@ -5,10 +5,10 @@ export const revalidate = 60 // ISR: revalidate every 60 seconds
 
 export async function GET(
   _request: Request,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
   try {
-    const { jobId } = params
+    const { jobId } = await params
 
     if (!jobId) {
       return NextResponse.json(

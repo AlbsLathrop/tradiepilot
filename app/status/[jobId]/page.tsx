@@ -99,9 +99,10 @@ function ProgressTimeline({ currentStatus }: { currentStatus: string }) {
 export default async function StatusPage({
   params,
 }: {
-  params: { jobId: string }
+  params: Promise<{ jobId: string }>
 }) {
-  const data = await getStatusData(params.jobId)
+  const { jobId } = await params
+  const data = await getStatusData(jobId)
 
   if (!data) {
     return (

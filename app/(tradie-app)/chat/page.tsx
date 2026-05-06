@@ -347,14 +347,22 @@ export default function ChatPage() {
       // Clean ALFRED response: strip JSON code blocks and extract reply
       let replyText = data.reply || "Done ✓";
 
-      // Remove markdown JSON code blocks
+      // First: extract reply from JSON wrapper with ```json blocks
+      const jsonWrapperMatch = replyText.match(/```json\s*\{[\s\S]*?"reply"\s*:\s*"([\s\S]*?)"\s*\}[\s\S]*?```/);
+      if (jsonWrapperMatch && jsonWrapperMatch[1]) {
+        replyText = jsonWrapperMatch[1];
+      }
+
+      // Second: remove remaining JSON code blocks
       replyText = replyText.replace(/```json[\s\S]*?```/g, '').trim();
 
-      // If reply contains JSON object string, try to parse it
+      // Third: if reply is a bare JSON object, try to parse it
       if (replyText.startsWith('{') && replyText.endsWith('}')) {
         try {
           const parsed = JSON.parse(replyText);
-          replyText = parsed.reply || replyText;
+          if (parsed.reply) {
+            replyText = parsed.reply;
+          }
         } catch {
           // If parse fails, use as-is
         }

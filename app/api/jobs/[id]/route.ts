@@ -130,6 +130,9 @@ export async function PATCH(
     if (body.foremanName !== undefined) {
       updates['Foreman Name'] = { rich_text: [{ text: { content: body.foremanName } }] }
     }
+    if (body.foremanPhone !== undefined) {
+      updates['Foreman Phone'] = { phone_number: body.foremanPhone }
+    }
     if (body.currentPhase) {
       updates['Current Phase'] = { select: { name: body.currentPhase } }
     }

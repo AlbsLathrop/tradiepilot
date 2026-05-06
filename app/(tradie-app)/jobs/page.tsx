@@ -486,6 +486,23 @@ export default function JobsPage() {
                         editValue={editValue}
                       />
                       <EditField
+                        label="Foreman Phone"
+                        value={job.foremanPhone || ''}
+                        jobId={job.id}
+                        field="foremanPhone"
+                        isEditing={editingId === `${job.id}-foremanPhone`}
+                        onEdit={() => {
+                          setEditingId(`${job.id}-foremanPhone`)
+                          setEditValue(job.foremanPhone || '')
+                        }}
+                        onSave={() => handleSaveEdit(job.id, 'foremanPhone', editValue)}
+                        onCancel={() => setEditingId(null)}
+                        onChange={setEditValue}
+                        editValue={editValue}
+                        type="tel"
+                        placeholder="Tap to add"
+                      />
+                      <EditField
                         label="Leading Hand"
                         value={job.leadingHand || ''}
                         jobId={job.id}
@@ -536,6 +553,54 @@ export default function JobsPage() {
                         placeholder="Names, comma separated"
                       />
                     </div>
+                  </div>
+
+                  {/* JOB LOG Section */}
+                  <div className="border-t border-[#1F2937] pt-4">
+                    <p className="text-[#F97316] text-xs font-bold uppercase tracking-wide mb-3">Job Log</p>
+                    {job.milestones && job.milestones.length > 0 ? (
+                      <div className="space-y-2">
+                        {job.milestones.slice(0, 10).map((m, idx) => {
+                          const daysAgo = Math.floor(
+                            (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60 * 24)
+                          )
+                          const hoursAgo = Math.floor(
+                            (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60)
+                          )
+                          const minsAgo = Math.floor(
+                            (Date.now() - new Date(m.date).getTime()) / (1000 * 60)
+                          )
+
+                          let timeStr = 'now'
+                          if (minsAgo > 0) timeStr = `${minsAgo}m ago`
+                          if (hoursAgo > 0) timeStr = `${hoursAgo}h ago`
+                          if (daysAgo > 0) timeStr = `${daysAgo}d ago`
+
+                          const typeEmoji: Record<string, string> = {
+                            'ON THE WAY': '🟠',
+                            'RUNNING LATE': '⚠️',
+                            'DAY DONE': '✅',
+                            'JOB_COMPLETE': '🎉',
+                            'PHASE_COMPLETE': '✓',
+                            'DECISION_NEEDED': '❓',
+                            'VARIATION': '📝',
+                          }
+
+                          const emoji = typeEmoji[m.type] || '•'
+                          return (
+                            <div key={idx} className="flex items-start gap-3 text-sm">
+                              <span className="text-lg shrink-0">{emoji}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-gray-300">{m.event}</p>
+                                <p className="text-gray-500 text-xs mt-0.5">{timeStr}</p>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-sm">No activity yet</p>
+                    )}
                   </div>
 
                   {/* Ask ALFRED Button */}

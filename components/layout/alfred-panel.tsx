@@ -35,6 +35,31 @@ function AlfredTab() {
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // Load chat history on mount (async, doesn't block submission)
+  useEffect(() => {
+    if (!session?.user?.tradieSlug) return
+
+    const loadHistory = async () => {
+      try {
+        const res = await fetch(`/api/alfred/chat-history?tradieSlug=${session.user.tradieSlug}`)
+        const data = await res.json()
+        if (data.messages && Array.isArray(data.messages)) {
+          setMessages(
+            data.messages.map((m: any) => ({
+              id: m.id,
+              role: m.role === 'alfred' ? 'assistant' : 'user',
+              content: m.content,
+            }))
+          )
+        }
+      } catch (err) {
+        console.error('Failed to load chat history:', err)
+      }
+    }
+
+    loadHistory()
+  }, [session?.user?.tradieSlug])
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -80,6 +105,8 @@ function AlfredTab() {
       const decoder = new TextDecoder()
       let buffer = ''
 
+      let fullResponse = ''
+
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
@@ -93,6 +120,7 @@ function AlfredTab() {
             try {
               const data = JSON.parse(line.slice(6))
               if (data.type === 'text-delta' && data.text) {
+                fullResponse += data.text
                 setMessages((prev) => {
                   const updated = [...prev]
                   const last = updated[updated.length - 1]
@@ -104,6 +132,24 @@ function AlfredTab() {
               }
             } catch {}
           }
+        }
+      }
+
+      // Save to chat history
+      if (fullResponse && session?.user?.tradieSlug) {
+        try {
+          await fetch('/api/alfred/chat-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: input,
+              reply: fullResponse,
+              action: 'alfred_chat',
+              tradieSlug: session.user.tradieSlug,
+            }),
+          })
+        } catch (err) {
+          console.error('Failed to save chat history:', err)
         }
       }
     } catch (error) {

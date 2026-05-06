@@ -699,6 +699,61 @@ export default function JobsPage() {
                     </div>
                   </div>
 
+                  {/* Client Status Page */}
+                  <div className="pt-2 border-t border-[#1F2937]">
+                    <p className="text-[#06B6D4] text-xs font-bold uppercase mb-2">Client Communication</p>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          const statusUrl = `${window.location.origin}/status/${job.id}`
+                          navigator.clipboard.writeText(statusUrl)
+                          setToast('Status link copied!')
+                          setTimeout(() => setToast(null), 2000)
+                        }}
+                        className="w-full bg-[#06B6D4] text-white text-xs font-bold py-2 px-3 rounded-lg active:opacity-70 text-center"
+                      >
+                        📋 Copy Status Link
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!job.clientPhone) {
+                            setToast('No client phone number on file')
+                            setTimeout(() => setToast(null), 2000)
+                            return
+                          }
+                          try {
+                            setToast('Sending status link to client...')
+                            const statusUrl = `${window.location.origin}/status/${job.id}`
+                            const businessName = session?.user?.name || 'TradieFlow'
+                            const message = `Hi ${job.clientName}, here's a live update on your job: ${statusUrl} — ${businessName}`
+
+                            const res = await fetch('/api/sms', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                to: job.clientPhone,
+                                message,
+                              }),
+                            })
+
+                            if (res.ok) {
+                              setToast('Status link sent to client!')
+                            } else {
+                              setToast('Failed to send SMS')
+                            }
+                            setTimeout(() => setToast(null), 2000)
+                          } catch (err) {
+                            setToast('Error sending SMS')
+                            setTimeout(() => setToast(null), 2000)
+                          }
+                        }}
+                        className="w-full bg-[#06B6D4]/70 text-white text-xs font-bold py-2 px-3 rounded-lg active:opacity-70 text-center"
+                      >
+                        📱 Send to Client
+                      </button>
+                    </div>
+                  </div>
+
                 </div>
               )}
             </div>

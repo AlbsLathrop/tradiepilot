@@ -450,3 +450,71 @@ function extract_email(page: PageObjectResponse, fieldName: string): string | nu
     return null
   }
 }
+
+export interface Milestone {
+  id: string
+  title: string
+  description: string
+  date: string
+  type: string
+}
+
+export interface Photo {
+  id: string
+  url: string
+  description: string
+  createdAt: string
+}
+
+export async function getMilestones(jobId: string): Promise<Milestone[]> {
+  try {
+    const dbId = process.env.NOTION_MILESTONE_LOG_DB_ID
+    if (!dbId) return []
+
+    const res = await notion.databases.query({
+      database_id: dbId,
+      filter: {
+        property: 'Job ID',
+        rich_text: { contains: jobId.replace(/-/g, '') }
+      },
+      sorts: [{ timestamp: 'created_time', direction: 'descending' }],
+    })
+
+    return (res.results as PageObjectResponse[]).map(m => ({
+      id: m.id,
+      title: title(m, 'Title'),
+      description: richText(m, 'Description'),
+      date: (m as any).created_time?.split('T')[0] ?? '',
+      type: select(m, 'Milestone Type'),
+    }))
+  } catch (error) {
+    console.error('[getMilestones] Error:', { jobId, error: error instanceof Error ? error.message : String(error) })
+    return []
+  }
+}
+
+export async function getPhotos(jobId: string): Promise<Photo[]> {
+  try {
+    const dbId = process.env.NOTION_MEDIA_DB_ID
+    if (!dbId) return []
+
+    const res = await notion.databases.query({
+      database_id: dbId,
+      filter: {
+        property: 'Job ID',
+        rich_text: { contains: jobId.replace(/-/g, '') }
+      },
+      sorts: [{ timestamp: 'created_time', direction: 'descending' }],
+    })
+
+    return (res.results as PageObjectResponse[]).map(p => ({
+      id: p.id,
+      url: (p.properties['File URL'] as any)?.url ?? (p.properties['URL'] as any)?.url ?? '',
+      description: richText(p, 'Description'),
+      createdAt: (p as any).created_time?.split('T')[0] ?? '',
+    })).filter(p => p.url)
+  } catch (error) {
+    console.error('[getPhotos] Error:', { jobId, error: error instanceof Error ? error.message : String(error) })
+    return []
+  }
+}

@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Send, Paperclip, Mic } from 'lucide-react';
 
+let preloadedMessageProcessed = false;
+
 interface Message {
   id: string;
   role: 'joey' | 'alfred';
@@ -141,6 +143,8 @@ export default function ChatPage() {
   }, []);
 
   useEffect(() => {
+    if (preloadedMessageProcessed) return;
+
     const params = new URLSearchParams(window.location.search);
     const jobId = params.get('jobId');
     const preloadedMessage = params.get('message');
@@ -161,10 +165,11 @@ export default function ChatPage() {
             });
           }
         })
-        .catch(() => {});
+        .catch(err => console.error('Failed to load job context:', err));
     }
 
     if (preloadedMessage) {
+      preloadedMessageProcessed = true;
       setInput(preloadedMessage);
       setTimeout(() => {
         sendMessage(preloadedMessage);

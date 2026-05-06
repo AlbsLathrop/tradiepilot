@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       leads.length > 0 ? leadLines : 'No new leads',
       leads.length > 0 ? `📱 Open app: tradiepilot.vercel.app` : '',
       ``,
-      `Have a ripper day! — TradiePilot`
+      `Have a ripper day! — TradieFlow`
     ].filter(l => l !== undefined && l !== '').join('\n')
 
     // Send SMS via Twilio

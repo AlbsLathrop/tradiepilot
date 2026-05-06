@@ -58,7 +58,7 @@ export default function LoginPage() {
           fontSize: '24px',
           fontWeight: '600',
           marginBottom: '4px',
-        }}>TradiePilot</h1>
+        }}>TradieFlow</h1>
         <p style={{
           color: '#9CA3AF',
           fontSize: '14px',

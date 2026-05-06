@@ -71,7 +71,7 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-[#0F0F0F] text-white p-6">
       <div className="max-w-md mx-auto">
         <h1 className="text-3xl font-bold mb-1">New Tradie Setup</h1>
-        <p className="text-gray-400 text-sm mb-8">TradiePilot Onboarding</p>
+        <p className="text-gray-400 text-sm mb-8">TradieFlow Onboarding</p>
 
         <div className="space-y-5 bg-[#111827] rounded-xl p-6 border border-[#1F2937]">
           {[

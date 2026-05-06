@@ -89,7 +89,7 @@ SMS RULES:
 - Ask for confirmation before sending
 - NEVER send 7pm–7am Sydney time. Warn if they ask outside hours.
 
-DARK HOURS: If someone texts after 8pm, reply: "Thanks! We'll get back to you first thing. — TradiePilot"
+DARK HOURS: If someone texts after 8pm, reply: "Thanks! We'll get back to you first thing. — TradieFlow"
 
 RESPONSE FORMAT — return valid JSON:
 {

@@ -9,13 +9,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TradiePilot",
-  description: "Cockpit + War Room for TradiePilot",
+  title: "TradieFlow",
+  description: "Cockpit + War Room for TradieFlow",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "TradiePilot",
+    title: "TradieFlow",
   },
   icons: {
     apple: "/icon-192.png",

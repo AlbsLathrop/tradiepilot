@@ -70,7 +70,7 @@ async function saveToMediaDB(data: {
         'Stage': { select: { name: data.stage } },
         'Auto Description': { rich_text: [{ text: { content: data.description } }] },
         'Tags': { multi_select: [{ name: data.stage === 'Issue' ? 'Issue' : 'Completed Work' }] },
-        'Uploaded By': { rich_text: [{ text: { content: data.uploadedBy || 'TradiePilot' } }] },
+        'Uploaded By': { rich_text: [{ text: { content: data.uploadedBy || 'TradieFlow' } }] },
         'Sent To Client': { checkbox: false },
       },
     });
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     const mediaType = isVideo ? 'Video' : 'Photo';
 
     // Upload to Vercel Blob (public for Claude Vision + inline display)
-    const filename = `tradiepilot/${jobId || 'general'}/${Date.now()}-${file.name}`;
+    const filename = `tradieflow/${jobId || 'general'}/${Date.now()}-${file.name}`;
     const blob = await put(filename, file, {
       access: 'public',
       token: process.env.BLOBTRADIEPILOT_READ_WRITE_TOKEN,
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
 
     // Save to Media DB
     const title = `${jobName} — ${stage} — ${new Date().toLocaleDateString('en-AU')}`;
-    const tradieName = formData.get('tradieName') as string || 'TradiePilot';
+    const tradieName = formData.get('tradieName') as string || 'TradieFlow';
     const mediaDbId = await saveToMediaDB({
       title,
       mediaUrl: blob.url,

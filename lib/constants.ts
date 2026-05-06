@@ -43,10 +43,10 @@ export const STATUS_COLORS: Record<string, string> = {
 }
 
 export const ORBIT_MESSAGES: Record<string, string> = {
-  'SCHEDULED':    'Hi {name}, your job is confirmed and locked in. We will see you on the day. Have a great one! - TradiePilot',
-  'IN PROGRESS':  'Hi {name}, just letting you know the team has started on your job today. Have a great one! - TradiePilot',
-  'RUNNING LATE': 'Hi {name}, heads up - the team is running a little late. They are on their way. Thanks for your patience! - TradiePilot',
-  'DAY DONE':     'Hi {name}, that is a wrap for today. The team has finished up on site. Have a good evening! - TradiePilot',
-  'COMPLETE':     'Hi {name}, your job is now complete. Thanks so much for choosing us. Have a great one! - TradiePilot',
-  'INVOICED':     'Hi {name}, your invoice has been sent through. Reach out if you have any questions. Thanks! - TradiePilot',
+  'SCHEDULED':    'Hi {name}, your job is confirmed and locked in. We will see you on the day. Have a great one! - TradieFlow',
+  'IN PROGRESS':  'Hi {name}, just letting you know the team has started on your job today. Have a great one! - TradieFlow',
+  'RUNNING LATE': 'Hi {name}, heads up - the team is running a little late. They are on their way. Thanks for your patience! - TradieFlow',
+  'DAY DONE':     'Hi {name}, that is a wrap for today. The team has finished up on site. Have a good evening! - TradieFlow',
+  'COMPLETE':     'Hi {name}, your job is now complete. Thanks so much for choosing us. Have a great one! - TradieFlow',
+  'INVOICED':     'Hi {name}, your invoice has been sent through. Reach out if you have any questions. Thanks! - TradieFlow',
 }

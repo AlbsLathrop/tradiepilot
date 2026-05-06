@@ -80,7 +80,7 @@ export default function ChatPage() {
     return {
       id: '1',
       role: 'alfred' as const,
-      content: `G'day ${name}. I'm ALFRED — your TradiePilot agent. Tell me about a job update, ask about your leads, or anything else about the business.`,
+      content: `G'day ${name}. I'm ALFRED — your TradieFlow agent. Tell me about a job update, ask about your leads, or anything else about the business.`,
       timestamp: new Date(),
     };
   };
@@ -487,7 +487,7 @@ export default function ChatPage() {
           <p className="text-white font-bold text-base">ALFRED</p>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-green-400"></div>
-            <p className="text-[#9CA3AF] text-xs">Your TradiePilot agent</p>
+            <p className="text-[#9CA3AF] text-xs">Your TradieFlow agent</p>
           </div>
         </div>
         <button

@@ -105,7 +105,7 @@ Start with "Morning ${tradieName}!" Be direct, no fluff. Australian tone.`
 
     const summary = summaryRes.content[0].type === 'text'
       ? summaryRes.content[0].text.trim()
-      : `Morning ${tradieName}! ${activeJobs} active jobs, ${newLeads} new leads. Have a good one! — TradiePilot`
+      : `Morning ${tradieName}! ${activeJobs} active jobs, ${newLeads} new leads. Have a good one! — TradieFlow`
 
     // Send SMS if phone provided
     if (tradiePhone) {

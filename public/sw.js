@@ -1,6 +1,6 @@
 self.addEventListener('push', function(event) {
   const data = event.data?.json() ?? {}
-  const title = data.title || 'TradiePilot'
+  const title = data.title || 'TradieFlow'
   const options = {
     body: data.body || 'New notification',
     icon: '/icon-192.png',

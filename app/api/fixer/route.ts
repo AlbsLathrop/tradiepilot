@@ -5,7 +5,7 @@ import { Client } from '@notionhq/client';
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 const notion = new Client({ auth: process.env.NOTION_API_KEY! });
 
-const FIXER_SYSTEM_PROMPT = `You are FIXER, the configuration agent for TradiePilot.
+const FIXER_SYSTEM_PROMPT = `You are FIXER, the configuration agent for TradieFlow.
 Tradie wants to change something about how their system works.
 
 TRADIE CONFIG FIELDS YOU CAN UPDATE:

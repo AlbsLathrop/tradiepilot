@@ -5,7 +5,7 @@ import { getClientIp, rateLimit } from '@/lib/ratelimit'
 import { logAuthFailure, logRateLimitExceeded, logValidationError } from '@/lib/logger'
 
 webpush.setVapidDetails(
-  'mailto:alberto@tradiepilot.com',
+  'mailto:alberto@tradieflow.com',
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
   process.env.VAPID_PRIVATE_KEY!
 )

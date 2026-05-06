@@ -177,7 +177,7 @@ export default function LeadsPage() {
           title: `Note — ${lead.clientName}`,
           description: note,
           eventType: 'NOTE',
-          by: session?.user?.name || 'TradiePilot',
+          by: session?.user?.name || 'TradieFlow',
         }),
       })
       setQuickNote(prev => ({ ...prev, [lead.id]: '' }))

@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
           process.env.TWILIO_AUTH_TOKEN
         )
 
-        const smsBody = `Hi ${clientName}, ${tradieName} is on the way to ${suburb} now. Should be with you shortly. — TradiePilot`
+        const smsBody = `Hi ${clientName}, ${tradieName} is on the way to ${suburb} now. Should be with you shortly. — TradieFlow`
 
         await twilio.messages.create({
           body: smsBody,
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
           process.env.TWILIO_AUTH_TOKEN
         )
 
-        const smsBody = `Hi ${clientName}, ${tradieName} is running a bit behind today but on the way. Thanks for your patience! — TradiePilot`
+        const smsBody = `Hi ${clientName}, ${tradieName} is running a bit behind today but on the way. Thanks for your patience! — TradieFlow`
 
         await twilio.messages.create({
           body: smsBody,

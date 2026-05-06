@@ -10,7 +10,7 @@ interface NotionPage {
   properties: Record<string, any>
 }
 
-interface TradiePilotConfig {
+interface TradieFlowConfig {
   businessName: string
   tradeType: string
   serviceArea: string
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ config: {} })
     }
     const p = (res.results[0] as NotionPage).properties
-    const config: TradiePilotConfig = {
+    const config: TradieFlowConfig = {
       businessName: p['Business Name']?.rich_text?.[0]?.plain_text ?? '',
       tradeType: p['Trade Type']?.rich_text?.[0]?.plain_text ?? '',
       serviceArea: p['Service Area']?.rich_text?.[0]?.plain_text ?? '',

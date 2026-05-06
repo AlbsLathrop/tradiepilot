@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { signOut, useSession } from 'next-auth/react'
 
-interface TradiePilotConfig {
+interface TradieFlowConfig {
   businessName: string
   tradeType: string
   serviceArea: string
@@ -16,7 +16,7 @@ interface TradiePilotConfig {
 
 export default function SettingsPage() {
   const { data: session, status } = useSession()
-  const [config, setConfig] = useState<TradiePilotConfig | null>(null)
+  const [config, setConfig] = useState<TradieFlowConfig | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
@@ -111,7 +111,7 @@ export default function SettingsPage() {
 
       <div className="px-4 pt-6 pb-4">
         <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-gray-400 text-sm">Your TradiePilot config</p>
+        <p className="text-gray-400 text-sm">Your TradieFlow config</p>
       </div>
 
       {config && (
@@ -122,17 +122,17 @@ export default function SettingsPage() {
               value={config.businessName ?? ''}
               onChange={v => setConfig((p) => ({
                 ...p, businessName: v
-              }) as TradiePilotConfig)} />
+              }) as TradieFlowConfig)} />
             <Field label="Trade Type"
               value={config.tradeType ?? ''}
               onChange={v => setConfig((p) => ({
                 ...p, tradeType: v
-              }) as TradiePilotConfig)} />
+              }) as TradieFlowConfig)} />
             <Field label="Service Area"
               value={config.serviceArea ?? ''}
               onChange={v => setConfig((p) => ({
                 ...p, serviceArea: v
-              }) as TradiePilotConfig)} />
+              }) as TradieFlowConfig)} />
           </Section>
 
           <Section title="ALFRED Settings">
@@ -141,28 +141,28 @@ export default function SettingsPage() {
               type="number"
               onChange={v => setConfig((p) => ({
                 ...p, minJobValue: Number(v)
-              }) as TradiePilotConfig)} />
+              }) as TradieFlowConfig)} />
             <Field label="Business Hours Start"
               value={config.hoursStart ?? '7:00'}
               onChange={v => setConfig((p) => ({
                 ...p, hoursStart: v
-              }) as TradiePilotConfig)} />
+              }) as TradieFlowConfig)} />
             <Field label="Business Hours End"
               value={config.hoursEnd ?? '17:00'}
               onChange={v => setConfig((p) => ({
                 ...p, hoursEnd: v
-              }) as TradiePilotConfig)} />
+              }) as TradieFlowConfig)} />
             <Field label="ALFRED Tone"
               value={config.tone ?? 'Professional'}
               onChange={v => setConfig((p) => ({
                 ...p, tone: v
-              }) as TradiePilotConfig)} />
+              }) as TradieFlowConfig)} />
           </Section>
 
           <Section title="Twilio">
             <div className="flex justify-between items-center py-2">
               <span className="text-gray-400 text-sm">
-                TradiePilot Number
+                TradieFlow Number
               </span>
               <span className="text-white text-sm font-mono">
                 {config.twilioNumber ?? '+61468072974'}

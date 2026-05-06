@@ -40,7 +40,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="p-6 border-b border-[#252a3d]">
         <div className="text-2xl font-bold font-mono text-[#f5c518] mb-2">JOBFLOW</div>
-        <div className="text-xs text-[#8892b0]">Alfred War Room · TradiePilot</div>
+        <div className="text-xs text-[#8892b0]">Alfred War Room · TradieFlow</div>
       </div>
 
       {/* Navigation */}

@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       database_id: '3ca5ac231a1741478b9dad5344c738df',
       filter: {
         property: 'Status',
-        select: { equals: 'New' }
+        select: { equals: 'NEW' }
       },
       page_size: 5,
     })

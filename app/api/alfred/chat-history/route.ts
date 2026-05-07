@@ -23,9 +23,9 @@ async function loadMessages(tradieSlug: string): Promise<ChatMessage[]> {
             },
           },
           {
-            property: 'Channel',
+            property: 'Type',
             select: {
-              equals: 'App',
+              equals: 'ALFRED Chat',
             },
           },
         ],
@@ -78,8 +78,8 @@ async function saveMessage(tradieSlug: string, role: 'user' | 'assistant', conte
             start: timestamp,
           },
         },
-        Channel: {
-          select: { name: 'App' },
+        Type: {
+          select: { name: 'ALFRED Chat' },
         },
         Direction: {
           select: { name: direction },

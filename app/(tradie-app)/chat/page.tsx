@@ -87,19 +87,7 @@ export default function ChatPage() {
     };
   };
 
-  const [messages, setMessages] = useState<Message[]>(() => {
-    if (typeof window === 'undefined') return [getDefaultMessage()];
-
-    try {
-      const saved = localStorage.getItem('alfred_chat_history');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }));
-      }
-    } catch {}
-
-    return [getDefaultMessage()];
-  });
+  const [messages, setMessages] = useState<Message[]>([getDefaultMessage()]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -120,14 +108,6 @@ export default function ChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  useEffect(() => {
-    if (messages.length > 0) {
-      try {
-        const toSave = messages.slice(-100);
-        localStorage.setItem('alfred_chat_history', JSON.stringify(toSave));
-      } catch {}
-    }
-  }, [messages]);
 
   useEffect(() => {
     const loadDynamicChips = async () => {
@@ -519,7 +499,6 @@ export default function ChatPage() {
         </div>
         <button
           onClick={() => {
-            localStorage.removeItem('alfred_chat_history');
             setMessages([{
               id: Date.now().toString(),
               role: 'alfred',

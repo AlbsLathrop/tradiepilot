@@ -762,7 +762,7 @@ export default function JobsPage() {
                               }
                               setShowAllLog(newSet)
                             }}
-                            className="mt-3 text-[#F97316] text-xs font-bold hover:opacity-80 transition-opacity"
+                            className="mt-3 text-orange-500 text-sm border border-orange-500 rounded px-3 py-1 hover:bg-orange-500 hover:text-white transition-colors bg-transparent"
                           >
                             {showAllLog.has(job.id) ? 'Show less ↑' : `Show all ${job.milestones.length} entries ↓`}
                           </button>

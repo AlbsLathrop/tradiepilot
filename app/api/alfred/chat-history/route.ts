@@ -13,36 +13,35 @@ const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 async function loadMessages(tradieSlug: string): Promise<ChatMessage[]> {
   try {
+    // Query all ALFRED Chat entries, filter by tradieSlug in JS (avoids Notion validation errors)
     const results = await queryNotionDatabase(NOTION_DB.COMMS, {
       filter: {
-        and: [
-          {
-            property: 'Job',
-            rich_text: {
-              equals: tradieSlug,
-            },
-          },
-          {
-            property: 'Type',
-            select: {
-              equals: 'ALFRED Chat',
-            },
-          },
-        ],
+        property: 'Type',
+        select: {
+          equals: 'ALFRED Chat',
+        },
       },
       sorts: [
         {
-          property: 'Timestamp',
+          property: 'Created',
           direction: 'ascending',
         },
       ],
       page_size: 50,
     });
 
-    return results.map((page: any) => {
+    // Filter by tradieSlug in JavaScript
+    const filtered = results.filter((page: any) => {
+      const jobOrConfigId =
+        page.properties?.['Tradie Config ID']?.rich_text?.[0]?.plain_text ||
+        page.properties?.Job?.rich_text?.[0]?.plain_text;
+      return jobOrConfigId === tradieSlug;
+    });
+
+    return filtered.map((page: any) => {
       const direction = page.properties?.Direction?.select?.name;
       const role = direction === 'Outbound' ? 'user' : 'assistant';
-      const timestamp = page.properties?.Timestamp?.date?.start ?? new Date().toISOString();
+      const timestamp = page.properties?.Created?.created_time ?? new Date().toISOString();
 
       return {
         role,
@@ -70,13 +69,8 @@ async function saveMessage(tradieSlug: string, role: 'user' | 'assistant', conte
         'Message Content': {
           rich_text: [{ text: { content } }],
         },
-        Job: {
+        'Tradie Config ID': {
           rich_text: [{ text: { content: tradieSlug } }],
-        },
-        Timestamp: {
-          date: {
-            start: timestamp,
-          },
         },
         Type: {
           select: { name: 'ALFRED Chat' },

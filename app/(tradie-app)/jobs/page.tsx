@@ -91,7 +91,7 @@ interface JobDetailProps {
   handleSaveEdit: (jobId: string, field: string, value: string) => void
   handleInvoiceUpdate: (job: Job, status: string) => void
   handleAction: (job: Job, action: string) => void
-  setToast: (msg: string) => void
+  setToast: (msg: string | null) => void
 }
 
 function JobDetail({

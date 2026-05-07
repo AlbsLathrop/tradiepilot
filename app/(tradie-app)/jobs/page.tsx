@@ -220,7 +220,7 @@ export default function JobsPage() {
   const [lightbox, setLightbox] = useState<Photo | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState<string>('')
-  const [showAllLog, setShowAllLog] = useState(false)
+  const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set())
   const [newJob, setNewJob] = useState({
     clientName: '', clientPhone: '', address: '',
     suburb: '', service: '', scope: '',
@@ -697,7 +697,7 @@ export default function JobsPage() {
                     <h3 className="text-orange-500 text-xs font-bold tracking-widest uppercase mb-3">Job Log</h3>
                     <div className="space-y-2">
                       {(() => {
-                        const visibleMilestones = showAllLog ? job.milestones : job.milestones.slice(0, 3)
+                        const visibleMilestones = expandedLogs.has(job.id) ? job.milestones : job.milestones.slice(0, 3)
                         return visibleMilestones.map((m: any, i: number) => {
                           const daysAgo = Math.floor(
                             (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60 * 24)
@@ -733,10 +733,15 @@ export default function JobsPage() {
                     </div>
                     {job.milestones.length > 3 && (
                       <button
-                        onClick={() => setShowAllLog(prev => !prev)}
+                        onClick={() => setExpandedLogs(prev => {
+                          const next = new Set(prev)
+                          if (next.has(job.id)) next.delete(job.id)
+                          else next.add(job.id)
+                          return next
+                        })}
                         className="mt-3 text-orange-500 text-xs underline outline-none"
                       >
-                        {showAllLog ? 'Show less ↑' : `Show all ${job.milestones.length} entries ↓`}
+                        {expandedLogs.has(job.id) ? 'Show less ↑' : `Show all ${job.milestones.length} entries ↓`}
                       </button>
                     )}
                   </div>

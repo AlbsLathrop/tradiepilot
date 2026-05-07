@@ -692,68 +692,52 @@ export default function JobsPage() {
                   </div>
 
                   {/* JOB LOG */}
-                  <div className="mb-6 border-t border-[#1F2937] pt-4">
-                    <h3 className="text-[#F97316] text-xs font-bold tracking-widest uppercase mb-3">Job Log</h3>
+                  {/* JOB LOG */}
+                  <div className="mb-6">
+                    <h3 className="text-orange-500 text-xs font-bold tracking-widest uppercase mb-3">Job Log</h3>
+                    <div className="space-y-2">
+                      {(() => {
+                        const visibleMilestones = showAllLog ? job.milestones : job.milestones.slice(0, 3)
+                        return visibleMilestones.map((m: any, i: number) => {
+                          const daysAgo = Math.floor(
+                            (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60 * 24)
+                          )
+                          const hoursAgo = Math.floor(
+                            (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60)
+                          )
+                          const minsAgo = Math.floor(
+                            (Date.now() - new Date(m.date).getTime()) / (1000 * 60)
+                          )
 
-                    {job.milestones.length === 0 ? (
-                      <p className="text-gray-500 text-sm">No entries yet</p>
-                    ) : (
-                      <div>
-                        <div
-                          style={{
-                            maxHeight: showAllLog ? '1000px' : '140px',
-                            overflow: 'hidden',
-                            transition: 'max-height 0.3s ease'
-                          }}
-                        >
-                          {job.milestones.map((m, idx) => {
-                            const daysAgo = Math.floor(
-                              (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60 * 24)
-                            )
-                            const hoursAgo = Math.floor(
-                              (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60)
-                            )
-                            const minsAgo = Math.floor(
-                              (Date.now() - new Date(m.date).getTime()) / (1000 * 60)
-                            )
+                          let timeAgo = 'now'
+                          if (minsAgo > 0) timeAgo = `${minsAgo}m ago`
+                          if (hoursAgo > 0) timeAgo = `${hoursAgo}h ago`
+                          if (daysAgo > 0) timeAgo = `${daysAgo}d ago`
 
-                            let timeStr = 'now'
-                            if (minsAgo > 0) timeStr = `${minsAgo}m ago`
-                            if (hoursAgo > 0) timeStr = `${hoursAgo}h ago`
-                            if (daysAgo > 0) timeStr = `${daysAgo}d ago`
+                          const isComplete = m.type?.includes('COMPLETE') || m.type?.includes('DONE')
+                          const isLate = m.type?.includes('LATE')
 
-                            const typeEmoji: Record<string, string> = {
-                              'ON THE WAY': '🟠',
-                              'RUNNING LATE': '⚠️',
-                              'DAY DONE': '✅',
-                              'JOB_COMPLETE': '🎉',
-                              'PHASE_COMPLETE': '✓',
-                              'DECISION_NEEDED': '❓',
-                              'VARIATION': '📝',
-                            }
-
-                            const emoji = typeEmoji[m.type] || '•'
-                            return (
-                              <div key={idx} className="flex items-start gap-3 mb-3">
-                                <span className="text-gray-400 mt-0.5 text-sm">{emoji}</span>
-                                <div>
-                                  <p className="text-white text-sm">{m.event}</p>
-                                  <p className="text-gray-500 text-xs">{timeStr}</p>
-                                </div>
+                          return (
+                            <div key={i} className="flex items-start gap-3 bg-[#1a1f2e] rounded-lg px-4 py-3">
+                              <span className={`text-xs font-bold mt-0.5 ${
+                                isComplete ? 'text-green-400' : isLate ? 'text-red-400' : 'text-orange-400'
+                              }`}>●</span>
+                              <div className="flex-1">
+                                <p className="text-white text-sm font-medium">{m.event}</p>
+                                <p className="text-gray-500 text-xs">{timeAgo}</p>
                               </div>
-                            )
-                          })}
-                        </div>
-
-                        {job.milestones.length > 3 && (
-                          <button
-                            onClick={() => setShowAllLog(!showAllLog)}
-                            className="mt-2 text-orange-500 text-xs underline"
-                          >
-                            {showAllLog ? 'Show less ↑' : `Show all ${job.milestones.length} entries ↓`}
-                          </button>
-                        )}
-                      </div>
+                            </div>
+                          )
+                        })
+                      })()}
+                    </div>
+                    {job.milestones.length > 3 && (
+                      <button
+                        onClick={() => setShowAllLog(prev => !prev)}
+                        className="mt-3 text-orange-500 text-xs underline"
+                      >
+                        {showAllLog ? 'Show less ↑' : `Show all ${job.milestones.length} entries ↓`}
+                      </button>
                     )}
                   </div>
 

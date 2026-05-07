@@ -221,6 +221,7 @@ export default function JobsPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState<string>('')
   const [expandedJobLogs, setExpandedJobLogs] = useState<Set<string>>(new Set())
+  const [showAllLog, setShowAllLog] = useState<Set<string>>(new Set())
   const [newJob, setNewJob] = useState({
     clientName: '', clientPhone: '', address: '',
     suburb: '', service: '', scope: '',
@@ -711,9 +712,9 @@ export default function JobsPage() {
                     {job.milestones && job.milestones.length > 0 ? (
                       <div>
                         <div className="space-y-2 overflow-hidden transition-all duration-300" style={{
-                          maxHeight: expandedJobLogs.has(job.id) ? '2000px' : '180px'
+                          maxHeight: showAllLog.has(job.id) ? '2000px' : '180px'
                         }}>
-                          {job.milestones.slice(0, expandedJobLogs.has(job.id) ? undefined : 3).map((m, idx) => {
+                          {job.milestones.slice(0, showAllLog.has(job.id) ? undefined : 3).map((m, idx) => {
                             const daysAgo = Math.floor(
                               (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60 * 24)
                             )
@@ -754,17 +755,17 @@ export default function JobsPage() {
                         {job.milestones.length > 3 && (
                           <button
                             onClick={() => {
-                              const newSet = new Set(expandedJobLogs)
-                              if (expandedJobLogs.has(job.id)) {
+                              const newSet = new Set(showAllLog)
+                              if (showAllLog.has(job.id)) {
                                 newSet.delete(job.id)
                               } else {
                                 newSet.add(job.id)
                               }
-                              setExpandedJobLogs(newSet)
+                              setShowAllLog(newSet)
                             }}
                             className="mt-3 text-[#F97316] text-xs font-bold hover:opacity-80 transition-opacity"
                           >
-                            {expandedJobLogs.has(job.id) ? 'Show less ↑' : `Show all ${job.milestones.length} entries ↓`}
+                            {showAllLog.has(job.id) ? 'Show less ↑' : `Show all ${job.milestones.length} entries ↓`}
                           </button>
                         )}
                       </div>

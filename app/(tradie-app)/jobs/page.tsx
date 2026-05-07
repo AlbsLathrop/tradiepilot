@@ -734,7 +734,7 @@ export default function JobsPage() {
                     {job.milestones.length > 3 && (
                       <button
                         onClick={() => setShowAllLog(prev => !prev)}
-                        className="mt-3 text-orange-500 text-xs underline"
+                        className="mt-3 text-orange-500 text-xs underline outline-none"
                       >
                         {showAllLog ? 'Show less ↑' : `Show all ${job.milestones.length} entries ↓`}
                       </button>

@@ -54,6 +54,12 @@ export async function POST(req: NextRequest) {
 
     const leads = leadsRes.results as any[]
 
+    // Debug: log lead properties
+    if (leads.length > 0) {
+      console.log('Lead props:', Object.keys(leads[0]?.properties || {}))
+      console.log('Lead properties:', leads[0]?.properties)
+    }
+
     // Build job lines
     const jobLines = jobs.map(job => {
       const clientName = job.properties['Client Name']?.title?.[0]?.plain_text || 'Unknown'

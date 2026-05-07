@@ -79,6 +79,457 @@ interface PhotosSectionProps {
   tradieSlug: string
 }
 
+interface JobDetailProps {
+  job: Job
+  session: any
+  editingId: string | null
+  editValue: string
+  setEditingId: (id: string | null) => void
+  setEditValue: (val: string) => void
+  openInvoiceId: string | null
+  setOpenInvoiceId: (id: string | null) => void
+  handleSaveEdit: (jobId: string, field: string, value: string) => void
+  handleInvoiceUpdate: (job: Job, status: string) => void
+  handleAction: (job: Job, action: string) => void
+  setToast: (msg: string) => void
+}
+
+function JobDetail({
+  job, session, editingId, editValue, setEditingId, setEditValue,
+  openInvoiceId, setOpenInvoiceId, handleSaveEdit, handleInvoiceUpdate, handleAction, setToast
+}: JobDetailProps) {
+  const [showAllLog, setShowAllLog] = useState(false)
+
+  const visibleMilestones = showAllLog ? job.milestones : job.milestones.slice(0, 3)
+
+  return (
+    <div className="px-4 pb-4 space-y-4 border-t border-[#1F2937]">
+
+      {/* JOB DETAILS Section */}
+      <div className="pt-4 space-y-2">
+        <p className="text-[#F97316] text-xs font-bold uppercase tracking-wide mb-3">Job Details</p>
+        <EditField
+          label="Type of Work"
+          value={job.jobType || ''}
+          jobId={job.id}
+          field="jobType"
+          isEditing={editingId === `${job.id}-jobType`}
+          onEdit={() => {
+            setEditingId(`${job.id}-jobType`)
+            setEditValue(job.jobType || '')
+          }}
+          onSave={() => handleSaveEdit(job.id, 'jobType', editValue)}
+          onCancel={() => setEditingId(null)}
+          onChange={setEditValue}
+          editValue={editValue}
+        />
+        <EditField
+          label="Job Details"
+          value={job.scope || ''}
+          jobId={job.id}
+          field="scope"
+          isEditing={editingId === `${job.id}-scope`}
+          onEdit={() => {
+            setEditingId(`${job.id}-scope`)
+            setEditValue(job.scope || '')
+          }}
+          onSave={() => handleSaveEdit(job.id, 'scope', editValue)}
+          onCancel={() => setEditingId(null)}
+          onChange={setEditValue}
+          editValue={editValue}
+          isTextarea
+        />
+        {job.jobValue && (
+          <InfoRow label="Job Value" value={`$${job.jobValue.toLocaleString()}`} />
+        )}
+        <EditField
+          label="Est. Completion"
+          value={job.estimatedCompletion || ''}
+          jobId={job.id}
+          field="estimatedCompletion"
+          isEditing={editingId === `${job.id}-estimatedCompletion`}
+          onEdit={() => {
+            setEditingId(`${job.id}-estimatedCompletion`)
+            setEditValue(job.estimatedCompletion || '')
+          }}
+          onSave={() => handleSaveEdit(job.id, 'estimatedCompletion', editValue)}
+          onCancel={() => setEditingId(null)}
+          onChange={setEditValue}
+          editValue={editValue}
+          type="date"
+        />
+        {job.address && (
+          <div className="flex items-start justify-between gap-4">
+            <span className="text-gray-400 text-sm shrink-0">Address</span>
+            <a
+              href={`https://maps.apple.com/?q=${encodeURIComponent(job.address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#F97316] text-sm text-right hover:underline"
+            >
+              {job.address} 📍
+            </a>
+          </div>
+        )}
+        {job.siteAccessNotes && (
+          <div className="mt-1 bg-orange-500/10 border border-orange-500/30 rounded-lg p-2">
+            <p className="text-orange-400 text-xs font-bold">⚠️ Site Access</p>
+            <p className="text-gray-300 text-xs mt-1">{job.siteAccessNotes}</p>
+          </div>
+        )}
+        <EditField
+          label="Notes"
+          value={job.notes || ''}
+          jobId={job.id}
+          field="notes"
+          isEditing={editingId === `${job.id}-notes`}
+          onEdit={() => {
+            setEditingId(`${job.id}-notes`)
+            setEditValue(job.notes || '')
+          }}
+          onSave={() => handleSaveEdit(job.id, 'notes', editValue)}
+          onCancel={() => setEditingId(null)}
+          onChange={setEditValue}
+          editValue={editValue}
+          isTextarea
+        />
+      </div>
+
+      {/* CLIENT Section */}
+      <div className="border-t border-[#1F2937] pt-4">
+        <p className="text-[#F97316] text-xs font-bold uppercase tracking-wide mb-3">Client</p>
+        <div className="bg-[#0F0F0F] rounded-lg p-3 space-y-2">
+          {job.clientName && (
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400 text-sm">Name</span>
+              <span className="text-white text-sm font-medium">{job.clientName}</span>
+            </div>
+          )}
+          {job.clientPhone && (
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400 text-sm">Phone</span>
+              <div className="flex items-center gap-3">
+                <a
+                  href={`tel:${job.clientPhone}`}
+                  className="text-[#F97316] text-sm font-medium"
+                >
+                  {job.clientPhone}
+                </a>
+                <a
+                  href={`tel:${job.clientPhone}`}
+                  className="bg-green-600 hover:bg-green-700 text-white text-xs
+                  font-bold px-3 py-1.5 rounded-lg active:opacity-70 transition-colors inline-block"
+                >
+                  📞 Call
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* TEAM Section */}
+      <div className="border-t border-[#1F2937] pt-4">
+        <p className="text-[#F97316] text-xs font-bold uppercase tracking-wide mb-3">Team</p>
+        <div className="bg-[#0F0F0F] rounded-lg p-3 space-y-3">
+          <EditField
+            label="Foreman"
+            value={job.foremanName || ''}
+            jobId={job.id}
+            field="foremanName"
+            isEditing={editingId === `${job.id}-foremanName`}
+            onEdit={() => {
+              setEditingId(`${job.id}-foremanName`)
+              setEditValue(job.foremanName || '')
+            }}
+            onSave={() => handleSaveEdit(job.id, 'foremanName', editValue)}
+            onCancel={() => setEditingId(null)}
+            onChange={setEditValue}
+            editValue={editValue}
+          />
+          <EditField
+            label="Foreman Phone"
+            value={job.foremanPhone || ''}
+            jobId={job.id}
+            field="foremanPhone"
+            isEditing={editingId === `${job.id}-foremanPhone`}
+            onEdit={() => {
+              setEditingId(`${job.id}-foremanPhone`)
+              setEditValue(job.foremanPhone || '')
+            }}
+            onSave={() => handleSaveEdit(job.id, 'foremanPhone', editValue)}
+            onCancel={() => setEditingId(null)}
+            onChange={setEditValue}
+            editValue={editValue}
+            type="tel"
+            placeholder="Tap to add"
+          />
+          <EditField
+            label="Leading Hand"
+            value={job.leadingHand || ''}
+            jobId={job.id}
+            field="leadingHand"
+            isEditing={editingId === `${job.id}-leadingHand`}
+            onEdit={() => {
+              setEditingId(`${job.id}-leadingHand`)
+              setEditValue(job.leadingHand || '')
+            }}
+            onSave={() => handleSaveEdit(job.id, 'leadingHand', editValue)}
+            onCancel={() => setEditingId(null)}
+            onChange={setEditValue}
+            editValue={editValue}
+            placeholder="Tap to add"
+          />
+          <EditField
+            label="Leading Hand Phone"
+            value={job.leadingHandPhone || ''}
+            jobId={job.id}
+            field="leadingHandPhone"
+            isEditing={editingId === `${job.id}-leadingHandPhone`}
+            onEdit={() => {
+              setEditingId(`${job.id}-leadingHandPhone`)
+              setEditValue(job.leadingHandPhone || '')
+            }}
+            onSave={() => handleSaveEdit(job.id, 'leadingHandPhone', editValue)}
+            onCancel={() => setEditingId(null)}
+            onChange={setEditValue}
+            editValue={editValue}
+            type="tel"
+            placeholder="Tap to add"
+          />
+          <EditField
+            label="Team Members"
+            value={job.teamMembers || ''}
+            jobId={job.id}
+            field="teamMembers"
+            isEditing={editingId === `${job.id}-teamMembers`}
+            onEdit={() => {
+              setEditingId(`${job.id}-teamMembers`)
+              setEditValue(job.teamMembers || '')
+            }}
+            onSave={() => handleSaveEdit(job.id, 'teamMembers', editValue)}
+            onCancel={() => setEditingId(null)}
+            onChange={setEditValue}
+            editValue={editValue}
+            isTextarea
+            placeholder="Names, comma separated"
+          />
+        </div>
+      </div>
+
+      {/* JOB LOG */}
+      <div className="mb-6">
+        <h3 className="text-orange-500 text-xs font-bold tracking-widest uppercase mb-3">Job Log</h3>
+        <div className="space-y-2">
+          {(() => {
+            return visibleMilestones.map((m: any, i: number) => {
+              const daysAgo = Math.floor(
+                (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60 * 24)
+              )
+              const hoursAgo = Math.floor(
+                (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60)
+              )
+              const minsAgo = Math.floor(
+                (Date.now() - new Date(m.date).getTime()) / (1000 * 60)
+              )
+
+              let timeAgo = 'now'
+              if (minsAgo > 0) timeAgo = `${minsAgo}m ago`
+              if (hoursAgo > 0) timeAgo = `${hoursAgo}h ago`
+              if (daysAgo > 0) timeAgo = `${daysAgo}d ago`
+
+              const isComplete = m.type?.includes('COMPLETE') || m.type?.includes('DONE')
+              const isLate = m.type?.includes('LATE')
+
+              return (
+                <div key={i} className="flex items-start gap-3 bg-[#1a1f2e] rounded-lg px-4 py-3">
+                  <span className={`text-xs font-bold mt-0.5 ${
+                    isComplete ? 'text-green-400' : isLate ? 'text-red-400' : 'text-orange-400'
+                  }`}>●</span>
+                  <div className="flex-1">
+                    <p className="text-white text-sm font-medium">{m.event}</p>
+                    <p className="text-gray-500 text-xs">{timeAgo}</p>
+                  </div>
+                </div>
+              )
+            })
+          })()}
+        </div>
+        {job.milestones.length > 3 && (
+          <button
+            onClick={() => setShowAllLog(prev => !prev)}
+            className="mt-3 text-orange-500 text-xs underline outline-none"
+          >
+            {showAllLog ? 'Show less ↑' : `Show all ${job.milestones.length} entries ↓`}
+          </button>
+        )}
+      </div>
+
+      {/* PHOTOS Section */}
+      {job.photos && job.photos.length > 0 && (
+        <PhotosSection
+          jobId={job.id}
+          clientName={job.clientName}
+          photos={job.photos}
+          tradieSlug={session?.user?.tradieSlug || ''}
+        />
+      )}
+
+      {/* Ask ALFRED Button */}
+      <a
+        href={`/chat?message=${encodeURIComponent(
+          `Give me a full update on the ${job.clientName} job in ${job.suburb}. What's the current status, what happened last, and what's coming up next?`
+        )}&jobId=${job.id}`}
+        className="w-full block bg-[#1F2937] border border-[#F97316] text-[#F97316] text-sm font-bold py-3 rounded-xl text-center"
+      >
+        🧠 Ask ALFRED about this job
+      </a>
+
+      {/* INVOICE */}
+      <div className="border-t border-[#1F2937] pt-4">
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            setOpenInvoiceId(
+              openInvoiceId === job.id ? null : job.id
+            )
+          }}
+          className="w-full flex items-center justify-between
+          px-3 py-2 rounded-lg border border-[#F97316]/50
+          hover:border-[#F97316] transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-[#F97316] text-xs font-bold uppercase
+            tracking-wide">Invoice</span>
+            <span className={`text-[10px] font-bold px-2 py-0.5
+            rounded-full ${
+              job.invoiceStatus === 'PAID'
+                ? 'bg-green-500/20 text-green-400'
+                : job.invoiceStatus === 'SENT' &&
+                  (job.invoiceDueDays ?? 0) > 14
+                ? 'bg-red-500/20 text-red-400 animate-pulse'
+                : job.invoiceStatus === 'SENT'
+                ? 'bg-blue-500/20 text-blue-400'
+                : 'bg-gray-500/20 text-gray-500'
+            }`}>
+              {job.invoiceStatus === 'SENT' &&
+               (job.invoiceDueDays ?? 0) > 14
+                ? `OVERDUE ${job.invoiceDueDays}d`
+                : job.invoiceStatus || 'NOT SENT'}
+            </span>
+            {job.invoiceAmount && (
+              <span className="text-gray-400 text-xs">
+                ${job.invoiceAmount.toLocaleString()}
+              </span>
+            )}
+          </div>
+          <span className="text-[#F97316]/60 text-xs">
+            {openInvoiceId === job.id ? '▲' : '▼'}
+          </span>
+        </button>
+
+        {openInvoiceId === job.id && (
+          <div className="grid grid-cols-3 gap-2 mt-2">
+            {[
+              { value: 'NOT SENT', label: 'Not Sent' },
+              { value: 'SENT', label: 'Invoiced' },
+              { value: 'PAID', label: '✓ Paid' },
+            ].map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleInvoiceUpdate(job, value)
+                }}
+                className={`text-xs font-bold py-2.5 rounded-lg
+                transition-all active:scale-95 ${
+                  (job.invoiceStatus || 'NOT SENT') === value
+                    ? 'bg-[#F97316] text-white'
+                    : 'bg-[#0F0F0F] border border-[#1F2937] text-gray-400'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Quick Actions */}
+      <div>
+        <p className="text-[#F97316] text-xs font-bold uppercase mb-2">Quick Actions</p>
+        <div className="grid grid-cols-2 gap-2">
+          {QUICK_ACTIONS.map(action => (
+            <button
+              key={action}
+              onClick={() => handleAction(job, action)}
+              className="bg-[#F97316] text-white text-xs font-bold py-3 px-2 rounded-lg active:opacity-70 text-center"
+            >
+              {action}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Client Status Page */}
+      <div className="pt-2 border-t border-[#1F2937]">
+        <p className="text-[#06B6D4] text-xs font-bold uppercase mb-2">Client Communication</p>
+        <div className="space-y-2">
+          <button
+            onClick={() => {
+              const statusUrl = `${window.location.origin}/status/${job.id}`
+              navigator.clipboard.writeText(statusUrl)
+              setToast('Status link copied!')
+              setTimeout(() => setToast(null), 2000)
+            }}
+            className="w-full bg-[#06B6D4] text-white text-xs font-bold py-2 px-3 rounded-lg active:opacity-70 text-center"
+          >
+            📋 Copy Status Link
+          </button>
+          <button
+            onClick={async () => {
+              if (!job.clientPhone) {
+                setToast('No client phone number on file')
+                setTimeout(() => setToast(null), 2000)
+                return
+              }
+              try {
+                setToast('Sending status link to client...')
+                const statusUrl = `${window.location.origin}/status/${job.id}`
+                const businessName = session?.user?.name || 'TradieFlow'
+                const message = `Hi ${job.clientName}, here's a live update on your job: ${statusUrl} — ${businessName}`
+
+                const res = await fetch('/api/sms', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    to: job.clientPhone,
+                    message,
+                  }),
+                })
+
+                if (res.ok) {
+                  setToast('Status link sent to client!')
+                } else {
+                  setToast('Failed to send SMS')
+                }
+                setTimeout(() => setToast(null), 2000)
+              } catch (err) {
+                setToast('Error sending SMS')
+                setTimeout(() => setToast(null), 2000)
+              }
+            }}
+            className="w-full bg-[#06B6D4]/70 text-white text-xs font-bold py-2 px-3 rounded-lg active:opacity-70 text-center"
+          >
+            📱 Send to Client
+          </button>
+        </div>
+      </div>
+
+    </div>
+  )
+}
+
 function PhotosSection({ jobId, clientName, photos, tradieSlug }: PhotosSectionProps) {
   const [activeTab, setActiveTab] = useState<string>('Progress')
   const [uploading, setUploading] = useState(false)
@@ -220,7 +671,6 @@ export default function JobsPage() {
   const [lightbox, setLightbox] = useState<Photo | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState<string>('')
-  const [expandedJobId, setExpandedJobId] = useState<string | null>(null)
   const [newJob, setNewJob] = useState({
     clientName: '', clientPhone: '', address: '',
     suburb: '', service: '', scope: '',
@@ -476,434 +926,7 @@ export default function JobsPage() {
               </button>
 
               {/* Expanded Detail */}
-              {isOpen && (
-                <div className="px-4 pb-4 space-y-4 border-t border-[#1F2937]">
-
-                  {/* JOB DETAILS Section */}
-                  <div className="pt-4 space-y-2">
-                    <p className="text-[#F97316] text-xs font-bold uppercase tracking-wide mb-3">Job Details</p>
-                    <EditField
-                      label="Type of Work"
-                      value={job.jobType || ''}
-                      jobId={job.id}
-                      field="jobType"
-                      isEditing={editingId === `${job.id}-jobType`}
-                      onEdit={() => {
-                        setEditingId(`${job.id}-jobType`)
-                        setEditValue(job.jobType || '')
-                      }}
-                      onSave={() => handleSaveEdit(job.id, 'jobType', editValue)}
-                      onCancel={() => setEditingId(null)}
-                      onChange={setEditValue}
-                      editValue={editValue}
-                    />
-                    <EditField
-                      label="Job Details"
-                      value={job.scope || ''}
-                      jobId={job.id}
-                      field="scope"
-                      isEditing={editingId === `${job.id}-scope`}
-                      onEdit={() => {
-                        setEditingId(`${job.id}-scope`)
-                        setEditValue(job.scope || '')
-                      }}
-                      onSave={() => handleSaveEdit(job.id, 'scope', editValue)}
-                      onCancel={() => setEditingId(null)}
-                      onChange={setEditValue}
-                      editValue={editValue}
-                      isTextarea
-                    />
-                    {job.jobValue && (
-                      <InfoRow label="Job Value" value={`$${job.jobValue.toLocaleString()}`} />
-                    )}
-                    <EditField
-                      label="Est. Completion"
-                      value={job.estimatedCompletion || ''}
-                      jobId={job.id}
-                      field="estimatedCompletion"
-                      isEditing={editingId === `${job.id}-estimatedCompletion`}
-                      onEdit={() => {
-                        setEditingId(`${job.id}-estimatedCompletion`)
-                        setEditValue(job.estimatedCompletion || '')
-                      }}
-                      onSave={() => handleSaveEdit(job.id, 'estimatedCompletion', editValue)}
-                      onCancel={() => setEditingId(null)}
-                      onChange={setEditValue}
-                      editValue={editValue}
-                      type="date"
-                    />
-                    {job.address && (
-                      <div className="flex items-start justify-between gap-4">
-                        <span className="text-gray-400 text-sm shrink-0">Address</span>
-                        <a
-                          href={`https://maps.apple.com/?q=${encodeURIComponent(job.address)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[#F97316] text-sm text-right hover:underline"
-                        >
-                          {job.address} 📍
-                        </a>
-                      </div>
-                    )}
-                    {job.siteAccessNotes && (
-                      <div className="mt-1 bg-orange-500/10 border border-orange-500/30 rounded-lg p-2">
-                        <p className="text-orange-400 text-xs font-bold">⚠️ Site Access</p>
-                        <p className="text-gray-300 text-xs mt-1">{job.siteAccessNotes}</p>
-                      </div>
-                    )}
-                    <EditField
-                      label="Notes"
-                      value={job.notes || ''}
-                      jobId={job.id}
-                      field="notes"
-                      isEditing={editingId === `${job.id}-notes`}
-                      onEdit={() => {
-                        setEditingId(`${job.id}-notes`)
-                        setEditValue(job.notes || '')
-                      }}
-                      onSave={() => handleSaveEdit(job.id, 'notes', editValue)}
-                      onCancel={() => setEditingId(null)}
-                      onChange={setEditValue}
-                      editValue={editValue}
-                      isTextarea
-                    />
-                  </div>
-
-                  {/* CLIENT Section */}
-                  <div className="border-t border-[#1F2937] pt-4">
-                    <p className="text-[#F97316] text-xs font-bold uppercase tracking-wide mb-3">Client</p>
-                    <div className="bg-[#0F0F0F] rounded-lg p-3 space-y-2">
-                      {job.clientName && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-400 text-sm">Name</span>
-                          <span className="text-white text-sm font-medium">{job.clientName}</span>
-                        </div>
-                      )}
-                      {job.clientPhone && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-400 text-sm">Phone</span>
-                          <div className="flex items-center gap-3">
-                            <a
-                              href={`tel:${job.clientPhone}`}
-                              className="text-[#F97316] text-sm font-medium"
-                            >
-                              {job.clientPhone}
-                            </a>
-                            <a
-                              href={`tel:${job.clientPhone}`}
-                              className="bg-green-600 hover:bg-green-700 text-white text-xs
-                              font-bold px-3 py-1.5 rounded-lg active:opacity-70 transition-colors inline-block"
-                            >
-                              📞 Call
-                            </a>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* TEAM Section */}
-                  <div className="border-t border-[#1F2937] pt-4">
-                    <p className="text-[#F97316] text-xs font-bold uppercase tracking-wide mb-3">Team</p>
-                    <div className="bg-[#0F0F0F] rounded-lg p-3 space-y-3">
-                      <EditField
-                        label="Foreman"
-                        value={job.foremanName || ''}
-                        jobId={job.id}
-                        field="foremanName"
-                        isEditing={editingId === `${job.id}-foremanName`}
-                        onEdit={() => {
-                          setEditingId(`${job.id}-foremanName`)
-                          setEditValue(job.foremanName || '')
-                        }}
-                        onSave={() => handleSaveEdit(job.id, 'foremanName', editValue)}
-                        onCancel={() => setEditingId(null)}
-                        onChange={setEditValue}
-                        editValue={editValue}
-                      />
-                      <EditField
-                        label="Foreman Phone"
-                        value={job.foremanPhone || ''}
-                        jobId={job.id}
-                        field="foremanPhone"
-                        isEditing={editingId === `${job.id}-foremanPhone`}
-                        onEdit={() => {
-                          setEditingId(`${job.id}-foremanPhone`)
-                          setEditValue(job.foremanPhone || '')
-                        }}
-                        onSave={() => handleSaveEdit(job.id, 'foremanPhone', editValue)}
-                        onCancel={() => setEditingId(null)}
-                        onChange={setEditValue}
-                        editValue={editValue}
-                        type="tel"
-                        placeholder="Tap to add"
-                      />
-                      <EditField
-                        label="Leading Hand"
-                        value={job.leadingHand || ''}
-                        jobId={job.id}
-                        field="leadingHand"
-                        isEditing={editingId === `${job.id}-leadingHand`}
-                        onEdit={() => {
-                          setEditingId(`${job.id}-leadingHand`)
-                          setEditValue(job.leadingHand || '')
-                        }}
-                        onSave={() => handleSaveEdit(job.id, 'leadingHand', editValue)}
-                        onCancel={() => setEditingId(null)}
-                        onChange={setEditValue}
-                        editValue={editValue}
-                        placeholder="Tap to add"
-                      />
-                      <EditField
-                        label="Leading Hand Phone"
-                        value={job.leadingHandPhone || ''}
-                        jobId={job.id}
-                        field="leadingHandPhone"
-                        isEditing={editingId === `${job.id}-leadingHandPhone`}
-                        onEdit={() => {
-                          setEditingId(`${job.id}-leadingHandPhone`)
-                          setEditValue(job.leadingHandPhone || '')
-                        }}
-                        onSave={() => handleSaveEdit(job.id, 'leadingHandPhone', editValue)}
-                        onCancel={() => setEditingId(null)}
-                        onChange={setEditValue}
-                        editValue={editValue}
-                        type="tel"
-                        placeholder="Tap to add"
-                      />
-                      <EditField
-                        label="Team Members"
-                        value={job.teamMembers || ''}
-                        jobId={job.id}
-                        field="teamMembers"
-                        isEditing={editingId === `${job.id}-teamMembers`}
-                        onEdit={() => {
-                          setEditingId(`${job.id}-teamMembers`)
-                          setEditValue(job.teamMembers || '')
-                        }}
-                        onSave={() => handleSaveEdit(job.id, 'teamMembers', editValue)}
-                        onCancel={() => setEditingId(null)}
-                        onChange={setEditValue}
-                        editValue={editValue}
-                        isTextarea
-                        placeholder="Names, comma separated"
-                      />
-                    </div>
-                  </div>
-
-                  {/* JOB LOG */}
-                  {/* JOB LOG */}
-                  <div className="mb-6">
-                    <h3 className="text-orange-500 text-xs font-bold tracking-widest uppercase mb-3">Job Log</h3>
-                    <div className="space-y-2">
-                      {(() => {
-                        const visibleMilestones = expandedJobId === job.id ? job.milestones : job.milestones.slice(0, 3)
-                        return visibleMilestones.map((m: any, i: number) => {
-                          const daysAgo = Math.floor(
-                            (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60 * 24)
-                          )
-                          const hoursAgo = Math.floor(
-                            (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60)
-                          )
-                          const minsAgo = Math.floor(
-                            (Date.now() - new Date(m.date).getTime()) / (1000 * 60)
-                          )
-
-                          let timeAgo = 'now'
-                          if (minsAgo > 0) timeAgo = `${minsAgo}m ago`
-                          if (hoursAgo > 0) timeAgo = `${hoursAgo}h ago`
-                          if (daysAgo > 0) timeAgo = `${daysAgo}d ago`
-
-                          const isComplete = m.type?.includes('COMPLETE') || m.type?.includes('DONE')
-                          const isLate = m.type?.includes('LATE')
-
-                          return (
-                            <div key={i} className="flex items-start gap-3 bg-[#1a1f2e] rounded-lg px-4 py-3">
-                              <span className={`text-xs font-bold mt-0.5 ${
-                                isComplete ? 'text-green-400' : isLate ? 'text-red-400' : 'text-orange-400'
-                              }`}>●</span>
-                              <div className="flex-1">
-                                <p className="text-white text-sm font-medium">{m.event}</p>
-                                <p className="text-gray-500 text-xs">{timeAgo}</p>
-                              </div>
-                            </div>
-                          )
-                        })
-                      })()}
-                    </div>
-                    {job.milestones.length > 3 && (
-                      <button
-                        onClick={() => setExpandedJobId(prev => prev === job.id ? null : job.id)}
-                        className="mt-3 text-orange-500 text-xs underline outline-none"
-                      >
-                        {expandedJobId === job.id ? 'Show less ↑' : `Show all ${job.milestones.length} entries ↓`}
-                      </button>
-                    )}
-                  </div>
-
-                  {/* PHOTOS Section */}
-                  {job.photos && job.photos.length > 0 && (
-                    <PhotosSection
-                      jobId={job.id}
-                      clientName={job.clientName}
-                      photos={job.photos}
-                      tradieSlug={session?.user?.tradieSlug || ''}
-                    />
-                  )}
-
-                  {/* Ask ALFRED Button */}
-                  <a
-                    href={`/chat?message=${encodeURIComponent(
-                      `Give me a full update on the ${job.clientName} job in ${job.suburb}. What's the current status, what happened last, and what's coming up next?`
-                    )}&jobId=${job.id}`}
-                    className="w-full block bg-[#1F2937] border border-[#F97316] text-[#F97316] text-sm font-bold py-3 rounded-xl text-center"
-                  >
-                    🧠 Ask ALFRED about this job
-                  </a>
-
-                  {/* INVOICE */}
-                  <div className="border-t border-[#1F2937] pt-4">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setOpenInvoiceId(
-                          openInvoiceId === job.id ? null : job.id
-                        )
-                      }}
-                      className="w-full flex items-center justify-between
-                      px-3 py-2 rounded-lg border border-[#F97316]/50
-                      hover:border-[#F97316] transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-[#F97316] text-xs font-bold uppercase
-                        tracking-wide">Invoice</span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5
-                        rounded-full ${
-                          job.invoiceStatus === 'PAID'
-                            ? 'bg-green-500/20 text-green-400'
-                            : job.invoiceStatus === 'SENT' &&
-                              (job.invoiceDueDays ?? 0) > 14
-                            ? 'bg-red-500/20 text-red-400 animate-pulse'
-                            : job.invoiceStatus === 'SENT'
-                            ? 'bg-blue-500/20 text-blue-400'
-                            : 'bg-gray-500/20 text-gray-500'
-                        }`}>
-                          {job.invoiceStatus === 'SENT' &&
-                           (job.invoiceDueDays ?? 0) > 14
-                            ? `OVERDUE ${job.invoiceDueDays}d`
-                            : job.invoiceStatus || 'NOT SENT'}
-                        </span>
-                        {job.invoiceAmount && (
-                          <span className="text-gray-400 text-xs">
-                            ${job.invoiceAmount.toLocaleString()}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[#F97316]/60 text-xs">
-                        {openInvoiceId === job.id ? '▲' : '▼'}
-                      </span>
-                    </button>
-
-                    {openInvoiceId === job.id && (
-                      <div className="grid grid-cols-3 gap-2 mt-2">
-                        {[
-                          { value: 'NOT SENT', label: 'Not Sent' },
-                          { value: 'SENT', label: 'Invoiced' },
-                          { value: 'PAID', label: '✓ Paid' },
-                        ].map(({ value, label }) => (
-                          <button
-                            key={value}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleInvoiceUpdate(job, value)
-                            }}
-                            className={`text-xs font-bold py-2.5 rounded-lg
-                            transition-all active:scale-95 ${
-                              (job.invoiceStatus || 'NOT SENT') === value
-                                ? 'bg-[#F97316] text-white'
-                                : 'bg-[#0F0F0F] border border-[#1F2937] text-gray-400'
-                            }`}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Quick Actions */}
-                  <div>
-                    <p className="text-[#F97316] text-xs font-bold uppercase mb-2">Quick Actions</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {QUICK_ACTIONS.map(action => (
-                        <button
-                          key={action}
-                          onClick={() => handleAction(job, action)}
-                          className="bg-[#F97316] text-white text-xs font-bold py-3 px-2 rounded-lg active:opacity-70 text-center"
-                        >
-                          {action}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Client Status Page */}
-                  <div className="pt-2 border-t border-[#1F2937]">
-                    <p className="text-[#06B6D4] text-xs font-bold uppercase mb-2">Client Communication</p>
-                    <div className="space-y-2">
-                      <button
-                        onClick={() => {
-                          const statusUrl = `${window.location.origin}/status/${job.id}`
-                          navigator.clipboard.writeText(statusUrl)
-                          setToast('Status link copied!')
-                          setTimeout(() => setToast(null), 2000)
-                        }}
-                        className="w-full bg-[#06B6D4] text-white text-xs font-bold py-2 px-3 rounded-lg active:opacity-70 text-center"
-                      >
-                        📋 Copy Status Link
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (!job.clientPhone) {
-                            setToast('No client phone number on file')
-                            setTimeout(() => setToast(null), 2000)
-                            return
-                          }
-                          try {
-                            setToast('Sending status link to client...')
-                            const statusUrl = `${window.location.origin}/status/${job.id}`
-                            const businessName = session?.user?.name || 'TradieFlow'
-                            const message = `Hi ${job.clientName}, here's a live update on your job: ${statusUrl} — ${businessName}`
-
-                            const res = await fetch('/api/sms', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({
-                                to: job.clientPhone,
-                                message,
-                              }),
-                            })
-
-                            if (res.ok) {
-                              setToast('Status link sent to client!')
-                            } else {
-                              setToast('Failed to send SMS')
-                            }
-                            setTimeout(() => setToast(null), 2000)
-                          } catch (err) {
-                            setToast('Error sending SMS')
-                            setTimeout(() => setToast(null), 2000)
-                          }
-                        }}
-                        className="w-full bg-[#06B6D4]/70 text-white text-xs font-bold py-2 px-3 rounded-lg active:opacity-70 text-center"
-                      >
-                        📱 Send to Client
-                      </button>
-                    </div>
-                  </div>
-
-                </div>
-              )}
+              {isOpen && <JobDetail job={job} session={session} editingId={editingId} editValue={editValue} setEditingId={setEditingId} setEditValue={setEditValue} openInvoiceId={openInvoiceId} setOpenInvoiceId={setOpenInvoiceId} handleSaveEdit={handleSaveEdit} handleInvoiceUpdate={handleInvoiceUpdate} handleAction={handleAction} setToast={setToast} />}
             </div>
           )
         })}

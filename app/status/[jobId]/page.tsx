@@ -1,5 +1,8 @@
+'use client'
+
 import { Phone, Check, Clock, FileText, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
 
 interface StatusData {
   job: any
@@ -8,7 +11,7 @@ interface StatusData {
   photos: any[]
 }
 
-async function getStatusData(jobId: string): Promise<StatusData | null> {
+async function getStatusDataServer(jobId: string): Promise<StatusData | null> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'
     const res = await fetch(`${baseUrl}/api/status/${jobId}`, {
@@ -96,24 +99,8 @@ function ProgressTimeline({ currentStatus }: { currentStatus: string }) {
   )
 }
 
-export default async function StatusPage({
-  params,
-}: {
-  params: Promise<{ jobId: string }>
-}) {
-  const { jobId } = await params
-  const data = await getStatusData(jobId)
-
-  if (!data) {
-    return (
-      <div className="min-h-screen bg-[#111827] flex items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-2">Job Not Found</h1>
-          <p className="text-white/50">We couldn't find this job. Please check the link and try again.</p>
-        </div>
-      </div>
-    )
-  }
+function StatusPageContent({ data }: { data: StatusData }) {
+  const [showAllLog, setShowAllLog] = useState(false)
 
   const { job, tradieConfig, milestones, photos } = data
   const businessName = tradieConfig?.businessName || tradieConfig?.name || 'TradiePilot'
@@ -173,30 +160,41 @@ export default async function StatusPage({
           </div>
         )}
 
-        {/* Milestones */}
-        {milestones.length > 0 && (
-          <div>
-            <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wide mb-3">What's Been Done</h2>
-            <div className="space-y-2">
-              {milestones.map((milestone) => (
-                <div key={milestone.id} className="bg-[#1F2937] rounded-lg p-4 border border-white/5">
-                  <div className="flex items-start gap-3">
-                    <Check className="w-4 h-4 text-green-400 mt-1 flex-shrink-0" />
-                    <div className="flex-1">
-                      <h3 className="text-white font-medium text-sm">{milestone.title}</h3>
-                      {milestone.description && (
-                        <p className="text-white/50 text-sm mt-1">{milestone.description}</p>
-                      )}
-                      {milestone.date && (
-                        <p className="text-white/40 text-xs mt-2">{new Date(milestone.date).toLocaleDateString()}</p>
-                      )}
+        {/* JOB LOG */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-orange-500 text-xs font-bold tracking-widest uppercase">Job Log</h3>
+          </div>
+
+          {milestones.length === 0 ? (
+            <p className="text-gray-500 text-sm">No entries yet</p>
+          ) : (
+            <>
+              <div className="space-y-3">
+                {(showAllLog ? milestones : milestones.slice(0, 3)).map((m: any, i: number) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <span className="text-gray-400 mt-0.5">
+                      {m.title?.includes('DONE') || m.title?.includes('COMPLETE') ? '✓' : '•'}
+                    </span>
+                    <div>
+                      <p className="text-white text-sm font-medium">{m.title} — {m.description}</p>
+                      <p className="text-gray-500 text-xs">{m.date ? new Date(m.date).toLocaleDateString() : ''}</p>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                ))}
+              </div>
+
+              {milestones.length > 3 && (
+                <button
+                  onClick={() => setShowAllLog(!showAllLog)}
+                  className="mt-3 text-orange-500 text-sm border border-orange-500 rounded px-3 py-1 hover:bg-orange-500 hover:text-white transition-colors"
+                >
+                  {showAllLog ? 'Show less ↑' : `Show all ${milestones.length} entries ↓`}
+                </button>
+              )}
+            </>
+          )}
+        </div>
 
         {/* Photos */}
         {photos.length > 0 && (

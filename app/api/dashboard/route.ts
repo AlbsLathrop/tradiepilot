@@ -131,10 +131,35 @@ export async function GET(request: Request) {
       return false
     }).slice(0, 5)
 
-    // Today's jobs - filter by status only (not date)
-    const todayJobs = jobs.filter(j =>
-      ['IN PROGRESS', 'SCHEDULED'].includes(j.status)
-    ).slice(0, 5)
+    // Today's jobs - Notion API query with status filter only
+    const todayJobsRes = await notion.databases.query({
+      database_id: NOTION_DB.JOBS,
+      filter: {
+        and: [
+          {
+            property: 'Tradie Config ID',
+            rich_text: { equals: tradieSlug }
+          },
+          {
+            or: [
+              { property: 'Status', select: { equals: 'IN PROGRESS' } },
+              { property: 'Status', select: { equals: 'SCHEDULED' } }
+            ]
+          }
+        ]
+      },
+    })
+
+    const todayJobs = (todayJobsRes.results as any[]).map(page => {
+      const p = page.properties
+      return {
+        id: page.id,
+        clientName: p['Client Name']?.title?.[0]?.plain_text ?? '',
+        suburb: p['Suburb']?.rich_text?.[0]?.plain_text ?? '',
+        service: p['Service']?.rich_text?.[0]?.plain_text ?? '',
+        status: p['Status']?.select?.name ?? '',
+      }
+    }).slice(0, 5)
 
     return NextResponse.json({
       activeJobs,

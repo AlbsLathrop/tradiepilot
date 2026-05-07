@@ -990,15 +990,24 @@ export default function JobsPage() {
                 <label className="text-gray-400 text-xs mb-1 block">
                   {label}
                 </label>
-                <input
-                  type={type}
-                  value={(newJob as any)[key]}
-                  onChange={e => setNewJob(prev => ({
-                    ...prev, [key]: e.target.value
-                  }))}
-                  placeholder={placeholder}
-                  className="w-full bg-[#0F0F0F] border border-[#1F2937] rounded-lg px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:border-[#F97316] outline-none"
-                />
+                {type === 'date' ? (
+                  <input
+                    type="date"
+                    value={(newJob as any)[key] || ''}
+                    onChange={(e) => setNewJob({...newJob, [key]: e.target.value})}
+                    className="w-full bg-[#1a1f2e] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-orange-500"
+                  />
+                ) : (
+                  <input
+                    type={type}
+                    value={(newJob as any)[key]}
+                    onChange={e => setNewJob(prev => ({
+                      ...prev, [key]: e.target.value
+                    }))}
+                    placeholder={placeholder}
+                    className="w-full bg-[#0F0F0F] border border-[#1F2937] rounded-lg px-3 py-2.5 text-white text-sm placeholder-gray-600 focus:border-[#F97316] outline-none"
+                  />
+                )}
               </div>
             ))}
             <button

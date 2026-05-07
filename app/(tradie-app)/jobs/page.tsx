@@ -220,6 +220,7 @@ export default function JobsPage() {
   const [lightbox, setLightbox] = useState<Photo | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState<string>('')
+  const [expandedJobLogs, setExpandedJobLogs] = useState<Set<string>>(new Set())
   const [newJob, setNewJob] = useState({
     clientName: '', clientPhone: '', address: '',
     suburb: '', service: '', scope: '',
@@ -692,46 +693,80 @@ export default function JobsPage() {
 
                   {/* JOB LOG Section */}
                   <div className="border-t border-[#1F2937] pt-4">
-                    <p className="text-[#F97316] text-xs font-bold uppercase tracking-wide mb-3">Job Log</p>
+                    <button
+                      onClick={() => {
+                        const newSet = new Set(expandedJobLogs)
+                        if (newSet.has(job.id)) {
+                          newSet.delete(job.id)
+                        } else {
+                          newSet.add(job.id)
+                        }
+                        setExpandedJobLogs(newSet)
+                      }}
+                      className="flex items-center gap-2 mb-3 cursor-pointer hover:opacity-80 transition-opacity"
+                    >
+                      <p className="text-[#F97316] text-xs font-bold uppercase tracking-wide">Job Log</p>
+                      <span className="text-[#F97316] text-xs">{expandedJobLogs.has(job.id) ? '↑' : '↓'}</span>
+                    </button>
                     {job.milestones && job.milestones.length > 0 ? (
-                      <div className="space-y-2">
-                        {job.milestones.slice(0, 10).map((m, idx) => {
-                          const daysAgo = Math.floor(
-                            (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60 * 24)
-                          )
-                          const hoursAgo = Math.floor(
-                            (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60)
-                          )
-                          const minsAgo = Math.floor(
-                            (Date.now() - new Date(m.date).getTime()) / (1000 * 60)
-                          )
+                      <div>
+                        <div className="space-y-2 overflow-hidden transition-all duration-300" style={{
+                          maxHeight: expandedJobLogs.has(job.id) ? '1000px' : '300px'
+                        }}>
+                          {job.milestones.slice(0, expandedJobLogs.has(job.id) ? undefined : 3).map((m, idx) => {
+                            const daysAgo = Math.floor(
+                              (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60 * 24)
+                            )
+                            const hoursAgo = Math.floor(
+                              (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60)
+                            )
+                            const minsAgo = Math.floor(
+                              (Date.now() - new Date(m.date).getTime()) / (1000 * 60)
+                            )
 
-                          let timeStr = 'now'
-                          if (minsAgo > 0) timeStr = `${minsAgo}m ago`
-                          if (hoursAgo > 0) timeStr = `${hoursAgo}h ago`
-                          if (daysAgo > 0) timeStr = `${daysAgo}d ago`
+                            let timeStr = 'now'
+                            if (minsAgo > 0) timeStr = `${minsAgo}m ago`
+                            if (hoursAgo > 0) timeStr = `${hoursAgo}h ago`
+                            if (daysAgo > 0) timeStr = `${daysAgo}d ago`
 
-                          const typeEmoji: Record<string, string> = {
-                            'ON THE WAY': '🟠',
-                            'RUNNING LATE': '⚠️',
-                            'DAY DONE': '✅',
-                            'JOB_COMPLETE': '🎉',
-                            'PHASE_COMPLETE': '✓',
-                            'DECISION_NEEDED': '❓',
-                            'VARIATION': '📝',
-                          }
+                            const typeEmoji: Record<string, string> = {
+                              'ON THE WAY': '🟠',
+                              'RUNNING LATE': '⚠️',
+                              'DAY DONE': '✅',
+                              'JOB_COMPLETE': '🎉',
+                              'PHASE_COMPLETE': '✓',
+                              'DECISION_NEEDED': '❓',
+                              'VARIATION': '📝',
+                            }
 
-                          const emoji = typeEmoji[m.type] || '•'
-                          return (
-                            <div key={idx} className="flex items-start gap-3 text-sm">
-                              <span className="text-lg shrink-0">{emoji}</span>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-gray-300">{m.event}</p>
-                                <p className="text-gray-500 text-xs mt-0.5">{timeStr}</p>
+                            const emoji = typeEmoji[m.type] || '•'
+                            return (
+                              <div key={idx} className="flex items-start gap-3 text-sm">
+                                <span className="text-lg shrink-0">{emoji}</span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-gray-300">{m.event}</p>
+                                  <p className="text-gray-500 text-xs mt-0.5">{timeStr}</p>
+                                </div>
                               </div>
-                            </div>
-                          )
-                        })}
+                            )
+                          })}
+                        </div>
+                        {job.milestones.length > 3 && (
+                          <button
+                            onClick={() => {
+                              const newSet = new Set(expandedJobLogs)
+                              if (expandedJobLogs.has(job.id)) {
+                                newSet.delete(job.id)
+                              } else {
+                                newSet.add(job.id)
+                              }
+                              setExpandedJobLogs(newSet)
+                            }}
+                            className="mt-3 text-[#F97316] text-xs font-bold hover:opacity-80 transition-opacity"
+                          >
+                            {expandedJobLogs.has(job.id) ? 'Show less ↑' : `Show all ${job.milestones.length} entries ↓`}
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <p className="text-gray-500 text-sm">No activity yet</p>

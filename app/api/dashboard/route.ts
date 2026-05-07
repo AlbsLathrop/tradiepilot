@@ -14,16 +14,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Missing tradieSlug' }, { status: 400 })
     }
 
-    // Fetch all jobs
+    // Fetch all jobs (no Tradie Config ID filter - filter in JS)
     const jobsRes = await notion.databases.query({
       database_id: NOTION_DB.JOBS,
-      filter: {
-        property: 'Tradie Config ID',
-        rich_text: { equals: tradieSlug }
-      },
+      page_size: 100,
     })
 
-    const jobs = (jobsRes.results as any[]).map(page => {
+    const allJobs = (jobsRes.results as any[]).map(page => {
       const p = page.properties
       return {
         id: page.id,
@@ -38,6 +35,11 @@ export async function GET(request: Request) {
         invoiceDate: p['Invoice Date']?.date?.start ?? null,
       }
     })
+
+    // Filter by Tradie Config ID in JavaScript
+    const jobs = allJobs.filter(page =>
+      (jobsRes.results as any[]).find(p => p.id === page.id)?.properties?.['Tradie Config ID']?.rich_text?.[0]?.plain_text === tradieSlug
+    )
 
     // Calculate stats
     const activeJobs = jobs.filter(j =>
@@ -66,16 +68,18 @@ export async function GET(request: Request) {
       .filter(j => j.invoiceStatus === 'PAID')
       .reduce((sum, j) => sum + (j.invoiceAmount ?? 0), 0)
 
-    // Fetch leads
+    // Fetch leads (no Tradie Config ID filter - filter in JS)
     const leadsRes = await notion.databases.query({
       database_id: NOTION_DB.LEADS,
-      filter: {
-        property: 'Tradie Config ID',
-        rich_text: { equals: tradieSlug }
-      },
+      page_size: 100,
     })
 
-    const leads = (leadsRes.results as any[]).map(page => ({
+    // Filter by Tradie Config ID in JavaScript
+    const filteredLeadsRes = (leadsRes.results as any[]).filter(page =>
+      page.properties?.['Tradie Config ID']?.rich_text?.[0]?.plain_text === tradieSlug
+    )
+
+    const leads = filteredLeadsRes.map(page => ({
       createdTime: (page as any).created_time,
       status: page.properties['Status']?.select?.name ?? '',
     }))
@@ -88,16 +92,18 @@ export async function GET(request: Request) {
 
     const qualifiedLeads = leads.filter(l => l.status === 'Qualified').length
 
-    // Fetch communications
+    // Fetch communications (no Tradie Config ID filter - filter in JS)
     const commsRes = await notion.databases.query({
       database_id: NOTION_DB.COMMS,
-      filter: {
-        property: 'Tradie Config ID',
-        rich_text: { equals: tradieSlug }
-      },
+      page_size: 100,
     })
 
-    const comms = (commsRes.results as any[]).map(page => ({
+    // Filter by Tradie Config ID in JavaScript
+    const filteredCommsRes = (commsRes.results as any[]).filter(page =>
+      page.properties?.['Tradie Config ID']?.rich_text?.[0]?.plain_text === tradieSlug
+    )
+
+    const comms = filteredCommsRes.map(page => ({
       timestamp: page.properties['Timestamp']?.date?.start ?? '',
       sender: page.properties['Sender']?.select?.name ?? '',
     }))
@@ -149,26 +155,24 @@ export async function GET(request: Request) {
       console.log('Looking for tradieSlug:', tradieSlug)
     }
 
-    // Today's jobs - Notion API query with status filter only
-    const todayJobsRes = await notion.databases.query({
+    // Today's jobs - fetch by status, filter by Tradie Config ID in JS
+    const todayJobsAllRes = await notion.databases.query({
       database_id: NOTION_DB.JOBS,
       filter: {
-        and: [
-          {
-            property: 'Tradie Config ID',
-            rich_text: { equals: tradieSlug }
-          },
-          {
-            or: [
-              { property: 'Status', select: { equals: 'IN PROGRESS' } },
-              { property: 'Status', select: { equals: 'SCHEDULED' } }
-            ]
-          }
+        or: [
+          { property: 'Status', select: { equals: 'IN PROGRESS' } },
+          { property: 'Status', select: { equals: 'SCHEDULED' } }
         ]
       },
+      page_size: 100,
     })
 
-    const todayJobs = (todayJobsRes.results as any[]).map(page => {
+    // Filter by Tradie Config ID in JavaScript
+    const todayJobsRes = (todayJobsAllRes.results as any[]).filter(page =>
+      page.properties?.['Tradie Config ID']?.rich_text?.[0]?.plain_text === tradieSlug
+    )
+
+    const todayJobs = todayJobsRes.map(page => {
       const p = page.properties
       return {
         id: page.id,

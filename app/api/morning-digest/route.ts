@@ -14,33 +14,22 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Query Jobs DB
-    const jobsFilter: any = {
-      and: [
-        {
-          or: [
-            { property: 'Status', select: { equals: 'IN PROGRESS' } },
-            { property: 'Status', select: { equals: 'SCHEDULED' } },
-          ]
-        }
-      ]
-    }
-
-    // Add tradie slug filter if DB has the field
-    if (tradieSlug) {
-      jobsFilter.and.push({
-        property: 'Tradie Config ID',
-        rich_text: { equals: tradieSlug }
-      })
-    }
-
-    const jobsRes = await notion.databases.query({
+    // Query Jobs DB (no Tradie Config ID filter - filter in JS)
+    const jobsAllRes = await notion.databases.query({
       database_id: 'e96a412b635a415cbdcd02343f55b7f3',
-      filter: jobsFilter,
-      page_size: 10,
+      filter: {
+        or: [
+          { property: 'Status', select: { equals: 'IN PROGRESS' } },
+          { property: 'Status', select: { equals: 'SCHEDULED' } },
+        ]
+      },
+      page_size: 100,
     })
 
-    const jobs = jobsRes.results as any[]
+    // Filter by Tradie Config ID in JavaScript
+    const jobs = (jobsAllRes.results as any[])
+      .filter(page => page.properties?.['Tradie Config ID']?.rich_text?.[0]?.plain_text === tradieSlug)
+      .slice(0, 10)
 
     // Query Leads DB
     const leadsRes = await notion.databases.query({

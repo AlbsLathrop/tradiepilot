@@ -131,6 +131,23 @@ export async function GET(request: Request) {
       return false
     }).slice(0, 5)
 
+    // Debug: Check actual Tradie Config ID values
+    const testRes = await notion.databases.query({
+      database_id: NOTION_DB.JOBS,
+      filter: {
+        or: [
+          { property: 'Status', select: { equals: 'IN PROGRESS' } },
+          { property: 'Status', select: { equals: 'SCHEDULED' } }
+        ]
+      },
+      page_size: 3,
+    })
+    console.log('TEST todayJobs without slug filter:', testRes.results.length)
+    if (testRes.results.length > 0) {
+      console.log('First job Tradie Config ID:', (testRes.results[0] as any)?.properties?.['Tradie Config ID']?.rich_text?.[0]?.plain_text)
+      console.log('Looking for tradieSlug:', tradieSlug)
+    }
+
     // Today's jobs - Notion API query with status filter only
     const todayJobsRes = await notion.databases.query({
       database_id: NOTION_DB.JOBS,

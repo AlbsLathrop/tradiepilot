@@ -100,8 +100,6 @@ function JobDetail({
 }: JobDetailProps) {
   const [showAllLog, setShowAllLog] = useState(false)
 
-  const visibleMilestones = showAllLog ? job.milestones : job.milestones.slice(0, 3)
-
   return (
     <div className="px-4 pb-4 space-y-4 border-t border-[#1F2937]">
 
@@ -322,7 +320,7 @@ function JobDetail({
         <h3 className="text-orange-500 text-xs font-bold tracking-widest uppercase mb-3">Job Log</h3>
         <div className="space-y-2">
           {(() => {
-            return visibleMilestones.map((m: any, i: number) => {
+            return (showAllLog ? job.milestones : job.milestones.slice(0, 3)).map((m: any, i: number) => {
               const daysAgo = Math.floor(
                 (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60 * 24)
               )

@@ -131,21 +131,10 @@ export async function GET(request: Request) {
       return false
     }).slice(0, 5)
 
-    // Today's jobs
-    const todayStart = new Date()
-    todayStart.setHours(0, 0, 0, 0)
-    const todayEnd = new Date()
-    todayEnd.setHours(23, 59, 59, 999)
-
-    const todayJobs = jobs.filter(j => {
-      if (j.estimatedCompletion) {
-        const estDate = new Date(j.estimatedCompletion)
-        if (estDate >= todayStart && estDate <= todayEnd) {
-          return ['IN PROGRESS', 'RUNNING LATE', 'DAY DONE', 'SCHEDULED'].includes(j.status)
-        }
-      }
-      return ['IN PROGRESS', 'RUNNING LATE', 'DAY DONE'].includes(j.status)
-    }).slice(0, 3)
+    // Today's jobs - filter by status only (not date)
+    const todayJobs = jobs.filter(j =>
+      ['IN PROGRESS', 'SCHEDULED'].includes(j.status)
+    ).slice(0, 5)
 
     return NextResponse.json({
       activeJobs,

@@ -220,7 +220,6 @@ export default function JobsPage() {
   const [lightbox, setLightbox] = useState<Photo | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState<string>('')
-  const [expandedJobLogs, setExpandedJobLogs] = useState<Set<string>>(new Set())
   const [showAllLog, setShowAllLog] = useState<Set<string>>(new Set())
   const [newJob, setNewJob] = useState({
     clientName: '', clientPhone: '', address: '',
@@ -696,18 +695,18 @@ export default function JobsPage() {
                   <div className="border-t border-[#1F2937] pt-4">
                     <button
                       onClick={() => {
-                        const newSet = new Set(expandedJobLogs)
+                        const newSet = new Set(showAllLog)
                         if (newSet.has(job.id)) {
                           newSet.delete(job.id)
                         } else {
                           newSet.add(job.id)
                         }
-                        setExpandedJobLogs(newSet)
+                        setShowAllLog(newSet)
                       }}
                       className="flex items-center gap-2 mb-3 cursor-pointer hover:opacity-80 transition-opacity"
                     >
                       <p className="text-[#F97316] text-xs font-bold uppercase tracking-wide">Job Log</p>
-                      <span className="inline-flex items-center justify-center bg-[#FF6B2C] text-white text-xs px-2 py-1 rounded">{expandedJobLogs.has(job.id) ? '↑' : '↓'}</span>
+                      <span className="inline-flex items-center justify-center bg-[#FF6B2C] text-white text-xs px-2 py-1 rounded">{showAllLog.has(job.id) ? '↑' : '↓'}</span>
                     </button>
                     {job.milestones && job.milestones.length > 0 ? (
                       <div>

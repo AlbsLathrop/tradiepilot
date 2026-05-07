@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 
     // Fetch all jobs
     const jobsRes = await notion.databases.query({
-      database_id: process.env.NOTION_JOBS_DB_ID!,
+      database_id: NOTION_DB.JOBS,
       filter: {
         property: 'Tradie Config ID',
         rich_text: { equals: tradieSlug }

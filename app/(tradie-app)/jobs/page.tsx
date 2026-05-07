@@ -706,12 +706,12 @@ export default function JobsPage() {
                       className="flex items-center gap-2 mb-3 cursor-pointer hover:opacity-80 transition-opacity"
                     >
                       <p className="text-[#F97316] text-xs font-bold uppercase tracking-wide">Job Log</p>
-                      <span className="text-[#F97316] text-xs">{expandedJobLogs.has(job.id) ? '↑' : '↓'}</span>
+                      <span className="inline-flex items-center justify-center bg-[#FF6B2C] text-white text-xs px-2 py-1 rounded">{expandedJobLogs.has(job.id) ? '↑' : '↓'}</span>
                     </button>
                     {job.milestones && job.milestones.length > 0 ? (
                       <div>
                         <div className="space-y-2 overflow-hidden transition-all duration-300" style={{
-                          maxHeight: expandedJobLogs.has(job.id) ? '1000px' : '300px'
+                          maxHeight: expandedJobLogs.has(job.id) ? '2000px' : '180px'
                         }}>
                           {job.milestones.slice(0, expandedJobLogs.has(job.id) ? undefined : 3).map((m, idx) => {
                             const daysAgo = Math.floor(
@@ -1083,7 +1083,7 @@ function EditField({
               type={type}
               value={editValue}
               onChange={(e) => onChange(e.target.value)}
-              placeholder={placeholder || label}
+              placeholder={type === 'date' ? '' : placeholder || label}
               className="flex-1 bg-[#0F0F0F] border border-[#F97316] rounded px-3 py-2 text-white text-sm focus:outline-none"
             />
           )}

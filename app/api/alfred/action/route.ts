@@ -86,8 +86,8 @@ export async function POST(req: NextRequest) {
       new Date().toLocaleString('en-US', { timeZone: 'Australia/Sydney' })
     ).getHours()
 
-    // Check dark hours (before 7am or at/after 8pm)
-    if (sydneyHour < 7 || sydneyHour >= 20) {
+    // Check dark hours (before 7am or at/after 8pm) - unless it's RUNNING LATE
+    if ((sydneyHour < 7 || sydneyHour >= 20) && action !== 'RUNNING LATE') {
       // Still log to Milestone Log but DON'T send any outbound actions
       const prompt = `You are ALFRED, an AI assistant for Australian tradies.
 ${tradieName} just tapped: "${action}" for the job: ${clientName} in ${suburb}.

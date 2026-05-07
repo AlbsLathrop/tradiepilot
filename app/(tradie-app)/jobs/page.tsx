@@ -995,7 +995,7 @@ export default function JobsPage() {
                     type="date"
                     value={(newJob as any)[key] || ''}
                     onChange={(e) => setNewJob({...newJob, [key]: e.target.value})}
-                    className="w-full bg-[#1a1f2e] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-orange-500"
+                    className="w-full bg-[#1a1f2e] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-orange-500 [color-scheme:dark]"
                   />
                 ) : (
                   <input
@@ -1093,7 +1093,7 @@ function EditField({
               value={editValue}
               onChange={(e) => onChange(e.target.value)}
               placeholder={type === 'date' ? '' : placeholder || label}
-              className="flex-1 bg-[#0F0F0F] border border-[#F97316] rounded px-3 py-2 text-white text-sm focus:outline-none"
+              className={`flex-1 bg-[#0F0F0F] border border-[#F97316] rounded px-3 py-2 text-white text-sm focus:outline-none${type === 'date' ? ' [color-scheme:dark]' : ''}`}
             />
           )}
           <button

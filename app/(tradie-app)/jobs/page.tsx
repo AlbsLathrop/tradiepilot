@@ -220,7 +220,7 @@ export default function JobsPage() {
   const [lightbox, setLightbox] = useState<Photo | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState<string>('')
-  const [showAllLog, setShowAllLog] = useState<Set<string>>(new Set())
+  const [showAllLog, setShowAllLog] = useState(false)
   const [newJob, setNewJob] = useState({
     clientName: '', clientPhone: '', address: '',
     suburb: '', service: '', scope: '',
@@ -691,29 +691,22 @@ export default function JobsPage() {
                     </div>
                   </div>
 
-                  {/* JOB LOG Section */}
-                  <div className="border-t border-[#1F2937] pt-4">
-                    <button
-                      onClick={() => {
-                        const newSet = new Set(showAllLog)
-                        if (newSet.has(job.id)) {
-                          newSet.delete(job.id)
-                        } else {
-                          newSet.add(job.id)
-                        }
-                        setShowAllLog(newSet)
-                      }}
-                      className="flex items-center gap-2 mb-3 cursor-pointer hover:opacity-80 transition-opacity"
-                    >
-                      <p className="text-[#F97316] text-xs font-bold uppercase tracking-wide">Job Log</p>
-                      <span className="inline-flex items-center justify-center bg-[#FF6B2C] text-white text-xs px-2 py-1 rounded">{showAllLog.has(job.id) ? '↑' : '↓'}</span>
-                    </button>
-                    {job.milestones && job.milestones.length > 0 ? (
+                  {/* JOB LOG */}
+                  <div className="mb-6 border-t border-[#1F2937] pt-4">
+                    <h3 className="text-[#F97316] text-xs font-bold tracking-widest uppercase mb-3">Job Log</h3>
+
+                    {job.milestones.length === 0 ? (
+                      <p className="text-gray-500 text-sm">No entries yet</p>
+                    ) : (
                       <div>
-                        <div className="space-y-2 overflow-hidden transition-all duration-300" style={{
-                          maxHeight: showAllLog.has(job.id) ? '2000px' : '180px'
-                        }}>
-                          {job.milestones.slice(0, showAllLog.has(job.id) ? undefined : 3).map((m, idx) => {
+                        <div
+                          style={{
+                            maxHeight: showAllLog ? '1000px' : '140px',
+                            overflow: 'hidden',
+                            transition: 'max-height 0.3s ease'
+                          }}
+                        >
+                          {job.milestones.map((m, idx) => {
                             const daysAgo = Math.floor(
                               (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60 * 24)
                             )
@@ -741,35 +734,26 @@ export default function JobsPage() {
 
                             const emoji = typeEmoji[m.type] || '•'
                             return (
-                              <div key={idx} className="flex items-start gap-3 text-sm">
-                                <span className="text-lg shrink-0">{emoji}</span>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-gray-300">{m.event}</p>
-                                  <p className="text-gray-500 text-xs mt-0.5">{timeStr}</p>
+                              <div key={idx} className="flex items-start gap-3 mb-3">
+                                <span className="text-gray-400 mt-0.5 text-sm">{emoji}</span>
+                                <div>
+                                  <p className="text-white text-sm">{m.event}</p>
+                                  <p className="text-gray-500 text-xs">{timeStr}</p>
                                 </div>
                               </div>
                             )
                           })}
                         </div>
+
                         {job.milestones.length > 3 && (
                           <button
-                            onClick={() => {
-                              const newSet = new Set(showAllLog)
-                              if (showAllLog.has(job.id)) {
-                                newSet.delete(job.id)
-                              } else {
-                                newSet.add(job.id)
-                              }
-                              setShowAllLog(newSet)
-                            }}
-                            className="mt-3 text-orange-500 text-sm border border-orange-500 rounded px-3 py-1 hover:bg-orange-500 hover:text-white transition-colors bg-transparent"
+                            onClick={() => setShowAllLog(!showAllLog)}
+                            className="mt-2 text-orange-500 text-xs underline"
                           >
-                            {showAllLog.has(job.id) ? 'Show less ↑' : `Show all ${job.milestones.length} entries ↓`}
+                            {showAllLog ? 'Show less ↑' : `Show all ${job.milestones.length} entries ↓`}
                           </button>
                         )}
                       </div>
-                    ) : (
-                      <p className="text-gray-500 text-sm">No activity yet</p>
                     )}
                   </div>
 

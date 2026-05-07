@@ -8,6 +8,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const tradieSlug = searchParams.get('tradieSlug')
+    console.log('[DASHBOARD DEBUG] received tradieSlug:', tradieSlug)
 
     if (!tradieSlug) {
       return NextResponse.json({ error: 'Missing tradieSlug' }, { status: 400 })

@@ -32,6 +32,8 @@ export default function HomePage() {
   useEffect(() => {
     if (status !== 'authenticated') return
     const slug = session?.user?.tradieSlug
+    console.log('[HOME DEBUG] tradieSlug from session:', slug)
+    console.log('[HOME DEBUG] full session user:', JSON.stringify(session?.user))
     if (!slug) return
 
     fetch(`/api/dashboard?tradieSlug=${slug}`)

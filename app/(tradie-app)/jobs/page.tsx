@@ -79,6 +79,59 @@ interface PhotosSectionProps {
   tradieSlug: string
 }
 
+function JobLogSection({ milestones }: { milestones: any[] }) {
+  const [expanded, setExpanded] = useState(false)
+  const visible = expanded ? milestones : milestones.slice(0, 3)
+
+  const getTimeAgo = (dateStr: string) => {
+    const daysAgo = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24))
+    const hoursAgo = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60))
+    const minsAgo = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60))
+
+    if (daysAgo > 0) return `${daysAgo}d ago`
+    if (hoursAgo > 0) return `${hoursAgo}h ago`
+    if (minsAgo > 0) return `${minsAgo}m ago`
+    return 'now'
+  }
+
+  return (
+    <div className="mb-6">
+      <h3 className="text-orange-500 text-xs font-bold tracking-widest uppercase mb-3">Job Log</h3>
+      {milestones.length === 0 ? (
+        <p className="text-gray-500 text-sm">No entries yet</p>
+      ) : (
+        <>
+          <div className="space-y-2">
+            {visible.map((m: any, i: number) => {
+              const isComplete = m.type?.includes('COMPLETE') || m.type?.includes('DONE')
+              const isLate = m.type?.includes('LATE')
+              return (
+                <div key={i} className="flex items-start gap-3 bg-[#1a1f2e] rounded-lg px-4 py-3">
+                  <span className={`text-xs font-bold mt-0.5 ${
+                    isComplete ? 'text-green-400' : isLate ? 'text-red-400' : 'text-orange-400'
+                  }`}>●</span>
+                  <div className="flex-1">
+                    <p className="text-white text-sm font-medium">{m.event}</p>
+                    <p className="text-gray-500 text-xs">{getTimeAgo(m.date)}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          {milestones.length > 3 && (
+            <button
+              onClick={() => setExpanded(prev => !prev)}
+              className="mt-3 text-orange-500 text-xs underline outline-none"
+            >
+              {expanded ? 'Show less ↑' : `Show all ${milestones.length} entries ↓`}
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 interface JobDetailProps {
   job: Job
   session: any
@@ -98,8 +151,6 @@ function JobDetail({
   job, session, editingId, editValue, setEditingId, setEditValue,
   openInvoiceId, setOpenInvoiceId, handleSaveEdit, handleInvoiceUpdate, handleAction, setToast
 }: JobDetailProps) {
-  const [showAllLog, setShowAllLog] = useState(false)
-
   return (
     <div className="px-4 pb-4 space-y-4 border-t border-[#1F2937]">
 
@@ -316,52 +367,7 @@ function JobDetail({
       </div>
 
       {/* JOB LOG */}
-      <div className="mb-6">
-        <h3 className="text-orange-500 text-xs font-bold tracking-widest uppercase mb-3">Job Log</h3>
-        <div className="space-y-2">
-          {(() => {
-            return (showAllLog ? job.milestones : job.milestones.slice(0, 3)).map((m: any, i: number) => {
-              const daysAgo = Math.floor(
-                (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60 * 24)
-              )
-              const hoursAgo = Math.floor(
-                (Date.now() - new Date(m.date).getTime()) / (1000 * 60 * 60)
-              )
-              const minsAgo = Math.floor(
-                (Date.now() - new Date(m.date).getTime()) / (1000 * 60)
-              )
-
-              let timeAgo = 'now'
-              if (minsAgo > 0) timeAgo = `${minsAgo}m ago`
-              if (hoursAgo > 0) timeAgo = `${hoursAgo}h ago`
-              if (daysAgo > 0) timeAgo = `${daysAgo}d ago`
-
-              const isComplete = m.type?.includes('COMPLETE') || m.type?.includes('DONE')
-              const isLate = m.type?.includes('LATE')
-
-              return (
-                <div key={i} className="flex items-start gap-3 bg-[#1a1f2e] rounded-lg px-4 py-3">
-                  <span className={`text-xs font-bold mt-0.5 ${
-                    isComplete ? 'text-green-400' : isLate ? 'text-red-400' : 'text-orange-400'
-                  }`}>●</span>
-                  <div className="flex-1">
-                    <p className="text-white text-sm font-medium">{m.event}</p>
-                    <p className="text-gray-500 text-xs">{timeAgo}</p>
-                  </div>
-                </div>
-              )
-            })
-          })()}
-        </div>
-        {job.milestones.length > 3 && (
-          <button
-            onClick={() => setShowAllLog(prev => !prev)}
-            className="mt-3 text-orange-500 text-xs underline outline-none"
-          >
-            {showAllLog ? 'Show less ↑' : `Show all ${job.milestones.length} entries ↓`}
-          </button>
-        )}
-      </div>
+      <JobLogSection milestones={job.milestones} />
 
       {/* PHOTOS Section */}
       {job.photos && job.photos.length > 0 && (

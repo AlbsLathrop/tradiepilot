@@ -844,8 +844,19 @@ ${JSON.stringify(contextData, null, 2)}`;
             milestoneType = 'VARIATION_APPROVED';
           }
 
+          // Generate smart title summary
+          const lowerMessage = message.toLowerCase();
+          const isQuestion = ['give me', 'what', 'how', 'tell me'].some(q => lowerMessage.startsWith(q));
+          let titleText = 'ALFRED Note';
+
+          if (isQuestion) {
+            titleText = 'ALFRED Query';
+          } else if (isUpdate) {
+            const summary = message.slice(0, 60).trim();
+            titleText = summary.charAt(0).toUpperCase() + summary.slice(1);
+          }
+
           const jobId = jobContext?.id || mentionedJob?.id;
-          const titleText = message.slice(0, 100);
 
           await notion.pages.create({
             parent: { database_id: process.env.NOTION_MILESTONE_LOG_DB_ID! },

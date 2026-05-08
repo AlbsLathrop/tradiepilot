@@ -370,11 +370,11 @@ function JobDetail({
       <JobLogSection milestones={job.milestones} />
 
       {/* PHOTOS Section */}
-      {job.photos && job.photos.length > 0 && (
+      {(
         <PhotosSection
           jobId={job.id}
           clientName={job.clientName}
-          photos={job.photos}
+          photos={job.photos || []}
           tradieSlug={session?.user?.tradieSlug || ''}
         />
       )}

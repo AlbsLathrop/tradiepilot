@@ -822,9 +822,53 @@ ${JSON.stringify(contextData, null, 2)}`;
       alfredResult.jobId
     );
 
+    // Auto-log job updates to Milestone Log
+    let milestoneLogged = false;
+    if (message && (mentionedJob || jobContext)) {
+      const updateKeywords = ['update', 'note', 'done', 'finished', 'delayed', 'waiting', 'complete', 'ready', 'issue', 'problem', 'tell', 'let', 'know'];
+      const isUpdate = updateKeywords.some(kw => message.toLowerCase().includes(kw));
+
+      if (isUpdate) {
+        try {
+          // Determine Milestone Type based on message content
+          let milestoneType = 'JOB_STARTED';
+          if (message.toLowerCase().includes('done') || message.toLowerCase().includes('complete')) {
+            milestoneType = 'JOB_COMPLETE';
+          } else if (message.toLowerCase().includes('issue') || message.toLowerCase().includes('problem')) {
+            milestoneType = 'ISSUE_FOUND';
+          } else if (message.toLowerCase().includes('resolved') || message.toLowerCase().includes('fixed')) {
+            milestoneType = 'ISSUE_RESOLVED';
+          } else if (message.toLowerCase().includes('phase')) {
+            milestoneType = 'PHASE_COMPLETE';
+          } else if (message.toLowerCase().includes('variation') || message.toLowerCase().includes('change')) {
+            milestoneType = 'VARIATION_APPROVED';
+          }
+
+          const jobId = jobContext?.id || mentionedJob?.id;
+          const titleText = message.slice(0, 100);
+
+          await notion.pages.create({
+            parent: { database_id: process.env.NOTION_MILESTONE_LOG_DB_ID! },
+            properties: {
+              'Title': { title: [{ text: { content: titleText } }] },
+              'Description': { rich_text: [{ text: { content: message } }] },
+              'Job ID': { rich_text: [{ text: { content: jobId } }] },
+              'Logged By': { select: { name: 'ALFRED' } },
+              'Milestone Type': { select: { name: milestoneType } },
+            },
+          });
+          milestoneLogged = true;
+        } catch (err) {
+          console.error('Milestone log error:', err);
+        }
+      }
+    }
+
+    const finalReply = milestoneLogged ? `${alfredResult.reply}\n📝 Logged to job.` : alfredResult.reply;
+
     return NextResponse.json({
       success: true,
-      reply: alfredResult.reply,
+      reply: finalReply,
       action: alfredResult.action,
       jobUpdated: alfredResult.jobId ? { id: alfredResult.jobId, name: alfredResult.jobName, newStatus: alfredResult.newStatus } : null,
     });

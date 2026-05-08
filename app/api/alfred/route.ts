@@ -36,6 +36,23 @@ function getSydneyTime(): string {
   }).format(now)
 }
 
+function detectMilestoneType(message: string): string {
+  const lower = message.toLowerCase()
+  if (lower.includes('issue') || lower.includes('problem') || lower.includes('wrong') || lower.includes('broken')) {
+    return 'ISSUE_FOUND'
+  }
+  if (lower.includes('fixed') || lower.includes('resolved') || lower.includes('sorted')) {
+    return 'ISSUE_RESOLVED'
+  }
+  if (lower.includes('variation') || lower.includes('extra') || lower.includes('addition') || lower.includes('approved')) {
+    return 'VARIATION_APPROVED'
+  }
+  if (lower.includes('phase') || lower.includes('stage') || lower.includes('section') || lower.includes('done') || lower.includes('finished')) {
+    return 'PHASE_COMPLETE'
+  }
+  return 'PHASE_COMPLETE'
+}
+
 function buildAlfredSystemPrompt(tradieName: string): string {
   return `You are ALFRED, the operations foreman for ${tradieName}'s trade business in Sydney.
 
@@ -830,19 +847,8 @@ ${JSON.stringify(contextData, null, 2)}`;
 
       if (isUpdate) {
         try {
-          // Determine Milestone Type based on message content
-          let milestoneType = 'JOB_STARTED';
-          if (message.toLowerCase().includes('done') || message.toLowerCase().includes('complete')) {
-            milestoneType = 'JOB_COMPLETE';
-          } else if (message.toLowerCase().includes('issue') || message.toLowerCase().includes('problem')) {
-            milestoneType = 'ISSUE_FOUND';
-          } else if (message.toLowerCase().includes('resolved') || message.toLowerCase().includes('fixed')) {
-            milestoneType = 'ISSUE_RESOLVED';
-          } else if (message.toLowerCase().includes('phase')) {
-            milestoneType = 'PHASE_COMPLETE';
-          } else if (message.toLowerCase().includes('variation') || message.toLowerCase().includes('change')) {
-            milestoneType = 'VARIATION_APPROVED';
-          }
+          // Detect milestone type from message content
+          const milestoneType = detectMilestoneType(message);
 
           // Generate smart title summary
           const lowerMessage = message.toLowerCase();

@@ -77,7 +77,9 @@ async function saveMessage(tradieSlug: string, role: 'user' | 'assistant', conte
         'Triggered By': {
           select: { name: 'Manual' },
         },
-        'date:Timestamp:start': timestamp,
+        Timestamp: {
+          date: { start: timestamp },
+        },
       },
     });
 

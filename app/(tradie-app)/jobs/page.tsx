@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 
 interface Milestone {
@@ -535,13 +535,29 @@ function JobDetail({
 }
 
 function PhotosSection({ jobId, clientName, photos, tradieSlug }: PhotosSectionProps) {
-  const [activeTab, setActiveTab] = useState<string>('Progress')
   const [uploading, setUploading] = useState(false)
   const [lightbox, setLightbox] = useState<Photo | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const tabs = ['Before', 'Progress', 'After']
-  const filteredPhotos = photos.filter(p => (p.category || 'Progress') === activeTab)
+  const sortedPhotos = [...photos].sort((a, b) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  )
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    if (date.toDateString() === today.toDateString()) {
+      return date.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday'
+    } else {
+      return date.toLocaleDateString('en-AU', { month: 'short', day: 'numeric' })
+    }
+  }
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -551,7 +567,6 @@ function PhotosSection({ jobId, clientName, photos, tradieSlug }: PhotosSectionP
     try {
       const formData = new FormData()
       formData.append('file', file)
-      formData.append('category', activeTab)
       formData.append('tradieSlug', tradieSlug)
 
       const res = await fetch(`/api/jobs/${jobId}/photos`, {
@@ -561,7 +576,6 @@ function PhotosSection({ jobId, clientName, photos, tradieSlug }: PhotosSectionP
 
       if (res.ok) {
         setToast('Photo uploaded!')
-        // Refresh photos by reloading page or updating state
         setTimeout(() => window.location.reload(), 1500)
       } else {
         setToast('Upload failed')
@@ -576,60 +590,56 @@ function PhotosSection({ jobId, clientName, photos, tradieSlug }: PhotosSectionP
 
   return (
     <div className="border-t border-[#1F2937] pt-4">
-      <p className="text-[#06B6D4] text-xs font-bold uppercase mb-3">Photos</p>
-
-      {/* Tabs */}
-      <div className="flex gap-1 mb-4">
-        {tabs.map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 text-xs font-bold py-2 px-2 rounded-lg transition-colors ${
-              activeTab === tab
-                ? 'bg-[#06B6D4] text-white'
-                : 'bg-[#1F2937] text-gray-400 border border-[#06B6D4]/30'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+      {/* Header with + button */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[#06B6D4] text-xs font-bold uppercase">Photos</p>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="w-7 h-7 bg-[#F97316] rounded-full flex items-center justify-center text-white text-sm font-bold hover:bg-orange-600 active:scale-95 disabled:opacity-50"
+        >
+          {uploading ? '⏳' : '+'}
+        </button>
       </div>
 
-      {/* Photo Grid */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        {filteredPhotos.map((photo, idx) => (
-          <button
-            key={idx}
-            onClick={() => setLightbox(photo)}
-            className="aspect-square bg-[#1F2937] rounded-lg overflow-hidden border border-[#06B6D4]/20 hover:border-[#06B6D4]/50 transition-colors"
-          >
-            <img
-              src={photo.url}
-              alt={photo.description || 'Job photo'}
-              className="w-full h-full object-cover"
-            />
-          </button>
-        ))}
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleUpload}
+        disabled={uploading}
+        className="hidden"
+      />
 
-        {/* Upload Button */}
-        <label className="aspect-square bg-[#1F2937] rounded-lg border-2 border-dashed border-[#06B6D4]/40 hover:border-[#06B6D4] transition-colors flex items-center justify-center cursor-pointer">
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleUpload}
-            disabled={uploading}
-            className="hidden"
-          />
-          <div className="text-center">
-            <div className="text-2xl mb-1">{uploading ? '⏳' : '+'}</div>
-            <div className="text-[10px] text-gray-400 font-medium">Add photo</div>
-          </div>
-        </label>
-      </div>
-
-      {filteredPhotos.length === 0 && (
-        <p className="text-gray-500 text-xs text-center py-2">No photos yet</p>
+      {/* Photo Grid or Empty State */}
+      {sortedPhotos.length === 0 ? (
+        <div className="border-2 border-dashed border-[#1F2937] rounded-lg p-6 text-center">
+          <p className="text-gray-500 text-2xl mb-2">📷</p>
+          <p className="text-gray-400 text-sm">Add first photo</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 gap-2">
+          {sortedPhotos.map((photo, idx) => (
+            <button
+              key={idx}
+              onClick={() => setLightbox(photo)}
+              className="group flex flex-col gap-1.5"
+            >
+              <div className="aspect-square bg-[#1F2937] rounded-lg overflow-hidden border border-[#1F2937] group-hover:border-[#06B6D4]/50 transition-colors">
+                <img
+                  src={photo.url}
+                  alt={photo.description || 'Job photo'}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <p className="text-gray-500 text-xs text-center">
+                {formatDate(photo.createdAt)}
+              </p>
+            </button>
+          ))}
+        </div>
       )}
 
       {/* Lightbox */}
@@ -638,6 +648,17 @@ function PhotosSection({ jobId, clientName, photos, tradieSlug }: PhotosSectionP
           className="fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-4"
           onClick={() => setLightbox(null)}
         >
+          <div className="absolute top-4 right-4">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setLightbox(null)
+              }}
+              className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white text-xl font-bold transition-colors"
+            >
+              ✕
+            </button>
+          </div>
           <img
             src={lightbox.url}
             alt={lightbox.description}
@@ -648,7 +669,6 @@ function PhotosSection({ jobId, clientName, photos, tradieSlug }: PhotosSectionP
               {lightbox.description}
             </p>
           )}
-          <p className="text-gray-500 text-xs mt-2">Tap anywhere to close</p>
         </div>
       )}
 

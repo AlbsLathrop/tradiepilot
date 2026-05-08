@@ -841,43 +841,43 @@ ${JSON.stringify(contextData, null, 2)}`;
 
     // Auto-log job updates to Milestone Log
     let milestoneLogged = false;
-    if (message && (mentionedJob || jobContext)) {
-      const updateKeywords = ['update', 'note', 'done', 'finished', 'delayed', 'waiting', 'complete', 'ready', 'issue', 'problem', 'tell', 'let', 'know'];
-      const isUpdate = updateKeywords.some(kw => message.toLowerCase().includes(kw));
+    const updateKeywords = ['update', 'note', 'done', 'finished', 'delayed', 'waiting', 'complete', 'ready', 'issue', 'problem', 'tell', 'let', 'know'];
+    const messageHasUpdate = message && updateKeywords.some(kw => message.toLowerCase().includes(kw));
 
-      if (isUpdate) {
-        try {
-          // Detect milestone type from message content
-          const milestoneType = detectMilestoneType(message);
+    // Determine which job to log (explicit jobContext takes priority, else detected mentionedJob)
+    const jobToLog = jobContext ? jobs.find(j => j.id === jobContext.id) : mentionedJob;
 
-          // Generate smart title summary
-          const lowerMessage = message.toLowerCase();
-          const isQuestion = ['give me', 'what', 'how', 'tell me'].some(q => lowerMessage.startsWith(q));
-          let titleText = 'ALFRED Note';
+    // Log if: jobContext is provided (always), OR detected job + message has update keywords
+    if (jobToLog && (jobContext || messageHasUpdate)) {
+      try {
+        // Detect milestone type from message content
+        const milestoneType = detectMilestoneType(message || '');
 
-          if (isQuestion) {
-            titleText = 'ALFRED Query';
-          } else if (isUpdate) {
-            const summary = message.slice(0, 60).trim();
-            titleText = summary.charAt(0).toUpperCase() + summary.slice(1);
-          }
+        // Generate smart title summary
+        const lowerMessage = (message || '').toLowerCase();
+        const isQuestion = ['give me', 'what', 'how', 'tell me'].some(q => lowerMessage.startsWith(q));
+        let titleText = 'ALFRED Note';
 
-          const jobId = jobContext?.id || mentionedJob?.id;
-
-          await notion.pages.create({
-            parent: { database_id: process.env.NOTION_MILESTONE_LOG_DB_ID! },
-            properties: {
-              'Title': { title: [{ text: { content: titleText } }] },
-              'Description': { rich_text: [{ text: { content: message } }] },
-              'Job ID': { rich_text: [{ text: { content: jobId } }] },
-              'Logged By': { select: { name: 'ALFRED' } },
-              'Milestone Type': { select: { name: milestoneType } },
-            },
-          });
-          milestoneLogged = true;
-        } catch (err) {
-          console.error('Milestone log error:', err);
+        if (isQuestion) {
+          titleText = 'ALFRED Query';
+        } else if (messageHasUpdate) {
+          const summary = (message || '').slice(0, 60).trim();
+          titleText = summary.charAt(0).toUpperCase() + summary.slice(1);
         }
+
+        await notion.pages.create({
+          parent: { database_id: process.env.NOTION_MILESTONE_LOG_DB_ID! },
+          properties: {
+            'Title': { title: [{ text: { content: titleText } }] },
+            'Description': { rich_text: [{ text: { content: message || '' } }] },
+            'Job ID': { rich_text: [{ text: { content: jobToLog.id } }] },
+            'Logged By': { select: { name: 'ALFRED' } },
+            'Milestone Type': { select: { name: milestoneType } },
+          },
+        });
+        milestoneLogged = true;
+      } catch (err) {
+        console.error('Milestone log error:', err);
       }
     }
 

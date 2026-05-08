@@ -615,7 +615,10 @@ function PhotosSection({ jobId, clientName, photos, tradieSlug }: PhotosSectionP
 
       {/* Photo Grid or Empty State */}
       {sortedPhotos.length === 0 ? (
-        <div className="border-2 border-dashed border-[#1F2937] rounded-lg p-6 text-center">
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          className="border-2 border-dashed border-[#1F2937] rounded-lg p-6 text-center cursor-pointer hover:border-orange-500 transition-colors"
+        >
           <p className="text-gray-500 text-2xl mb-2">📷</p>
           <p className="text-gray-400 text-sm">Add first photo</p>
         </div>

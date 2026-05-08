@@ -13,35 +13,28 @@ const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 async function loadMessages(tradieSlug: string): Promise<ChatMessage[]> {
   try {
-    // Query all ALFRED Chat entries, filter by tradieSlug in JS (avoids Notion validation errors)
+    // Query all entries, filter by tradieSlug in JS
     const results = await queryNotionDatabase(NOTION_DB.COMMS, {
-      filter: {
-        property: 'Type',
-        select: {
-          equals: 'ALFRED Chat',
-        },
-      },
       sorts: [
         {
-          property: 'Created',
+          property: 'Timestamp',
           direction: 'ascending',
         },
       ],
       page_size: 50,
     });
 
-    // Filter by tradieSlug in JavaScript
+    // Filter by Job field and [ALFRED] prefix
     const filtered = results.filter((page: any) => {
-      const jobOrConfigId =
-        page.properties?.['Tradie Config ID']?.rich_text?.[0]?.plain_text ||
-        page.properties?.Job?.rich_text?.[0]?.plain_text;
-      return jobOrConfigId === tradieSlug;
+      const jobId = page.properties?.Job?.rich_text?.[0]?.plain_text;
+      const logEntry = page.properties?.['Log Entry']?.title?.[0]?.plain_text ?? '';
+      return jobId === tradieSlug && logEntry.startsWith('[ALFRED]');
     });
 
     return filtered.map((page: any) => {
       const direction = page.properties?.Direction?.select?.name;
       const role = direction === 'Outbound' ? 'user' : 'assistant';
-      const timestamp = page.properties?.Created?.created_time ?? new Date().toISOString();
+      const timestamp = page.properties?.Timestamp?.date?.start ?? new Date().toISOString();
 
       return {
         role,
@@ -69,18 +62,22 @@ async function saveMessage(tradieSlug: string, role: 'user' | 'assistant', conte
         'Message Content': {
           rich_text: [{ text: { content } }],
         },
-        'Tradie Config ID': {
+        Job: {
           rich_text: [{ text: { content: tradieSlug } }],
         },
-        Type: {
-          select: { name: 'ALFRED Chat' },
+        Agent: {
+          select: { name: 'FIXER' },
         },
         Direction: {
           select: { name: direction },
         },
+        Channel: {
+          select: { name: 'App' },
+        },
         'Triggered By': {
           select: { name: 'Manual' },
         },
+        'date:Timestamp:start': timestamp,
       },
     });
 

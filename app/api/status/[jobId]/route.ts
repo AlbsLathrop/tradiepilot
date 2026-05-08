@@ -17,8 +17,14 @@ export async function GET(
       )
     }
 
+    const formattedId = jobId.replace(
+      /^([0-9a-f]{8})([0-9a-f]{4})([0-9a-f]{4})([0-9a-f]{4})([0-9a-f]{12})$/,
+      '$1-$2-$3-$4-$5'
+    )
+    console.log('[STATUS]', { jobId, formattedId })
+
     // Fetch job data
-    const job = await getJob(jobId)
+    const job = await getJob(formattedId)
     if (!job) {
       return NextResponse.json(
         { error: 'Job not found' },
@@ -31,8 +37,8 @@ export async function GET(
 
     // Fetch milestones and photos
     const [milestones, photos] = await Promise.all([
-      getMilestones(jobId),
-      getPhotos(jobId),
+      getMilestones(formattedId),
+      getPhotos(formattedId),
     ])
 
     return NextResponse.json({

@@ -218,8 +218,12 @@ export async function getJobs(tradieConfigId: string): Promise<Job[]> {
 
 export async function getJob(jobId: string): Promise<Job | null> {
   try {
-    console.log('[getJob] Fetching page:', { jobId })
-    const res = await notion.pages.retrieve({ page_id: jobId })
+    const formattedId = jobId.replace(
+      /^([0-9a-f]{8})([0-9a-f]{4})([0-9a-f]{4})([0-9a-f]{4})([0-9a-f]{12})$/,
+      '$1-$2-$3-$4-$5'
+    )
+    console.log('[getJob] Fetching page:', { jobId, formattedId })
+    const res = await notion.pages.retrieve({ page_id: formattedId })
 
     if (!isFullPage(res)) {
       console.error('[getJob] Page is not a full page:', { jobId, objectType: res.object })
@@ -227,7 +231,7 @@ export async function getJob(jobId: string): Promise<Job | null> {
     }
 
     const job = toJob(res as PageObjectResponse)
-    console.log('[getJob] Successfully parsed job:', { jobId, clientName: job.clientName })
+    console.log('[getJob] Successfully parsed job:', { jobId, formattedId, clientName: job.clientName })
     return job
   } catch (error) {
     console.error('[getJob] Notion API error:', {

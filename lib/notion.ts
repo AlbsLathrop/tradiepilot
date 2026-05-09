@@ -216,28 +216,27 @@ export async function getJobs(tradieConfigId: string): Promise<Job[]> {
   return (res.results as PageObjectResponse[]).map(toJob)
 }
 
-export async function getJob(jobId: string): Promise<Job | null> {
+export async function getJob(pageId: string): Promise<Job | null> {
   try {
-    const formattedId = jobId.replace(
-      /^([0-9a-f]{8})([0-9a-f]{4})([0-9a-f]{4})([0-9a-f]{4})([0-9a-f]{12})$/,
-      '$1-$2-$3-$4-$5'
-    )
-    console.log('[getJob] Fetching page:', { jobId, formattedId })
-    const res = await notion.pages.retrieve({ page_id: formattedId })
+    const page = await notion.pages.retrieve({ page_id: pageId }) as any
+    const p = page.properties
 
-    if (!isFullPage(res)) {
-      console.error('[getJob] Page is not a full page:', { jobId, objectType: res.object })
-      return null
-    }
-
-    const job = toJob(res as PageObjectResponse)
-    console.log('[getJob] Successfully parsed job:', { jobId, formattedId, clientName: job.clientName })
-    return job
+    return {
+      id: page.id,
+      clientName: p['Client Name']?.title?.[0]?.plain_text || '',
+      suburb: p['Suburb']?.rich_text?.[0]?.plain_text || '',
+      address: p['Address']?.rich_text?.[0]?.plain_text || '',
+      status: p['Status']?.select?.name || '',
+      jobType: p['Service']?.rich_text?.[0]?.plain_text || '',
+      estimatedCompletion: p['Estimated Completion']?.date?.start || '',
+      notes: p['Notes']?.rich_text?.[0]?.plain_text || '',
+      tradieConfigId: p['Tradie Config ID']?.rich_text?.[0]?.plain_text || '',
+      clientPhone: p['Client Phone']?.phone_number || '',
+    } as any
   } catch (error) {
     console.error('[getJob] Notion API error:', {
-      jobId,
+      pageId,
       error: error instanceof Error ? error.message : String(error),
-      errorType: error instanceof Error ? error.constructor.name : typeof error,
     })
     return null
   }

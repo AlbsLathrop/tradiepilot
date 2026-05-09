@@ -607,7 +607,6 @@ function PhotosSection({ jobId, clientName, photos, tradieSlug }: PhotosSectionP
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         onChange={handleUpload}
         disabled={uploading}
         className="hidden"

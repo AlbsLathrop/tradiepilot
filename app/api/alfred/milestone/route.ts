@@ -9,9 +9,11 @@ export async function POST(request: NextRequest) {
     const { jobId, jobName, milestoneType, description, loggedBy = 'ALFRED' } = body;
 
     if (!process.env.NOTION_MILESTONE_LOG_DB_ID) {
-      console.log('Milestone Log DB not configured yet');
+      console.log('[ALFRED LOG] Milestone Log DB not configured yet');
       return NextResponse.json({ success: true, skipped: true });
     }
+
+    console.log('[ALFRED LOG] Attempting to create milestone:', { jobId, jobName, milestoneType });
 
     const page = await notion.pages.create({
       parent: { database_id: process.env.NOTION_MILESTONE_LOG_DB_ID },
@@ -25,10 +27,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log('[ALFRED LOG] Success:', page.id);
+
     return NextResponse.json({ success: true, milestoneId: page.id });
 
   } catch (error: any) {
-    console.error('Milestone error:', error);
+    console.error('[ALFRED LOG] Failed:', error);
     return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

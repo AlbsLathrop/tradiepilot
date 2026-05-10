@@ -63,10 +63,16 @@ async function getStatusDataServer(jobId: string): Promise<StatusData | null> {
       database_id: '34605054c0a34dd1ba45a60bb128f8d7',
       page_size: 100,
     })
+    console.log('[STATUS PAGE] Total milestone entries:', milestonesRes.results.length)
+
     const milestones = milestonesRes.results
       .filter((m: any) => {
         const jobIdField = (m.properties?.['Job ID'] as any)?.rich_text?.[0]?.plain_text || ''
-        return jobIdField === formattedId || jobIdField === formattedId.replace(/-/g, '')
+        const match = jobIdField === formattedId || jobIdField === formattedId.replace(/-/g, '')
+        if (match) {
+          console.log('[STATUS PAGE] Matched milestone:', jobIdField, '→', (m.properties?.['Title'] as any)?.rich_text?.[0]?.plain_text)
+        }
+        return match
       })
       .sort((a: any, b: any) => {
         const dateA = new Date(a.created_time).getTime()
@@ -76,10 +82,11 @@ async function getStatusDataServer(jobId: string): Promise<StatusData | null> {
       .slice(0, 5)
       .map((m: any) => ({
         id: m.id,
-        title: (m.properties?.['Title'] as any)?.rich_text?.[0]?.plain_text || '',
+        title: (m.properties?.['Title'] as any)?.title?.[0]?.plain_text || (m.properties?.['Title'] as any)?.rich_text?.[0]?.plain_text || '',
         description: (m.properties?.['Description'] as any)?.rich_text?.[0]?.plain_text || '',
         date: (m as any).created_time?.split('T')[0] || '',
       }))
+    console.log('[STATUS PAGE] Milestones after filter:', milestones.length)
 
     // Fetch photos from Media DB
     const photosRes = await notion.databases.query({

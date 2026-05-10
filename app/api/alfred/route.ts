@@ -683,7 +683,12 @@ ${JSON.stringify(contextData, null, 2)}`;
 
         // Log to Communication Log
         try {
-          await notion.pages.create({
+          console.log('[ALFRED LOG] Creating Comm Log entry with properties:', JSON.stringify({
+            message: body.pendingSMS.message,
+            recipient: body.pendingSMS.name,
+            dbId: process.env.NOTION_COMMUNICATION_LOG_DB_ID,
+          }));
+          const logResult = await notion.pages.create({
             parent: { database_id: process.env.NOTION_COMMUNICATION_LOG_DB_ID! },
             properties: {
               'Message': { title: [{ text: { content: body.pendingSMS.message } }] },
@@ -692,8 +697,9 @@ ${JSON.stringify(contextData, null, 2)}`;
               'Agent': { select: { name: 'ALFRED' } },
             },
           });
-        } catch (logErr) {
-          console.error('Comm log error:', logErr);
+          console.log('[ALFRED LOG] Comm Log Success:', logResult.id);
+        } catch (logErr: any) {
+          console.error('[ALFRED LOG] Full error:', logErr?.code, logErr?.message, JSON.stringify(logErr?.body));
         }
 
         return NextResponse.json({

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getJob, getTradieConfigById, getMilestones, getPhotos } from '@/lib/notion'
 
-export const revalidate = 60 // ISR: revalidate every 60 seconds
+export const dynamic = 'force-dynamic'
 
 export async function GET(
   _request: Request,
@@ -9,6 +9,7 @@ export async function GET(
 ) {
   try {
     const { jobId } = await params
+    console.log('[STATUS] Request received for jobId:', jobId)
 
     if (!jobId) {
       return NextResponse.json(

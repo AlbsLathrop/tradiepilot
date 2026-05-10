@@ -34,6 +34,9 @@ export async function PATCH(
     if (body.quoteExpiry) {
       updates['Quote Expiry'] = { date: { start: body.quoteExpiry } }
     }
+    if (body.quoteAmount !== undefined) {
+      updates['Quote Amount'] = body.quoteAmount ? { number: body.quoteAmount } : null
+    }
 
     await notion.pages.update({ page_id: id, properties: updates })
     return NextResponse.json({ success: true })

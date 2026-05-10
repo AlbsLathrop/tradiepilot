@@ -57,6 +57,8 @@ export default function LeadsPage() {
   const [showNewLead, setShowNewLead] = useState(false)
   const [openLeadLogId, setOpenLeadLogId] = useState<string | null>(null)
   const [quickNote, setQuickNote] = useState<Record<string, string>>({})
+  const [editingField, setEditingField] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState<string>('')
   const [newLead, setNewLead] = useState({
     clientName: '', phone: '', suburb: '',
     service: '', source: '', notes: ''
@@ -189,6 +191,34 @@ export default function LeadsPage() {
       showToast('✓ Note added')
     } catch {
       showToast('Failed to add note')
+    }
+  }
+
+  const handleSaveQuoteAmount = async (lead: Lead) => {
+    const amount = editValue.trim()
+    if (!amount) {
+      setEditingField(null)
+      return
+    }
+    const numAmount = parseFloat(amount)
+    if (isNaN(numAmount)) {
+      showToast('Invalid amount')
+      return
+    }
+    try {
+      await fetch(`/api/leads/${lead.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quoteAmount: numAmount }),
+      })
+      setLeads(prev => prev.map(l =>
+        l.id === lead.id ? { ...l, quoteAmount: numAmount } : l
+      ))
+      setEditingField(null)
+      setEditValue('')
+      showToast(`✓ Quote amount saved`)
+    } catch {
+      showToast('Failed to save quote amount')
     }
   }
 
@@ -487,17 +517,64 @@ export default function LeadsPage() {
                     )}
                   </div>
 
-                  {/* Quote Date */}
-                  {lead.quoteDate && (
-                    <div className="bg-[#0F0F0F] rounded-lg p-3">
-                      <p className="text-[#F97316] text-xs font-bold uppercase mb-2">Quote Date</p>
-                      <p className="text-white text-sm">
-                        {new Date(lead.quoteDate).toLocaleDateString('en-AU', {
-                          day: 'numeric', month: 'short', year: 'numeric'
-                        })}
-                      </p>
+                  {/* Quote Info */}
+                  <div className="bg-[#0F0F0F] rounded-lg p-3 space-y-3">
+                    <p className="text-[#F97316] text-xs font-bold uppercase">Quote Info</p>
+
+                    {/* Quote Amount */}
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400 text-sm">Amount ($)</span>
+                      {editingField === `${lead.id}_amount` ? (
+                        <div className="flex gap-1">
+                          <input
+                            type="number"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            placeholder="0"
+                            className="w-24 bg-[#111827] border border-[#F97316] rounded px-2 py-1 text-white text-sm focus:outline-none"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => handleSaveQuoteAmount(lead)}
+                            className="text-green-400 text-lg font-bold"
+                          >
+                            ✓
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingField(null)
+                              setEditValue('')
+                            }}
+                            className="text-red-400 text-lg font-bold"
+                          >
+                            ✗
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setEditingField(`${lead.id}_amount`)
+                            setEditValue(lead.quoteAmount?.toString() ?? '')
+                          }}
+                          className="text-white text-sm font-medium hover:text-[#F97316]"
+                        >
+                          {lead.quoteAmount ? `$${lead.quoteAmount.toLocaleString()}` : 'Add'}
+                        </button>
+                      )}
                     </div>
-                  )}
+
+                    {/* Quote Date */}
+                    {lead.quoteDate && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400 text-sm">Date</span>
+                        <span className="text-white text-sm">
+                          {new Date(lead.quoteDate).toLocaleDateString('en-AU', {
+                            day: 'numeric', month: 'short', year: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Ask ALFRED */}
                   <a

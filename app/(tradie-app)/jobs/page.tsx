@@ -406,6 +406,7 @@ function JobDetail({
                   clientPhone: job.clientPhone,
                   tradieSlug: session?.user?.tradieSlug,
                   businessName: session?.user?.name,
+                  service: job.service,
                 })
               })
               if (res.ok) {

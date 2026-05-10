@@ -229,6 +229,7 @@ export default function ChatPage() {
 
       // Save user message to history
       if (tradieSlug) {
+        console.log('[CHAT] saving message: voice transcript');
         fetch('/api/alfred/chat-history', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -258,6 +259,7 @@ export default function ChatPage() {
 
         // Save ALFRED response to history
         if (tradieSlug) {
+          console.log('[CHAT] saving message: alfred response from voice');
           fetch('/api/alfred/chat-history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -354,6 +356,7 @@ export default function ChatPage() {
 
       // Save user message to history
       if (tradieSlug) {
+        console.log('[CHAT] saving message: user text');
         fetch('/api/alfred/chat-history', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -455,6 +458,7 @@ export default function ChatPage() {
 
         // Save ALFRED response to history
         if (tradieSlug) {
+          console.log('[CHAT] saving message: alfred response from text');
           fetch('/api/alfred/chat-history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

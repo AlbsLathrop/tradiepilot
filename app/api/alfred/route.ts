@@ -231,6 +231,34 @@ function findJob(jobs: any[], query: string): any | null {
   return null;
 }
 
+function findLead(leads: any[], query: string): any | null {
+  const q = query.toLowerCase();
+
+  const byName = leads.find(l => l.name && q.includes(l.name.toLowerCase().split(' ')[0]));
+  if (byName) return byName;
+
+  const bySuburb = leads.find(l => l.suburb && q.includes(l.suburb.toLowerCase()));
+  if (bySuburb) return bySuburb;
+
+  const byService = leads.find(l => l.service && q.includes(l.service.toLowerCase().split(' ')[0]));
+  if (byService) return byService;
+
+  return null;
+}
+
+function detectQuoteMessage(message: string): { isQuote: boolean; amount: number | null } {
+  const lower = message.toLowerCase();
+  const hasQuoteKeyword = /quoted|quote|sent quote|gave quote/.test(lower);
+
+  const amountMatch = message.match(/\$[\d,]+(?:\.\d{2})?|\$\s*[\d,]+(?:\.\d{2})?/);
+  const amount = amountMatch ? parseFloat(amountMatch[0].replace(/[$,\s]/g, '')) : null;
+
+  return {
+    isQuote: hasQuoteKeyword && amount !== null,
+    amount,
+  };
+}
+
 function getTodaysJobs(jobs: any[]): any[] {
   const today = new Date().toISOString().split('T')[0];
   const activeStatuses = ['Scheduled', 'In Progress', 'Running Late', 'Day Done'];
@@ -837,6 +865,36 @@ ${JSON.stringify(contextData, null, 2)}`;
         }
       } catch (err) {
         console.error('Job creation error:', err);
+      }
+    }
+
+    // Auto-detect and handle quote messages
+    if (message) {
+      const { isQuote, amount } = detectQuoteMessage(message);
+      if (isQuote && amount) {
+        const mentionedLead = findLead(leads, message);
+        if (mentionedLead) {
+          try {
+            const today = new Date().toISOString().split('T')[0];
+            await notion.pages.update({
+              page_id: mentionedLead.id,
+              properties: {
+                'Quote Status': { select: { name: 'Quoted' } },
+                'Quote Amount': { number: amount },
+                'Quote Date': { date: { start: today } },
+              },
+            });
+            console.log(`ALFRED: Updated ${mentionedLead.name} quote: $${amount}`);
+
+            // Confirm to user and update response
+            alfredResult.reply = `Logged — ${mentionedLead.name} quoted $${amount.toLocaleString()}. I'll track the response.`;
+            alfredResult.action = 'update_lead_quote';
+            alfredResult.leadId = mentionedLead.id;
+            alfredResult.leadName = mentionedLead.name;
+          } catch (err) {
+            console.error('Lead quote update error:', err);
+          }
+        }
       }
     }
 

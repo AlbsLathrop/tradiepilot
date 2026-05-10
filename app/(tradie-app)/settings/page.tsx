@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { signOut, useSession } from 'next-auth/react'
+import { Check, X } from 'lucide-react'
 
 interface TradieFlowConfig {
   businessName: string
@@ -12,15 +13,17 @@ interface TradieFlowConfig {
   hoursEnd: string
   tone: string
   twilioNumber: string
+  workingHours: string
 }
 
 export default function SettingsPage() {
   const { data: session, status } = useSession()
   const [config, setConfig] = useState<TradieFlowConfig | null>(null)
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [editingField, setEditingField] = useState<string | null>(null)
+  const [savingField, setSavingField] = useState<string | null>(null)
 
   if (status === 'loading') {
     return (
@@ -72,6 +75,7 @@ export default function SettingsPage() {
           hoursEnd: d.hoursEnd ?? '17:00',
           tone: d.tone ?? 'Professional',
           twilioNumber: d.twilioNumber ?? '',
+          workingHours: d.workingHours ?? '',
         })
         setError(null)
         setLoading(false)
@@ -83,19 +87,31 @@ export default function SettingsPage() {
       })
   }, [status, session?.user?.tradieSlug])
 
-  const handleSave = async () => {
-    setSaving(true)
+  const handleFieldSave = async (fieldKey: string, fieldNotionName: string, value: any) => {
+    setSavingField(fieldKey)
     try {
-      await fetch('/api/settings', {
+      const payload: Record<string, any> = {}
+      payload[fieldKey] = value
+
+      const response = await fetch('/api/tradie-config', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
+        body: JSON.stringify(payload),
       })
-      showToast('✓ Settings saved')
-    } catch {
+
+      if (!response.ok) {
+        throw new Error('Save failed')
+      }
+
+      showToast('✓ Saved')
+      setEditingField(null)
+      setConfig(prev => prev ? { ...prev, [fieldKey]: value } : null)
+    } catch (err) {
       showToast('Failed to save')
+      console.error('Field save error:', err)
+    } finally {
+      setSavingField(null)
     }
-    setSaving(false)
   }
 
   if (loading) {
@@ -141,56 +157,46 @@ export default function SettingsPage() {
         <div className="px-4 space-y-4">
 
           <Section title="Business Profile">
-            <Field label="Business Name"
-              value={config.businessName ?? ''}
-              onChange={v => setConfig((p) => ({
-                ...p, businessName: v
-              }) as TradieFlowConfig)} />
-            <Field label="Trade Type"
-              value={config.tradeType ?? ''}
-              onChange={v => setConfig((p) => ({
-                ...p, tradeType: v
-              }) as TradieFlowConfig)} />
-            <Field label="Service Area"
-              value={config.serviceArea ?? ''}
-              onChange={v => setConfig((p) => ({
-                ...p, serviceArea: v
-              }) as TradieFlowConfig)} />
+            <EditableField
+              label="Business Name"
+              value={config.businessName}
+              onSave={(v) => handleFieldSave('businessName', 'Business Name', v)}
+              isEditing={editingField === 'businessName'}
+              onEditStart={() => setEditingField('businessName')}
+              onEditCancel={() => setEditingField(null)}
+              isSaving={savingField === 'businessName'}
+            />
+            <EditableField
+              label="Service Area"
+              value={config.serviceArea}
+              onSave={(v) => handleFieldSave('serviceArea', 'Service Area', v)}
+              isEditing={editingField === 'serviceArea'}
+              onEditStart={() => setEditingField('serviceArea')}
+              onEditCancel={() => setEditingField(null)}
+              isSaving={savingField === 'serviceArea'}
+            />
           </Section>
 
           <Section title="ALFRED Settings">
-            <Field label="Min Job Value ($)"
-              value={String(config.minJobValue ?? '')}
+            <EditableField
+              label="Min Job Value ($)"
+              value={String(config.minJobValue)}
               type="number"
-              onChange={v => setConfig((p) => ({
-                ...p, minJobValue: Number(v)
-              }) as TradieFlowConfig)} />
-            <Field label="Business Hours Start"
-              value={config.hoursStart ?? '7:00'}
-              onChange={v => setConfig((p) => ({
-                ...p, hoursStart: v
-              }) as TradieFlowConfig)} />
-            <Field label="Business Hours End"
-              value={config.hoursEnd ?? '17:00'}
-              onChange={v => setConfig((p) => ({
-                ...p, hoursEnd: v
-              }) as TradieFlowConfig)} />
-            <Field label="ALFRED Tone"
-              value={config.tone ?? 'Professional'}
-              onChange={v => setConfig((p) => ({
-                ...p, tone: v
-              }) as TradieFlowConfig)} />
-          </Section>
-
-          <Section title="Twilio">
-            <div className="flex justify-between items-center py-2">
-              <span className="text-gray-400 text-sm">
-                TradieFlow Number
-              </span>
-              <span className="text-white text-sm font-mono">
-                {config.twilioNumber ?? '+61468072974'}
-              </span>
-            </div>
+              onSave={(v) => handleFieldSave('minJobValue', 'Min Job Value', v === '' ? 0 : Number(v))}
+              isEditing={editingField === 'minJobValue'}
+              onEditStart={() => setEditingField('minJobValue')}
+              onEditCancel={() => setEditingField(null)}
+              isSaving={savingField === 'minJobValue'}
+            />
+            <EditableField
+              label="Working Hours"
+              value={config.workingHours}
+              onSave={(v) => handleFieldSave('workingHours', 'Working Hours', v)}
+              isEditing={editingField === 'workingHours'}
+              onEditStart={() => setEditingField('workingHours')}
+              onEditCancel={() => setEditingField(null)}
+              isSaving={savingField === 'workingHours'}
+            />
           </Section>
 
           <Section title="Talk to ALFRED">
@@ -205,15 +211,6 @@ export default function SettingsPage() {
               🧠 Open ALFRED
             </a>
           </Section>
-
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full bg-[#F97316] text-white font-bold
-            py-3.5 rounded-xl text-sm disabled:opacity-50"
-          >
-            {saving ? 'Saving...' : 'Save Settings'}
-          </button>
 
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
@@ -242,21 +239,59 @@ function Section({ title, children }: {
   )
 }
 
-function Field({ label, value, onChange, type = 'text' }: {
-  label: string; value: string;
-  onChange: (v: string) => void; type?: string
+function EditableField({ label, value, onSave, isEditing, onEditStart, onEditCancel, isSaving, type = 'text' }: {
+  label: string
+  value: string | number
+  onSave: (v: string) => void
+  isEditing: boolean
+  onEditStart: () => void
+  onEditCancel: () => void
+  isSaving: boolean
+  type?: string
 }) {
+  const [editValue, setEditValue] = useState(String(value))
+
+  if (isEditing) {
+    return (
+      <div className="py-2">
+        <label className="text-gray-400 text-xs mb-2 block">{label}</label>
+        <div className="flex gap-2">
+          <input
+            type={type}
+            value={editValue}
+            onChange={e => setEditValue(e.target.value)}
+            autoFocus
+            className="flex-1 bg-[#0F0F0F] border border-[#F97316] rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none"
+          />
+          <button
+            onClick={() => onSave(editValue)}
+            disabled={isSaving}
+            className="bg-[#F97316] text-white p-2.5 rounded-lg hover:bg-[#C2580A] disabled:opacity-50"
+          >
+            <Check size={18} />
+          </button>
+          <button
+            onClick={onEditCancel}
+            disabled={isSaving}
+            className="bg-gray-600 text-white p-2.5 rounded-lg hover:bg-gray-700 disabled:opacity-50"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div>
-      <label className="text-gray-400 text-xs mb-1 block">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className="w-full bg-[#0F0F0F] border border-[#1F2937]
-        rounded-lg px-3 py-2.5 text-white text-sm
-        focus:border-[#F97316] outline-none"
-      />
-    </div>
+    <button
+      onClick={onEditStart}
+      className="w-full text-left py-2 group"
+    >
+      <label className="text-gray-400 text-xs block mb-1">{label}</label>
+      <div className="flex justify-between items-center px-3 py-2.5 bg-[#0F0F0F] rounded-lg group-hover:border group-hover:border-[#F97316] border border-transparent transition-colors">
+        <span className="text-white text-sm">{value || '—'}</span>
+        <span className="text-gray-500 text-xs group-hover:text-[#F97316] transition-colors">tap to edit</span>
+      </div>
+    </button>
   )
 }

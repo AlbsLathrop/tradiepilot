@@ -876,21 +876,26 @@ ${JSON.stringify(contextData, null, 2)}`;
         if (mentionedLead) {
           try {
             const today = new Date().toISOString().split('T')[0];
-            await notion.pages.update({
-              page_id: mentionedLead.id,
-              properties: {
-                'Quote Status': { select: { name: 'Quoted' } },
-                'Quote Amount': { number: amount },
-                'Quote Date': { date: { start: today } },
-              },
+            const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3001';
+            const patchRes = await fetch(`${baseUrl}/api/leads/${mentionedLead.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                quoteStatus: 'Quoted',
+                quoteAmount: amount,
+                quoteDate: today,
+              }),
             });
-            console.log(`ALFRED: Updated ${mentionedLead.name} quote: $${amount}`);
 
-            // Confirm to user and update response
-            alfredResult.reply = `Logged — ${mentionedLead.name} quoted $${amount.toLocaleString()}. I'll track the response.`;
-            alfredResult.action = 'update_lead_quote';
-            alfredResult.leadId = mentionedLead.id;
-            alfredResult.leadName = mentionedLead.name;
+            if (patchRes.ok) {
+              console.log(`ALFRED: Updated ${mentionedLead.name} quote: $${amount}`);
+              alfredResult.reply = `Logged — ${mentionedLead.name} quoted $${amount.toLocaleString()}. I'll track the response.`;
+              alfredResult.action = 'update_lead_quote';
+              alfredResult.leadId = mentionedLead.id;
+              alfredResult.leadName = mentionedLead.name;
+            } else {
+              console.error('Lead quote PATCH failed:', patchRes.status);
+            }
           } catch (err) {
             console.error('Lead quote update error:', err);
           }

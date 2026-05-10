@@ -850,16 +850,10 @@ ${JSON.stringify(contextData, null, 2)}`;
       alfredResult.jobId
     );
 
-    // Auto-log job updates to Milestone Log
-    let milestoneLogged = false;
-    const updateKeywords = ['update', 'note', 'done', 'finished', 'delayed', 'waiting', 'complete', 'ready', 'issue', 'problem', 'tell', 'let', 'know'];
-    const messageHasUpdate = message && updateKeywords.some(kw => message.toLowerCase().includes(kw));
-
-    // Determine which job to log (explicit jobContext takes priority, else detected mentionedJob)
+    // Auto-log all job updates silently (no keyword gate)
     const jobToLog = jobContext ? jobs.find(j => j.id === jobContext.id) : mentionedJob;
 
-    // Log if: jobContext is provided (always), OR detected job + message has update keywords
-    if (jobToLog && (jobContext || messageHasUpdate)) {
+    if (jobToLog) {
       try {
         console.log('[ALFRED LOG] Creating Milestone entry with properties:', JSON.stringify({
           jobId: jobToLog.id,
@@ -877,7 +871,7 @@ ${JSON.stringify(contextData, null, 2)}`;
 
         if (isQuestion) {
           titleText = 'ALFRED Query';
-        } else if (messageHasUpdate) {
+        } else {
           const summary = (message || '').slice(0, 60).trim();
           titleText = summary.charAt(0).toUpperCase() + summary.slice(1);
         }
@@ -893,13 +887,12 @@ ${JSON.stringify(contextData, null, 2)}`;
           },
         });
         console.log('[ALFRED LOG] Milestone Success:', result.id);
-        milestoneLogged = true;
       } catch (err: any) {
         console.error('[ALFRED LOG] Full error:', err?.code, err?.message, JSON.stringify(err?.body));
       }
     }
 
-    const finalReply = milestoneLogged ? `${alfredResult.reply}\n📝 Logged to job.` : alfredResult.reply;
+    const finalReply = alfredResult.reply;
 
     return NextResponse.json({
       success: true,

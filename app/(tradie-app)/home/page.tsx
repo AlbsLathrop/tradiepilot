@@ -161,8 +161,8 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Row 2: New Leads + Reviews */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Row 2: New Leads + Reviews + Pipeline */}
+        <div className="grid grid-cols-3 gap-3">
           <Link href="/leads">
             <div className="bg-[#1F2937] rounded-xl p-5 cursor-pointer hover:bg-[#252f3f] transition-colors">
               <p className="text-gray-400 text-xs font-bold uppercase tracking-wide mb-3">
@@ -189,6 +189,12 @@ export default function HomePage() {
             <p className="text-gray-400 text-xs mt-2">
               {dashData.reviewCount} review{dashData.reviewCount !== 1 ? 's' : ''}
             </p>
+          </div>
+
+          <div className="bg-[#1a1f2e] rounded-xl p-5 border border-white/5">
+            <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-2">Pipeline</p>
+            <p className="text-3xl font-bold text-white">${dashData.pipelineValue.toLocaleString()}</p>
+            <p className="text-gray-400 text-xs mt-2">{dashData.quotedCount} quotes out</p>
           </div>
         </div>
 
@@ -259,12 +265,6 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Pipeline */}
-        <div className="bg-[#1a1f2e] rounded-xl p-4 border border-white/5">
-          <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-2">Pipeline</p>
-          <p className="text-2xl font-bold text-white">${dashData.pipelineValue.toLocaleString()}</p>
-          <p className="text-gray-400 text-xs mt-1">{dashData.quotedCount} quotes pending response</p>
-        </div>
       </div>
     </div>
   )

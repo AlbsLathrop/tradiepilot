@@ -94,11 +94,13 @@ export async function GET(request: Request) {
 
     const qualifiedLeads = leads.filter(l => l.status === 'Qualified').length
 
-    // Pipeline stats: quoted leads with amounts pending response
-    const quotedLeads = leads.filter(l =>
-      l.quoteStatus === 'Quoted' || l.quoteStatus === 'QUOTED'
-    )
-    console.log('[PIPELINE] leads with quotes:', quotedLeads.map(l => ({ name: l.quoteStatus, amount: l.quoteAmount })))
+    // Pipeline stats: leads with quote amounts
+    const quotedLeads = leads.filter(l => (l.quoteAmount ?? 0) > 0)
+    console.log('[PIPELINE] leads with quotes:', quotedLeads.map(l => ({
+      name: l.clientName,
+      quoteStatus: l.quoteStatus,
+      quoteAmount: l.quoteAmount
+    })))
     const pipelineValue = quotedLeads.reduce((sum, l) => sum + (l.quoteAmount ?? 0), 0)
     const quotedCount = quotedLeads.length
     console.log('[PIPELINE] calculated:', { pipelineValue, quotedCount })

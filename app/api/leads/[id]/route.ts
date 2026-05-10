@@ -10,6 +10,9 @@ export async function PATCH(
   const { id } = await params
   const body = await req.json()
 
+  console.log('[LEAD PATCH] body:', JSON.stringify(body))
+  console.log('[LEAD PATCH] quoteAmount:', body.quoteAmount)
+
   try {
     const updates: Record<string, any> = {}
     if (body.status) {
@@ -36,7 +39,7 @@ export async function PATCH(
     }
     if (body.quoteAmount !== undefined) {
       console.log('[LEAD PATCH] quoteAmount:', body.quoteAmount)
-      updates['Quote Amount'] = body.quoteAmount ? { number: body.quoteAmount } : null
+      updates['Quote Amount'] = body.quoteAmount ? { number: Number(body.quoteAmount) } : null
     }
 
     console.log('[LEAD PATCH] updates object:', JSON.stringify(updates))

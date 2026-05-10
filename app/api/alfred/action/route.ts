@@ -42,6 +42,26 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // RUNNING LATE: Always send immediately regardless of time of day
+    if (action === 'RUNNING LATE' && clientPhone) {
+      try {
+        const twilio = require('twilio')(
+          process.env.TWILIO_ACCOUNT_SID,
+          process.env.TWILIO_AUTH_TOKEN
+        )
+
+        const smsBody = `Hi ${clientName}, ${tradieName} is running a bit behind today but on the way. Thanks for your patience! — TradieFlow`
+
+        await twilio.messages.create({
+          body: smsBody,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: clientPhone,
+        })
+      } catch (smsErr: any) {
+        console.warn('SMS failed (non-fatal):', smsErr.message)
+      }
+    }
+
     // ON THE WAY: Send SMS immediately to client
     if (action === 'ON THE WAY' && clientPhone) {
       try {
@@ -62,31 +82,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // RUNNING LATE: Send SMS immediately to client
-    if (action === 'RUNNING LATE' && clientPhone) {
-      try {
-        const twilio = require('twilio')(
-          process.env.TWILIO_ACCOUNT_SID,
-          process.env.TWILIO_AUTH_TOKEN
-        )
-
-        const smsBody = `Hi ${clientName}, ${tradieName} is running a bit behind today but on the way. Thanks for your patience! — TradieFlow`
-
-        await twilio.messages.create({
-          body: smsBody,
-          from: process.env.TWILIO_PHONE_NUMBER,
-          to: clientPhone,
-        })
-      } catch (smsErr: any) {
-        console.warn('SMS failed (non-fatal):', smsErr.message)
-      }
-    }
-
     const sydneyHour = new Date(
       new Date().toLocaleString('en-US', { timeZone: 'Australia/Sydney' })
     ).getHours()
 
-    // Check dark hours (before 7am or at/after 8pm) - unless it's RUNNING LATE
+    // Check dark hours (before 7am or at/after 8pm) - does not apply to RUNNING LATE
     if ((sydneyHour < 7 || sydneyHour >= 20) && action !== 'RUNNING LATE') {
       // Still log to Milestone Log but DON'T send any outbound actions
       const prompt = `You are ALFRED, an AI assistant for Australian tradies.

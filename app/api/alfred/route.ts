@@ -145,8 +145,8 @@ async function getJobsContext(tradieSlug: string) {
          || job.properties?.['Name']?.title?.[0]?.plain_text
          || 'Unnamed Job',
       status: job.properties?.['Status']?.select?.name || 'Unknown',
-      clientName: job.properties?.['Client Name']?.rich_text?.[0]?.plain_text
-               || job.properties?.['Client']?.rich_text?.[0]?.plain_text || '',
+      clientName: job.properties?.['Client Name']?.title?.[0]?.plain_text
+               || job.properties?.['Client']?.title?.[0]?.plain_text || '',
       clientPhone: job.properties?.['Client Phone']?.phone_number
                 || job.properties?.['Phone']?.phone_number || '',
       service: job.properties?.['Service']?.rich_text?.[0]?.plain_text

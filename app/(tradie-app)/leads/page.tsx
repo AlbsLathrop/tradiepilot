@@ -107,6 +107,18 @@ export default function LeadsPage() {
 
   const filtered = activeTab === 'All'
     ? leads
+    : activeTab === 'QUOTED'
+    ? leads.filter(l => ['Quoted', 'Accepted', 'Declined', 'No Response'].includes(l.quoteStatus))
+    : leads.filter(l => l.status === activeTab)
+  const filtered = activeTab === 'All'
+    ? leads
+    : activeTab === 'QUOTED'
+    ? leads.filter(l => ['Quoted', 'Accepted', 'Declined', 'No Response'].includes(l.quoteStatus))
+    : leads.filter(l => l.status === activeTab)
+  const filtered = activeTab === 'All'
+    ? leads
+    : activeTab === 'QUOTED'
+    ? leads.filter(l => ['Quoted', 'Accepted', 'Declined', 'No Response'].includes(l.quoteStatus))
     : leads.filter(l => l.status === activeTab)
 
   const showToast = (msg: string) => {

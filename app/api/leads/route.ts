@@ -44,9 +44,9 @@ export async function GET(request: Request) {
         lunaLastUpdate: p['LUNA Last Update']?.rich_text?.[0]?.plain_text ?? '',
         tradieConfigId: p['Tradie Config ID']?.rich_text?.[0]?.plain_text ?? '',
         jobValue: null as number | null,
-        quoteAmount: null as number | null,
+        quoteAmount: p['Quote Amount']?.number ?? null,
         quoteExpiry: null as string | null,
-        quoteStatus: 'NOT QUOTED',
+        quoteStatus: p['Quote Status']?.select?.name ?? 'Not Quoted',
         disqualifyReason: '',
         quoteDaysLeft: null as number | null,
         leadLog: [] as any[],
@@ -85,5 +85,40 @@ export async function GET(request: Request) {
     return NextResponse.json({ leads })
   } catch (error: any) {
     return NextResponse.json({ error: error?.message, leads: [] }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const { leadId, quoteAmount, quoteDate, quoteStatus } = await request.json()
+
+    if (!leadId) {
+      return NextResponse.json({ error: 'Missing leadId' }, { status: 400 })
+    }
+
+    const updates: Record<string, any> = {}
+
+    if (quoteAmount !== undefined) {
+      updates['Quote Amount'] = { number: quoteAmount }
+    }
+    if (quoteDate !== undefined) {
+      updates['Quote Date'] = quoteDate ? { date: { start: quoteDate } } : null
+    }
+    if (quoteStatus !== undefined) {
+      updates['Quote Status'] = { select: { name: quoteStatus } }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
+    }
+
+    await notion.pages.update({
+      page_id: leadId,
+      properties: updates,
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    return NextResponse.json({ error: error?.message }, { status: 500 })
   }
 }

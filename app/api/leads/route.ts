@@ -98,8 +98,8 @@ export async function PATCH(request: Request) {
 
     const updates: Record<string, any> = {}
 
-    if (quoteAmount !== undefined) {
-      updates['Quote Amount'] = { number: quoteAmount }
+    if (quoteAmount !== undefined && quoteAmount !== null) {
+      updates['Quote Amount'] = { number: Number(quoteAmount) }
     }
     if (quoteDate !== undefined) {
       updates['Quote Date'] = quoteDate ? { date: { start: quoteDate } } : null
@@ -116,6 +116,7 @@ export async function PATCH(request: Request) {
       page_id: leadId,
       properties: updates,
     })
+    console.log('[LEAD PATCH] Notion update result: success')
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

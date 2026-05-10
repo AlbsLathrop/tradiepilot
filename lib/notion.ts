@@ -203,17 +203,17 @@ export async function getJobs(tradieConfigId: string): Promise<Job[]> {
 
   const res = await notion.databases.query({
     database_id: NOTION_DB.JOBS,
-    filter: {
-      property: 'Tradie Config ID',
-      rich_text: { equals: tradieConfigId },
-    },
     sorts: [
       { timestamp: 'last_edited_time', direction: 'descending' },
     ],
-    page_size: 30,
+    page_size: 100,
   })
 
-  return (res.results as PageObjectResponse[]).map(toJob)
+  const filtered = (res.results as PageObjectResponse[]).filter(page =>
+    page.properties?.['Tradie Config ID']?.rich_text?.[0]?.plain_text === tradieConfigId
+  );
+
+  return filtered.map(toJob)
 }
 
 export async function getJob(pageId: string): Promise<Job | null> {
@@ -257,11 +257,13 @@ export async function getRecentLeads(limit: number): Promise<Lead[]> {
 export async function getTradieConfig(id: string): Promise<TradieConfig | null> {
   const res = await notion.databases.query({
     database_id: NOTION_DB.CONFIG,
-    filter: { property: 'Tradie Config ID', rich_text: { equals: id } },
-    page_size: 1,
+    page_size: 100,
   })
 
-  const page = res.results[0] as PageObjectResponse | undefined
+  const filtered = res.results.filter((page: any) =>
+    page.properties?.['Tradie Config ID']?.rich_text?.[0]?.plain_text === id
+  );
+  const page = filtered[0] as PageObjectResponse | undefined
   return page ? toTradieConfig(page) : null
 }
 

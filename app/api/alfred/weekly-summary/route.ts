@@ -24,14 +24,13 @@ export async function POST(req: NextRequest) {
     // Look up tradie config from Notion
     const configRes = await notion.databases.query({
       database_id: process.env.NOTION_TRADIE_CONFIG_DB_ID!,
-      filter: {
-        property: 'Tradie Config ID',
-        rich_text: { equals: tradieSlug }
-      },
-      page_size: 1,
+      page_size: 100,
     })
 
-    const configPage = configRes.results[0] as any
+    const configFiltered = configRes.results.filter((page: any) =>
+      page.properties?.['Tradie Config ID']?.rich_text?.[0]?.plain_text === tradieSlug
+    );
+    const configPage = configFiltered[0] as any
     const tradiePhone = configPage?.properties['Phone']?.phone_number
       ?? configPage?.properties['Twilio Number']?.phone_number
       ?? null
@@ -42,22 +41,20 @@ export async function POST(req: NextRequest) {
     // Fetch jobs
     const jobsRes = await notion.databases.query({
       database_id: process.env.NOTION_JOBS_DB_ID!,
-      filter: {
-        property: 'Tradie Config ID',
-        rich_text: { equals: tradieSlug }
-      },
+      page_size: 100,
     })
-    const jobs = jobsRes.results as any[]
+    const jobs = jobsRes.results.filter((page: any) =>
+      page.properties?.['Tradie Config ID']?.rich_text?.[0]?.plain_text === tradieSlug
+    ) as any[]
 
     // Fetch leads
     const leadsRes = await notion.databases.query({
       database_id: process.env.NOTION_LEADS_DB_ID!,
-      filter: {
-        property: 'Tradie Config ID',
-        rich_text: { equals: tradieSlug }
-      },
+      page_size: 100,
     })
-    const leads = leadsRes.results as any[]
+    const leads = leadsRes.results.filter((page: any) =>
+      page.properties?.['Tradie Config ID']?.rich_text?.[0]?.plain_text === tradieSlug
+    ) as any[]
 
     // Build stats
     const activeJobs = jobs.filter(j =>

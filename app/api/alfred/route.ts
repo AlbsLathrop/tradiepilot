@@ -130,15 +130,15 @@ async function getJobsContext(tradieSlug: string) {
   try {
     const response = await notion.databases.query({
       database_id: process.env.NOTION_JOBS_DB_ID!,
-      filter: {
-        property: 'Tradie Config ID',
-        rich_text: { equals: tradieSlug },
-      },
       sorts: [{ timestamp: 'created_time', direction: 'descending' }],
-      page_size: 30,
+      page_size: 100,
     });
 
-    return response.results.map((job: any) => ({
+    const filtered = response.results.filter((page: any) =>
+      page.properties?.['Tradie Config ID']?.rich_text?.[0]?.plain_text === tradieSlug
+    );
+
+    return filtered.map((job: any) => ({
       id: job.id,
       jobNumber: job.properties?.['Job Number']?.number || null,
       name: job.properties?.['Job Name']?.title?.[0]?.plain_text
@@ -170,15 +170,15 @@ async function getLeadsContext(tradieSlug: string) {
   try {
     const response = await notion.databases.query({
       database_id: process.env.NOTION_LEADS_DB_ID!,
-      filter: {
-        property: 'Tradie Config ID',
-        rich_text: { equals: tradieSlug },
-      },
       sorts: [{ timestamp: 'created_time', direction: 'descending' }],
-      page_size: 20,
+      page_size: 100,
     });
 
-    const leads = response.results.map((lead: any) => ({
+    const filtered = response.results.filter((page: any) =>
+      page.properties?.['Tradie Config ID']?.rich_text?.[0]?.plain_text === tradieSlug
+    );
+
+    const leads = filtered.map((lead: any) => ({
       id: lead.id,
       name: lead.properties?.['Name']?.title?.[0]?.plain_text || 'Unknown',
       status: lead.properties?.['Status']?.select?.name || 'Unknown',
@@ -450,14 +450,13 @@ export async function POST(request: NextRequest) {
     try {
       const configRes = await notion.databases.query({
         database_id: process.env.NOTION_TRADIE_CONFIG_DB_ID!,
-        filter: {
-          property: 'Tradie Config ID',
-          rich_text: { equals: tradieSlug },
-        },
-        page_size: 1,
+        page_size: 100,
       });
-      if (configRes.results.length > 0) {
-        const config = configRes.results[0] as any;
+      const filtered = configRes.results.filter((page: any) =>
+        page.properties?.['Tradie Config ID']?.rich_text?.[0]?.plain_text === tradieSlug
+      );
+      if (filtered.length > 0) {
+        const config = filtered[0] as any;
         tradieName = config.properties?.['Owner Name']?.rich_text?.[0]?.plain_text
           || config.properties?.['Business Name']?.title?.[0]?.plain_text
           || tradieName;

@@ -285,6 +285,21 @@ function isConfigCommand(message: string): boolean {
   return configKeywords.some(kw => lower.includes(kw));
 }
 
+function isJobUpdateMessage(message: string): boolean {
+  const updateKeywords = [
+    'done', 'finished', 'complete', 'started', 'delayed', 'waiting',
+    'arrived', 'quoted', 'called', 'phase', 'issue', 'fixed', 'ready', 'installed'
+  ];
+  const lower = message.toLowerCase();
+  return updateKeywords.some(kw => lower.includes(kw));
+}
+
+function isQuestion(message: string): boolean {
+  const questionStarts = ['what', 'how', 'when', 'give me', 'tell me'];
+  const lower = message.toLowerCase();
+  return questionStarts.some(q => lower.startsWith(q));
+}
+
 async function logToCommLog(message: string, reply: string, action: string, jobId?: string) {
   try {
     if (!process.env.NOTION_COMMUNICATION_LOG_DB_ID) return;
@@ -910,10 +925,11 @@ ${JSON.stringify(contextData, null, 2)}`;
       alfredResult.jobId
     );
 
-    // Auto-log all job updates silently (no keyword gate)
+    // Log only job updates (not questions)
+    const shouldLog = isJobUpdateMessage(message || '') && !isQuestion(message || '');
     const jobToLog = jobContext ? jobs.find(j => j.id === jobContext.id) : mentionedJob;
 
-    if (jobToLog) {
+    if (shouldLog && jobToLog) {
       try {
         console.log('[ALFRED LOG] Creating Milestone entry with properties:', JSON.stringify({
           jobId: jobToLog.id,
@@ -925,16 +941,8 @@ ${JSON.stringify(contextData, null, 2)}`;
         const milestoneType = detectMilestoneType(message || '');
 
         // Generate smart title summary
-        const lowerMessage = (message || '').toLowerCase();
-        const isQuestion = ['give me', 'what', 'how', 'tell me'].some(q => lowerMessage.startsWith(q));
-        let titleText = 'ALFRED Note';
-
-        if (isQuestion) {
-          titleText = 'ALFRED Query';
-        } else {
-          const summary = (message || '').slice(0, 60).trim();
-          titleText = summary.charAt(0).toUpperCase() + summary.slice(1);
-        }
+        const summary = (message || '').slice(0, 60).trim();
+        const titleText = summary.charAt(0).toUpperCase() + summary.slice(1);
 
         const result = await notion.pages.create({
           parent: { database_id: process.env.NOTION_MILESTONE_LOG_DB_ID! },

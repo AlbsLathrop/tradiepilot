@@ -799,9 +799,6 @@ ${JSON.stringify(contextData, null, 2)}`;
         if (raw.Service) {
           updates['Service'] = { rich_text: [{ text: { content: raw.Service } }] };
         }
-        if (raw.Notes) {
-          updates['Notes'] = { rich_text: [{ text: { content: raw.Notes } }] };
-        }
         if (raw.Scope) {
           updates['Scope'] = { rich_text: [{ text: { content: raw.Scope } }] };
         }

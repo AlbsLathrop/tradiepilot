@@ -60,7 +60,12 @@ export async function POST(req: NextRequest) {
 
     // Build lead lines (max 2)
     const leadLines = leads.slice(0, 2).map(lead => {
-      const clientName = lead.properties['Name']?.title?.[0]?.plain_text || 'Unknown'
+      // Try multiple property names for client name
+      const clientName =
+        lead.properties['Name']?.title?.[0]?.plain_text ||
+        lead.properties['name']?.title?.[0]?.plain_text ||
+        lead.properties['Client Name']?.title?.[0]?.plain_text ||
+        'Unknown'
       const suburb = lead.properties['Suburb']?.rich_text?.[0]?.plain_text || ''
       const phoneNum = lead.properties['Phone']?.phone_number || ''
       return `• ${clientName}, ${suburb} — ${phoneNum}`

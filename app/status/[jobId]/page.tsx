@@ -61,18 +61,25 @@ async function getStatusDataServer(jobId: string): Promise<StatusData | null> {
     // Fetch milestones from Milestone Log DB
     const milestonesRes = await notion.databases.query({
       database_id: '34605054c0a34dd1ba45a60bb128f8d7',
-      filter: {
-        property: 'Job ID',
-        rich_text: { contains: formattedId.replace(/-/g, '') }
-      },
-      sorts: [{ timestamp: 'created_time', direction: 'descending' }],
+      page_size: 100,
     })
-    const milestones = milestonesRes.results.map((m: any) => ({
-      id: m.id,
-      title: (m.properties?.['Title'] as any)?.rich_text?.[0]?.plain_text || '',
-      description: (m.properties?.['Description'] as any)?.rich_text?.[0]?.plain_text || '',
-      date: (m as any).created_time?.split('T')[0] || '',
-    }))
+    const milestones = milestonesRes.results
+      .filter((m: any) => {
+        const jobIdField = (m.properties?.['Job ID'] as any)?.rich_text?.[0]?.plain_text || ''
+        return jobIdField === formattedId || jobIdField === formattedId.replace(/-/g, '')
+      })
+      .sort((a: any, b: any) => {
+        const dateA = new Date(a.created_time).getTime()
+        const dateB = new Date(b.created_time).getTime()
+        return dateB - dateA
+      })
+      .slice(0, 5)
+      .map((m: any) => ({
+        id: m.id,
+        title: (m.properties?.['Title'] as any)?.rich_text?.[0]?.plain_text || '',
+        description: (m.properties?.['Description'] as any)?.rich_text?.[0]?.plain_text || '',
+        date: (m as any).created_time?.split('T')[0] || '',
+      }))
 
     // Fetch photos from Media DB
     const photosRes = await notion.databases.query({

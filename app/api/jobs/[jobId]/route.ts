@@ -57,6 +57,7 @@ export async function GET(
       estimatedCompletion: props['Estimated Completion']?.date?.start ?? null,
       completionDate: props['Completion Date']?.date?.start ?? null,
       lastMessageSent: props['Last Message Sent']?.date?.start ?? null,
+      jobValue: props['Job Value']?.number ?? null,
       tradieConfigId,
     }
 
@@ -144,6 +145,9 @@ export async function PATCH(
     }
     if (body.invoiceDate) {
       updates['Invoice Date'] = { date: { start: body.invoiceDate } }
+    }
+    if (body.jobValue !== undefined) {
+      updates['Job Value'] = { number: Number(body.jobValue) }
     }
 
     await notion.pages.update({

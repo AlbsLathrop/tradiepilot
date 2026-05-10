@@ -52,7 +52,7 @@ export async function GET(request: Request) {
     const behindScheduleJobs = jobs.filter(j => j.status === 'RUNNING LATE').length
     const completeJobs = jobs.filter(j => j.status === 'COMPLETE').length
 
-    // Monthly revenue
+    // Monthly revenue - calculate using Job Value
     const now = new Date()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
     const monthJobs = jobs.filter(j => {
@@ -62,11 +62,11 @@ export async function GET(request: Request) {
 
     const monthInvoiced = monthJobs
       .filter(j => ['INVOICED', 'PAID'].includes(j.invoiceStatus))
-      .reduce((sum, j) => sum + (j.invoiceAmount ?? 0), 0)
+      .reduce((sum, j) => sum + (j.jobValue ?? 0), 0)
 
     const monthPaid = monthJobs
       .filter(j => j.invoiceStatus === 'PAID')
-      .reduce((sum, j) => sum + (j.invoiceAmount ?? 0), 0)
+      .reduce((sum, j) => sum + (j.jobValue ?? 0), 0)
 
     // Fetch leads (no Tradie Config ID filter - filter in JS)
     const leadsRes = await notion.databases.query({

@@ -20,6 +20,8 @@ async function getStatusDataServer(jobId: string): Promise<StatusData | null> {
     const page = await notion.pages.retrieve({ page_id: formattedId }) as any
     const p = page.properties
 
+    const tradieConfigId = (p['Tradie Config ID'] as any)?.rich_text?.[0]?.plain_text || ''
+
     const job = {
       id: page.id,
       clientName: (p['Client Name'] as any)?.title?.[0]?.plain_text || '',
@@ -30,12 +32,67 @@ async function getStatusDataServer(jobId: string): Promise<StatusData | null> {
       estimatedCompletion: (p['Estimated Completion'] as any)?.date?.start || '',
       notes: (p['Notes'] as any)?.rich_text?.[0]?.plain_text || '',
       clientPhone: (p['Client Phone'] as any)?.phone_number || '',
-      tradieConfigId: (p['Tradie Config ID'] as any)?.rich_text?.[0]?.plain_text || '',
+      tradieConfigId,
+      lastUpdated: (p['Last Updated'] as any)?.date?.start || null,
     }
 
-    const tradieConfig = { businessName: "Ben's Stonework" }
+    // Fetch tradieConfig by slug
+    let tradieConfig: any = null
+    if (tradieConfigId) {
+      const tradieRes = await notion.databases.query({
+        database_id: 'ff9248a4dd244ad9a0761281967750ea',
+        page_size: 10,
+      })
+      const tradiePage = tradieRes.results.find((tp: any) =>
+        (tp.properties?.['Tradie Slug'] as any)?.rich_text?.[0]?.plain_text === tradieConfigId ||
+        (tp.properties?.['Email'] as any)?.email?.includes(tradieConfigId.split('-')[0])
+      ) as any
+      if (tradiePage) {
+        tradieConfig = {
+          businessName: tradiePage.properties?.['Business Name']?.title?.[0]?.plain_text || '',
+          phone: tradiePage.properties?.['Phone']?.phone_number || '',
+        }
+      }
+    }
+    if (!tradieConfig) {
+      tradieConfig = { businessName: "Ben's Stonework", phone: '' }
+    }
 
-    return { job, tradieConfig, milestones: [], photos: [] }
+    // Fetch milestones from Milestone Log DB
+    const milestonesRes = await notion.databases.query({
+      database_id: '34605054c0a34dd1ba45a60bb128f8d7',
+      filter: {
+        property: 'Job ID',
+        rich_text: { contains: formattedId.replace(/-/g, '') }
+      },
+      sorts: [{ timestamp: 'created_time', direction: 'descending' }],
+    })
+    const milestones = milestonesRes.results.map((m: any) => ({
+      id: m.id,
+      title: (m.properties?.['Title'] as any)?.rich_text?.[0]?.plain_text || '',
+      description: (m.properties?.['Description'] as any)?.rich_text?.[0]?.plain_text || '',
+      date: (m as any).created_time?.split('T')[0] || '',
+    }))
+
+    // Fetch photos from Media DB
+    const photosRes = await notion.databases.query({
+      database_id: '349187ef-12be-81e3-b672-faffa07096b5',
+      filter: {
+        property: 'Job ID',
+        rich_text: { contains: formattedId.replace(/-/g, '') }
+      },
+      sorts: [{ timestamp: 'created_time', direction: 'descending' }],
+    })
+    const photos = photosRes.results
+      .map((p: any) => ({
+        id: p.id,
+        url: (p.properties?.['File URL'] as any)?.url || (p.properties?.['URL'] as any)?.url || '',
+        description: (p.properties?.['Description'] as any)?.rich_text?.[0]?.plain_text || '',
+        category: (p.properties?.['Category'] as any)?.select?.name || 'Progress',
+      }))
+      .filter((p: any) => p.url)
+
+    return { job, tradieConfig, milestones, photos }
   } catch (err: any) {
     console.error('[getStatusData] Error:', err?.message)
     return null

@@ -61,12 +61,12 @@ function ProgressTimeline({ currentStatus }: { currentStatus: string }) {
                   isDone
                     ? 'bg-green-500/30 border border-green-500'
                     : isCurrent
-                    ? 'bg-cyan-500/30 border border-cyan-500 ring-2 ring-cyan-400'
+                    ? 'bg-orange-500/30 border border-orange-500 ring-2 ring-orange-400'
                     : 'bg-gray-700/30 border border-gray-600'
                 }`}
               >
                 {isDone && <Check className="w-4 h-4 text-green-400" />}
-                {isCurrent && <Clock className="w-4 h-4 text-cyan-400" />}
+                {isCurrent && <Clock className="w-4 h-4 text-orange-400" />}
               </div>
               {/* Label - responsive text size */}
               <span
@@ -92,14 +92,31 @@ export function StatusPageContent({ data }: { data: StatusData }) {
 
   return (
     <div className="min-h-screen bg-[#111827]">
+      {/* Helper function to format time */}
       {/* Header */}
       <div className="bg-gradient-to-b from-[#1F2937] to-[#111827] border-b border-white/5 sticky top-0 z-50">
         <div className="max-w-2xl mx-auto px-4 py-6">
           <h1 className="text-lg font-bold text-white">
-            <span className="text-cyan-400">{businessName}</span>
+            <span className="text-orange-400">{businessName}</span>
             <span className="text-white/60"> — Job Update</span>
           </h1>
           <p className="text-sm text-white/40 mt-1">{job.clientName}</p>
+          {job.lastUpdated && (
+            <p className="text-xs text-white/30 mt-2">
+              Last updated: {(() => {
+                const date = new Date(job.lastUpdated)
+                const now = new Date()
+                const diffMs = now.getTime() - date.getTime()
+                const diffMins = Math.floor(diffMs / 60000)
+                if (diffMins < 1) return 'just now'
+                if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`
+                const diffHours = Math.floor(diffMins / 60)
+                if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
+                const diffDays = Math.floor(diffHours / 24)
+                return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
+              })()}
+            </p>
+          )}
         </div>
       </div>
 
@@ -145,6 +162,17 @@ export function StatusPageContent({ data }: { data: StatusData }) {
           </div>
         )}
 
+        {/* Notes */}
+        {job.notes && (
+          <div className="bg-[#1F2937] rounded-xl p-6 border border-white/5">
+            <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wide mb-2 flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Notes
+            </h2>
+            <p className="text-white/80 text-sm">{job.notes}</p>
+          </div>
+        )}
+
         {/* JOB LOG */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
@@ -152,7 +180,7 @@ export function StatusPageContent({ data }: { data: StatusData }) {
           </div>
 
           {milestones.length === 0 ? (
-            <p className="text-gray-500 text-sm">No entries yet</p>
+            <p className="text-gray-500 text-sm">No updates yet</p>
           ) : (
             <>
               <div className="space-y-3">
@@ -224,19 +252,8 @@ export function StatusPageContent({ data }: { data: StatusData }) {
               What's Next
             </h2>
             <p className="text-white font-medium">
-              Est. Completion: <span className="text-cyan-400">{new Date(job.estimatedCompletion).toLocaleDateString()}</span>
+              Est. Completion: <span className="text-orange-400">{new Date(job.estimatedCompletion).toLocaleDateString()}</span>
             </p>
-          </div>
-        )}
-
-        {/* Notes */}
-        {job.notes && (
-          <div className="bg-[#1F2937] rounded-xl p-6 border border-white/5">
-            <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wide mb-2 flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Notes
-            </h2>
-            <p className="text-white/80 text-sm">{job.notes}</p>
           </div>
         )}
       </div>
@@ -247,14 +264,14 @@ export function StatusPageContent({ data }: { data: StatusData }) {
           {job.clientPhone && (
             <a
               href={`tel:${job.clientPhone}`}
-              className="w-full flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-3 rounded-lg transition-colors"
+              className="w-full flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 rounded-lg transition-colors"
             >
               <Phone className="w-5 h-5" />
               Call {businessName}
             </a>
           )}
           <p className="text-center text-xs text-white/40">
-            Powered by <span className="text-cyan-400 font-medium">TradieFlow</span>
+            Powered by <span className="text-orange-400 font-medium">TradieFlow</span>
           </p>
         </div>
       </div>

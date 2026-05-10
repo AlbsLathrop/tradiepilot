@@ -97,7 +97,6 @@ export async function GET(request: Request) {
     // Pipeline stats: leads with quote amounts
     const quotedLeads = leads.filter(l => (l.quoteAmount ?? 0) > 0)
     console.log('[PIPELINE] leads with quotes:', quotedLeads.map(l => ({
-      name: l.clientName,
       quoteStatus: l.quoteStatus,
       quoteAmount: l.quoteAmount
     })))

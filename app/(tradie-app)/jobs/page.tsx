@@ -379,6 +379,51 @@ function JobDetail({
         />
       )}
 
+      {/* SHARE STATUS Link Section */}
+      <div className="border-t border-[#1F2937] pt-4 space-y-2">
+        <button
+          onClick={() => {
+            const statusUrl = `https://tradiepilot.vercel.app/status/${job.id.replace(/-/g, '')}`
+            navigator.clipboard.writeText(statusUrl)
+            setToast('Status link copied!')
+            setTimeout(() => setToast(null), 2000)
+          }}
+          className="w-full border border-cyan-500 text-cyan-400 text-sm font-bold py-3 rounded-lg hover:bg-cyan-500 hover:text-white transition-colors"
+        >
+          🔗 Copy Client Status Link
+        </button>
+        <button
+          onClick={async () => {
+            try {
+              setToast('Sending status link...')
+              const res = await fetch('/api/quick-actions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'SHARE_STATUS',
+                  jobId: job.id,
+                  clientName: job.clientName,
+                  clientPhone: job.clientPhone,
+                  tradieSlug: session?.user?.tradieSlug,
+                  businessName: session?.user?.name,
+                })
+              })
+              if (res.ok) {
+                setToast('Status link sent to client!')
+              } else {
+                setToast('Failed to send status link')
+              }
+            } catch (err) {
+              setToast('Error sending status link')
+            }
+            setTimeout(() => setToast(null), 2000)
+          }}
+          className="w-full border border-orange-500 text-orange-400 text-sm font-bold py-3 rounded-lg hover:bg-orange-500 hover:text-white transition-colors"
+        >
+          📱 Send Status Link to Client
+        </button>
+      </div>
+
       {/* Ask ALFRED Button */}
       <a
         href={`/chat?message=${encodeURIComponent(

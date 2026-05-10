@@ -219,6 +219,8 @@ export async function getJobs(tradieConfigId: string): Promise<Job[]> {
 export async function getJob(pageId: string): Promise<Job | null> {
   try {
     const page = await notion.pages.retrieve({ page_id: pageId }) as any
+    console.log('[getJob] Raw properties:', JSON.stringify(Object.keys(page.properties)))
+    console.log('[getJob] Client Name:', JSON.stringify(page.properties['Client Name']))
     const p = page.properties
 
     return {

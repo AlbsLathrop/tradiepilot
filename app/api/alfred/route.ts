@@ -646,7 +646,12 @@ ${JSON.stringify(contextData, null, 2)}`;
       if ((sydneyHour < 7 || sydneyHour >= 20) && !isRunningLate) {
         // Log to Milestone Log but DON'T send SMS (unless it's Running Late)
         try {
-          await notion.pages.create({
+          console.log('[ALFRED LOG] Creating dark hours Comm Log entry with properties:', JSON.stringify({
+            jobId: alfredResult.jobId,
+            hasJobId: !!alfredResult.jobId,
+            tradieSlug,
+          }));
+          const logResult = await notion.pages.create({
             parent: { database_id: process.env.NOTION_COMMUNICATION_LOG_DB_ID! },
             properties: {
               'Message': { title: [{ text: { content: body.pendingSMS.message } }] },
@@ -656,8 +661,9 @@ ${JSON.stringify(contextData, null, 2)}`;
               'Direction': { select: { name: 'Outbound (Scheduled)' } },
             },
           });
-        } catch (logErr) {
-          console.error('Comm log error:', logErr);
+          console.log('[ALFRED LOG] Dark hours Comm Log Success:', logResult.id);
+        } catch (logErr: any) {
+          console.error('[ALFRED LOG] Full error:', logErr?.code, logErr?.message, JSON.stringify(logErr?.body));
         }
 
         return NextResponse.json({
@@ -856,6 +862,12 @@ ${JSON.stringify(contextData, null, 2)}`;
     // Log if: jobContext is provided (always), OR detected job + message has update keywords
     if (jobToLog && (jobContext || messageHasUpdate)) {
       try {
+        console.log('[ALFRED LOG] Creating Milestone entry with properties:', JSON.stringify({
+          jobId: jobToLog.id,
+          hasJobId: !!jobToLog.id,
+          tradieSlug,
+        }));
+
         // Detect milestone type from message content
         const milestoneType = detectMilestoneType(message || '');
 
@@ -871,7 +883,7 @@ ${JSON.stringify(contextData, null, 2)}`;
           titleText = summary.charAt(0).toUpperCase() + summary.slice(1);
         }
 
-        await notion.pages.create({
+        const result = await notion.pages.create({
           parent: { database_id: process.env.NOTION_MILESTONE_LOG_DB_ID! },
           properties: {
             'Title': { title: [{ text: { content: titleText } }] },
@@ -881,9 +893,10 @@ ${JSON.stringify(contextData, null, 2)}`;
             'Milestone Type': { select: { name: milestoneType } },
           },
         });
+        console.log('[ALFRED LOG] Milestone Success:', result.id);
         milestoneLogged = true;
-      } catch (err) {
-        console.error('Milestone log error:', err);
+      } catch (err: any) {
+        console.error('[ALFRED LOG] Full error:', err?.code, err?.message, JSON.stringify(err?.body));
       }
     }
 

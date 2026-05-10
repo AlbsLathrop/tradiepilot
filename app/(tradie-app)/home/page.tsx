@@ -21,6 +21,7 @@ interface DashboardData {
   reviewRating: number | null
   pipelineValue: number
   quotedCount: number
+  activeJobsValue: number
   attentionJobs: Array<{ id: string; clientName: string; suburb: string; status: string }>
   todayJobs: Array<{ id: string; clientName: string; suburb: string; service: string; status: string }>
 }
@@ -146,6 +147,19 @@ export default function HomePage() {
             </div>
           </div>
         )}
+
+        {/* Jobs In Progress Value */}
+        <div className="bg-[#1F2937] rounded-xl p-5">
+          <p className="text-gray-400 text-xs font-bold uppercase tracking-wide mb-3">
+            Jobs In Progress
+          </p>
+          <p className="text-4xl font-bold text-cyan-400">
+            ${(dashData.activeJobsValue || 0).toLocaleString()}
+          </p>
+          <p className="text-gray-400 text-xs mt-2">
+            {dashData.inProgressJobs} active · {dashData.scheduledJobs} scheduled
+          </p>
+        </div>
 
         {/* Row 2: New Leads + Reviews */}
         <div className="grid grid-cols-2 gap-3">

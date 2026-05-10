@@ -35,9 +35,11 @@ export async function PATCH(
       updates['Quote Expiry'] = { date: { start: body.quoteExpiry } }
     }
     if (body.quoteAmount !== undefined) {
+      console.log('[LEAD PATCH] quoteAmount:', body.quoteAmount)
       updates['Quote Amount'] = body.quoteAmount ? { number: body.quoteAmount } : null
     }
 
+    console.log('[LEAD PATCH] updates object:', JSON.stringify(updates))
     await notion.pages.update({ page_id: id, properties: updates })
     return NextResponse.json({ success: true })
   } catch (error: any) {

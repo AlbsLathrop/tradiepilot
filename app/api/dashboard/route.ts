@@ -95,9 +95,13 @@ export async function GET(request: Request) {
     const qualifiedLeads = leads.filter(l => l.status === 'Qualified').length
 
     // Pipeline stats: quoted leads with amounts pending response
-    const quotedLeads = leads.filter(l => l.quoteStatus === 'Quoted')
+    const quotedLeads = leads.filter(l =>
+      l.quoteStatus === 'Quoted' || l.quoteStatus === 'QUOTED'
+    )
+    console.log('[PIPELINE] leads with quotes:', quotedLeads.map(l => ({ name: l.quoteStatus, amount: l.quoteAmount })))
     const pipelineValue = quotedLeads.reduce((sum, l) => sum + (l.quoteAmount ?? 0), 0)
     const quotedCount = quotedLeads.length
+    console.log('[PIPELINE] calculated:', { pipelineValue, quotedCount })
 
     // Fetch communications (no Tradie Config ID filter - filter in JS)
     const commsRes = await notion.databases.query({
@@ -134,6 +138,11 @@ export async function GET(request: Request) {
     // Fetch reviews (satisfaction DB not yet configured)
     let reviewCount = 0
     let reviewRating: number | null = null
+
+    // Active jobs value: sum of IN PROGRESS + SCHEDULED jobs
+    const activeJobsValue = jobs
+      .filter(j => ['IN PROGRESS', 'SCHEDULED'].includes(j.status))
+      .reduce((sum, j) => sum + (j.jobValue ?? 0), 0)
 
     // Attention jobs
     const attentionJobs = jobs.filter(j => {
@@ -207,6 +216,7 @@ export async function GET(request: Request) {
       reviewRating,
       pipelineValue,
       quotedCount,
+      activeJobsValue,
       attentionJobs: attentionJobs.map(j => ({
         id: j.id,
         clientName: j.clientName,
@@ -238,6 +248,9 @@ export async function GET(request: Request) {
       smsThisWeek: 0,
       reviewCount: 0,
       reviewRating: null,
+      pipelineValue: 0,
+      quotedCount: 0,
+      activeJobsValue: 0,
       attentionJobs: [],
       todayJobs: []
     })

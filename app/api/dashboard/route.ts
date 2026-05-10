@@ -82,6 +82,8 @@ export async function GET(request: Request) {
     const leads = filteredLeadsRes.map(page => ({
       createdTime: (page as any).created_time,
       status: page.properties['Status']?.select?.name ?? '',
+      quoteStatus: page.properties['Quote Status']?.select?.name ?? '',
+      quoteAmount: page.properties['Quote Amount']?.number ?? 0,
     }))
 
     const thisMonth = new Date(now.getFullYear(), now.getMonth())
@@ -91,6 +93,11 @@ export async function GET(request: Request) {
     }).length
 
     const qualifiedLeads = leads.filter(l => l.status === 'Qualified').length
+
+    // Pipeline stats: quoted leads with amounts pending response
+    const quotedLeads = leads.filter(l => l.quoteStatus === 'Quoted')
+    const pipelineValue = quotedLeads.reduce((sum, l) => sum + (l.quoteAmount ?? 0), 0)
+    const quotedCount = quotedLeads.length
 
     // Fetch communications (no Tradie Config ID filter - filter in JS)
     const commsRes = await notion.databases.query({
@@ -198,6 +205,8 @@ export async function GET(request: Request) {
       smsThisWeek,
       reviewCount,
       reviewRating,
+      pipelineValue,
+      quotedCount,
       attentionJobs: attentionJobs.map(j => ({
         id: j.id,
         clientName: j.clientName,

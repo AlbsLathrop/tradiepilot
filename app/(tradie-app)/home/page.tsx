@@ -19,6 +19,8 @@ interface DashboardData {
   smsThisWeek: number
   reviewCount: number
   reviewRating: number | null
+  pipelineValue: number
+  quotedCount: number
   attentionJobs: Array<{ id: string; clientName: string; suburb: string; status: string }>
   todayJobs: Array<{ id: string; clientName: string; suburb: string; service: string; status: string }>
 }
@@ -241,6 +243,13 @@ export default function HomePage() {
           ) : (
             <p className="text-gray-400 text-sm">No jobs scheduled today</p>
           )}
+        </div>
+
+        {/* Pipeline */}
+        <div className="bg-[#1a1f2e] rounded-xl p-4 border border-white/5">
+          <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-2">Pipeline</p>
+          <p className="text-2xl font-bold text-white">${dashData.pipelineValue.toLocaleString()}</p>
+          <p className="text-gray-400 text-xs mt-1">{dashData.quotedCount} quotes pending response</p>
         </div>
       </div>
     </div>

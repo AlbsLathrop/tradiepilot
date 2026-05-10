@@ -45,8 +45,13 @@ export async function POST(req: NextRequest) {
 
     // Debug: log lead properties
     if (leads.length > 0) {
-      console.log('Lead props:', Object.keys(leads[0]?.properties || {}))
-      console.log('Lead properties:', leads[0]?.properties)
+      const props = leads[0]?.properties || {}
+      console.log('[MORNING DIGEST] Lead property keys:', Object.keys(props))
+      Object.keys(props).forEach(key => {
+        if (props[key]?.title) {
+          console.log(`[MORNING DIGEST] "${key}" is a title property:`, props[key].title?.[0]?.plain_text)
+        }
+      })
     }
 
     // Build job lines

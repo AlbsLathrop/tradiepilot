@@ -225,7 +225,7 @@ export async function getJob(pageId: string): Promise<Job | null> {
 
     return {
       id: page.id,
-      clientName: p['Client Name']?.title?.[0]?.plain_text || '',
+      clientName: p['Client Name']?.rich_text?.[0]?.plain_text || '',
       suburb: p['Suburb']?.rich_text?.[0]?.plain_text || '',
       address: p['Address']?.rich_text?.[0]?.plain_text || '',
       status: p['Status']?.select?.name || '',

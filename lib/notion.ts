@@ -218,28 +218,25 @@ export async function getJobs(tradieConfigId: string): Promise<Job[]> {
 
 export async function getJob(pageId: string): Promise<Job | null> {
   try {
-    const page = await notion.pages.retrieve({ page_id: pageId }) as any
-    console.log('[getJob] Raw properties:', JSON.stringify(Object.keys(page.properties)))
-    console.log('[getJob] Client Name:', JSON.stringify(page.properties['Client Name']))
-    const p = page.properties
+    const res = await notion.pages.retrieve({ page_id: pageId }) as any
+    if (!res || res.object !== 'page') return null
+
+    const p = res.properties
 
     return {
-      id: page.id,
-      clientName: p['Client Name']?.rich_text?.[0]?.plain_text || '',
-      suburb: p['Suburb']?.rich_text?.[0]?.plain_text || '',
-      address: p['Address']?.rich_text?.[0]?.plain_text || '',
-      status: p['Status']?.select?.name || '',
-      jobType: p['Service']?.rich_text?.[0]?.plain_text || '',
-      estimatedCompletion: p['Estimated Completion']?.date?.start || '',
-      notes: p['Notes']?.rich_text?.[0]?.plain_text || '',
-      tradieConfigId: p['Tradie Config ID']?.rich_text?.[0]?.plain_text || '',
-      clientPhone: p['Client Phone']?.phone_number || '',
+      id: res.id,
+      clientName: (p['Client Name'] as any)?.title?.[0]?.plain_text || '',
+      suburb: (p['Suburb'] as any)?.rich_text?.[0]?.plain_text || '',
+      address: (p['Address'] as any)?.rich_text?.[0]?.plain_text || '',
+      status: (p['Status'] as any)?.select?.name || '',
+      jobType: (p['Service'] as any)?.rich_text?.[0]?.plain_text || '',
+      estimatedCompletion: (p['Estimated Completion'] as any)?.date?.start || '',
+      notes: (p['Notes'] as any)?.rich_text?.[0]?.plain_text || '',
+      tradieConfigId: (p['Tradie Config ID'] as any)?.rich_text?.[0]?.plain_text || '',
+      clientPhone: (p['Client Phone'] as any)?.phone_number || '',
     } as any
-  } catch (error) {
-    console.error('[getJob] Notion API error:', {
-      pageId,
-      error: error instanceof Error ? error.message : String(error),
-    })
+  } catch (err: any) {
+    console.error('[getJob] Error:', err?.message)
     return null
   }
 }

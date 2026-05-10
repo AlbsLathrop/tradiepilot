@@ -210,7 +210,7 @@ export async function getJobs(tradieConfigId: string): Promise<Job[]> {
   })
 
   const filtered = (res.results as PageObjectResponse[]).filter(page =>
-    page.properties?.['Tradie Config ID']?.rich_text?.[0]?.plain_text === tradieConfigId
+    (page.properties?.['Tradie Config ID'] as any)?.rich_text?.[0]?.plain_text === tradieConfigId
   );
 
   return filtered.map(toJob)

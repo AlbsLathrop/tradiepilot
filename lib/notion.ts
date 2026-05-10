@@ -264,21 +264,28 @@ export async function getTradieConfig(id: string): Promise<TradieConfig | null> 
   return page ? toTradieConfig(page) : null
 }
 
-export async function getTradieConfigById(pageId: string): Promise<TradieConfig | null> {
+export async function getTradieConfigById(tradieSlug: string): Promise<{ businessName: string; phone: string } | null> {
+  if (!tradieSlug) return null
+
   try {
-    const res = await notion.pages.retrieve({ page_id: pageId })
-
-    if (!isFullPage(res)) {
-      console.error('[getTradieConfigById] Page is not a full page:', { pageId })
-      return null
-    }
-
-    return toTradieConfig(res as PageObjectResponse)
-  } catch (error) {
-    console.error('[getTradieConfigById] Notion API error:', {
-      pageId,
-      error: error instanceof Error ? error.message : String(error),
+    const res = await notion.databases.query({
+      database_id: 'ff9248a4dd244ad9a0761281967750ea',
+      page_size: 10,
     })
+
+    const page = res.results.find((p: any) =>
+      (p.properties?.['Tradie Slug'] as any)?.rich_text?.[0]?.plain_text === tradieSlug ||
+      (p.properties?.['Email'] as any)?.email?.includes(tradieSlug.split('-')[0])
+    ) as any
+
+    if (!page) return null
+
+    return {
+      businessName: page.properties?.['Business Name']?.title?.[0]?.plain_text || '',
+      phone: page.properties?.['Phone']?.phone_number || '',
+    }
+  } catch (err: any) {
+    console.error('[getTradieConfigById] Error:', err?.message)
     return null
   }
 }

@@ -53,6 +53,8 @@ export async function GET(request: Request) {
     const completeJobs = jobs.filter(j => j.status === 'COMPLETE').length
 
     // Monthly revenue - sum Job Value for invoiced/paid jobs (by Invoice Status field)
+    const now = new Date()
+
     const monthRevenue = jobs
       .filter(j => ['INVOICED', 'PAID'].includes(j.invoiceStatus))
       .reduce((sum, j) => sum + (j.jobValue ?? 0), 0)

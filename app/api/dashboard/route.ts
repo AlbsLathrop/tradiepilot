@@ -52,20 +52,21 @@ export async function GET(request: Request) {
     const behindScheduleJobs = jobs.filter(j => j.status === 'RUNNING LATE').length
     const completeJobs = jobs.filter(j => j.status === 'COMPLETE').length
 
-    // Monthly revenue - sum Job Value for invoiced/paid jobs (by Invoice Status field)
+    // Monthly revenue - sum Job Value where Invoice Status = "Invoiced"/"Paid" OR Status = "INVOICED"/"PAID"
     const now = new Date()
 
-    const monthRevenue = jobs
-      .filter(j => ['INVOICED', 'PAID'].includes(j.invoiceStatus))
-      .reduce((sum, j) => sum + (j.jobValue ?? 0), 0)
+    const invoicedJobs = jobs.filter(j => j.invoiceStatus === 'Invoiced')
+    const paidJobs = jobs.filter(j => j.invoiceStatus === 'Paid')
+    const statusInvoicedJobs = jobs.filter(j => j.status === 'INVOICED')
+    const statusPaidJobs = jobs.filter(j => j.status === 'PAID')
 
-    const monthInvoiced = jobs
-      .filter(j => j.invoiceStatus === 'INVOICED')
-      .reduce((sum, j) => sum + (j.jobValue ?? 0), 0)
+    const monthInvoiced = invoicedJobs.reduce((sum, j) => sum + (j.jobValue ?? 0), 0) +
+      statusInvoicedJobs.reduce((sum, j) => sum + (j.jobValue ?? 0), 0)
 
-    const monthPaid = jobs
-      .filter(j => j.invoiceStatus === 'PAID')
-      .reduce((sum, j) => sum + (j.jobValue ?? 0), 0)
+    const monthPaid = paidJobs.reduce((sum, j) => sum + (j.jobValue ?? 0), 0) +
+      statusPaidJobs.reduce((sum, j) => sum + (j.jobValue ?? 0), 0)
+
+    const monthRevenue = monthInvoiced + monthPaid
 
     // Fetch leads (no Tradie Config ID filter - filter in JS)
     const leadsRes = await notion.databases.query({

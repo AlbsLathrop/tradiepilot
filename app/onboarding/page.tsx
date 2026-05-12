@@ -80,7 +80,7 @@ export default function OnboardingPage() {
             { key: 'tradeType', label: 'Trade (e.g. stonemason, painter, electrician)', type: 'text' },
             { key: 'serviceArea', label: 'Service Area (suburbs)', type: 'text' },
             { key: 'email', label: 'Email Address', type: 'email' },
-            { key: 'minJobValue', label: 'Min Job Value ($)', type: 'number' },
+            { key: 'minJobValue', label: 'Min Job Value (AUD)', type: 'number' },
             {
               key: 'tone',
               label: 'ALFRED Tone',

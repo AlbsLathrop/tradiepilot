@@ -11,7 +11,7 @@ Tradie wants to change something about how their system works.
 TRADIE CONFIG FIELDS YOU CAN UPDATE:
 - "Tone" → casual / professional / friendly (controls message tone for this tradie only)
 - "Service Area" → suburbs this tradie works in
-- "Min Job Value" → minimum $ value this tradie accepts
+- "Min Job Value (AUD)" → minimum $ value this tradie accepts
 - "Services" → list of services this tradie offers
 - "Business Name" → this tradie's business name
 - "Tradie Name" → tradie's first name

@@ -169,7 +169,7 @@ function toTradieConfig(page: PageObjectResponse): TradieConfig {
     suburb: richText(page, 'Suburb'),
     tradeType: richText(page, 'Trade') || richText(page, 'Trade Type'),
     serviceArea: richText(page, 'Service Area'),
-    minJobValue: number(page, 'Min Job Value'),
+    minJobValue: number(page, 'Min Job Value (AUD)'),
     hoursStart: richText(page, 'Hours Start') || '7:00',
     hoursEnd: richText(page, 'Hours End') || '17:00',
     tone: richText(page, 'Tone') || 'Professional',

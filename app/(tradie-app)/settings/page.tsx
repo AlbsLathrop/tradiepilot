@@ -179,10 +179,10 @@ export default function SettingsPage() {
 
           <Section title="ALFRED Settings">
             <EditableField
-              label="Min Job Value ($)"
+              label="Min Job Value (AUD)"
               value={String(config.minJobValue)}
               type="number"
-              onSave={(v) => handleFieldSave('minJobValue', 'Min Job Value', v === '' ? 0 : Number(v))}
+              onSave={(v) => handleFieldSave('minJobValue', 'Min Job Value (AUD)', v === '' ? 0 : Number(v))}
               isEditing={editingField === 'minJobValue'}
               onEditStart={() => setEditingField('minJobValue')}
               onEditCancel={() => setEditingField(null)}

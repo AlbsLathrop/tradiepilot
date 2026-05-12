@@ -35,7 +35,7 @@ export async function GET(request: Request) {
       businessName: props['Business Name']?.title?.[0]?.plain_text || '',
       trade: props['Trade']?.select?.name || props['Trade Type']?.select?.name || '',
       serviceArea: props['Service Area']?.rich_text?.[0]?.plain_text || '',
-      minJobValue: props['Min Job Value']?.number || 0,
+      minJobValue: props['Min Job Value (AUD)']?.number || 0,
       phone: props['Phone']?.phone_number || '',
       googleReviewUrl: props['Google Review URL']?.url || ''
     })
@@ -78,7 +78,7 @@ export async function PATCH(request: Request) {
       updates['Service Area'] = { rich_text: [{ text: { content: body.serviceArea } }] }
     }
     if (body.minJobValue !== undefined) {
-      updates['Min Job Value'] = { number: Number(body.minJobValue) }
+      updates['Min Job Value (AUD)'] = { number: Number(body.minJobValue) }
     }
     if (body.workingHours !== undefined) {
       updates['Working Hours'] = { rich_text: [{ text: { content: body.workingHours } }] }

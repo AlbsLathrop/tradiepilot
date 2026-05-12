@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
         'Service Area': {
           rich_text: [{ text: { content: cleanServiceArea } }],
         },
-        'Min Job Value': { number: minJobValue ?? 0 },
+        'Min Job Value (AUD)': { number: minJobValue ?? 0 },
         'Twilio Number': { phone_number: twilioNumber ?? '' },
         'Tone': { select: { name: cleanTone || 'Professional' } },
         'Hours Start': {

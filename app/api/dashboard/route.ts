@@ -52,34 +52,17 @@ export async function GET(request: Request) {
     const behindScheduleJobs = jobs.filter(j => j.status === 'RUNNING LATE').length
     const completeJobs = jobs.filter(j => j.status === 'COMPLETE').length
 
-    // Monthly revenue - calculate using Job Value for completed/invoiced/paid jobs
-    const now = new Date()
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-
+    // Monthly revenue - sum Job Value for invoiced/paid jobs (by Invoice Status field)
     const monthRevenue = jobs
-      .filter(j => ['COMPLETE', 'INVOICED', 'PAID'].includes(j.status))
-      .filter(j => {
-        // Check if job has a relevant date in current month
-        const invDate = j.invoiceDate ? new Date(j.invoiceDate) : null
-        const estDate = j.estimatedCompletion ? new Date(j.estimatedCompletion) : null
-        return (invDate && invDate >= monthStart) || (estDate && estDate >= monthStart)
-      })
+      .filter(j => ['INVOICED', 'PAID'].includes(j.invoiceStatus))
       .reduce((sum, j) => sum + (j.jobValue ?? 0), 0)
 
     const monthInvoiced = jobs
-      .filter(j => ['INVOICED', 'PAID'].includes(j.status))
-      .filter(j => {
-        const invDate = j.invoiceDate ? new Date(j.invoiceDate) : null
-        return invDate && invDate >= monthStart
-      })
+      .filter(j => j.invoiceStatus === 'INVOICED')
       .reduce((sum, j) => sum + (j.jobValue ?? 0), 0)
 
     const monthPaid = jobs
-      .filter(j => j.status === 'PAID')
-      .filter(j => {
-        const invDate = j.invoiceDate ? new Date(j.invoiceDate) : null
-        return invDate && invDate >= monthStart
-      })
+      .filter(j => j.invoiceStatus === 'PAID')
       .reduce((sum, j) => sum + (j.jobValue ?? 0), 0)
 
     // Fetch leads (no Tradie Config ID filter - filter in JS)

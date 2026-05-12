@@ -707,6 +707,11 @@ export default function JobsPage() {
   const tabToStatusMap: Record<string, string> = {
     'BEHIND SCHEDULE': 'RUNNING LATE'
   }
+  const invoiceStatusTabs = ['INVOICED', 'PAID']
+  const tabToInvoiceStatusMap: Record<string, string> = {
+    'INVOICED': 'Invoiced',
+    'PAID': 'Paid'
+  }
 
   const fetchJobs = (tradieSlug: string) => {
     console.log('[JOBS] Fetching jobs for:', tradieSlug)
@@ -743,7 +748,9 @@ export default function JobsPage() {
 
   const filteredJobs = activeTab === 'All'
     ? jobs
-    : jobs.filter(j => j.status === (tabToStatusMap[activeTab] || activeTab))
+    : invoiceStatusTabs.includes(activeTab)
+      ? jobs.filter(j => j.invoiceStatus === tabToInvoiceStatusMap[activeTab])
+      : jobs.filter(j => j.status === (tabToStatusMap[activeTab] || activeTab))
 
   const handleToggle = (id: string) => {
     setExpandedId(prev => prev === id ? null : id)

@@ -52,20 +52,34 @@ export async function GET(request: Request) {
     const behindScheduleJobs = jobs.filter(j => j.status === 'RUNNING LATE').length
     const completeJobs = jobs.filter(j => j.status === 'COMPLETE').length
 
-    // Monthly revenue - calculate using Job Value
+    // Monthly revenue - calculate using Job Value for completed/invoiced/paid jobs
     const now = new Date()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-    const monthJobs = jobs.filter(j => {
-      const invDate = j.invoiceDate ? new Date(j.invoiceDate) : null
-      return invDate && invDate >= monthStart
-    })
 
-    const monthInvoiced = monthJobs
-      .filter(j => ['INVOICED', 'PAID'].includes(j.invoiceStatus))
+    const monthRevenue = jobs
+      .filter(j => ['COMPLETE', 'INVOICED', 'PAID'].includes(j.status))
+      .filter(j => {
+        // Check if job has a relevant date in current month
+        const invDate = j.invoiceDate ? new Date(j.invoiceDate) : null
+        const estDate = j.estimatedCompletion ? new Date(j.estimatedCompletion) : null
+        return (invDate && invDate >= monthStart) || (estDate && estDate >= monthStart)
+      })
       .reduce((sum, j) => sum + (j.jobValue ?? 0), 0)
 
-    const monthPaid = monthJobs
-      .filter(j => j.invoiceStatus === 'PAID')
+    const monthInvoiced = jobs
+      .filter(j => ['INVOICED', 'PAID'].includes(j.status))
+      .filter(j => {
+        const invDate = j.invoiceDate ? new Date(j.invoiceDate) : null
+        return invDate && invDate >= monthStart
+      })
+      .reduce((sum, j) => sum + (j.jobValue ?? 0), 0)
+
+    const monthPaid = jobs
+      .filter(j => j.status === 'PAID')
+      .filter(j => {
+        const invDate = j.invoiceDate ? new Date(j.invoiceDate) : null
+        return invDate && invDate >= monthStart
+      })
       .reduce((sum, j) => sum + (j.jobValue ?? 0), 0)
 
     // Fetch leads (no Tradie Config ID filter - filter in JS)
@@ -206,7 +220,7 @@ export async function GET(request: Request) {
       scheduledJobs,
       behindScheduleJobs,
       completeJobs,
-      monthRevenue: monthPaid,
+      monthRevenue,
       monthInvoiced,
       monthPaid,
       newLeads,

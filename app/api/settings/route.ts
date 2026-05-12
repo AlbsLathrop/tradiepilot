@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
       businessName: p['Business Name']?.rich_text?.[0]?.plain_text ?? '',
       tradeType: p['Trade Type']?.rich_text?.[0]?.plain_text ?? '',
       serviceArea: p['Service Area']?.rich_text?.[0]?.plain_text ?? '',
-      minJobValue: p['Min Job Value']?.number ?? 0,
+      minJobValue: p['Min Job Value (AUD)']?.number ?? 0,
       hoursStart: p['Hours Start']?.rich_text?.[0]?.plain_text ?? '7:00',
       hoursEnd: p['Hours End']?.rich_text?.[0]?.plain_text ?? '17:00',
       tone: p['Tone']?.select?.name ?? 'Professional',
@@ -93,7 +93,7 @@ export async function PATCH(req: NextRequest) {
     if (body.serviceArea !== undefined) updates['Service Area'] = {
       rich_text: [{ text: { content: body.serviceArea } }]
     }
-    if (body.minJobValue !== undefined) updates['Min Job Value'] = {
+    if (body.minJobValue !== undefined) updates['Min Job Value (AUD)'] = {
       number: body.minJobValue
     }
     if (body.tone !== undefined) updates['Tone'] = {

@@ -143,7 +143,7 @@ export default function HomePage() {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400 text-sm">Outstanding</span>
-              <span className="text-yellow-400 font-bold">${((dashData.monthInvoiced || 0) - (dashData.monthPaid || 0)).toLocaleString()}</span>
+              <span className="text-yellow-400 font-bold">${Math.max(0, (dashData.monthInvoiced || 0) - (dashData.monthPaid || 0)).toLocaleString()}</span>
             </div>
           </div>
         )}

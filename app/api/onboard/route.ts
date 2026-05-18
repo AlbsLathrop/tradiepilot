@@ -442,7 +442,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<OnboardRespon
         success: true,
         tradieId,
         notionPageId: notionResult.pageId,
-        twilioNumber: twilioResult.number,
+        twilioNumber: twilioResult.number ?? undefined,
         message: 'Account created successfully',
       },
       { status: 200 }

@@ -102,7 +102,7 @@ async function purchaseTwilioNumber() {
     // Search for available Australian numbers
     const available = await twilioClient.availablePhoneNumbers('AU')
       .local
-      .list({ areaCode: '2', limit: 1 })
+      .list({ limit: 1 })
 
     if (!available || available.length === 0) {
       console.warn('[onboard] No available Twilio numbers found')

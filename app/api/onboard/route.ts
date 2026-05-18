@@ -102,7 +102,10 @@ async function purchaseTwilioNumber() {
     // Search for available Australian numbers
     const available = await twilioClient.availablePhoneNumbers('AU')
       .local
-      .list({ limit: 1 })
+      .list({
+        limit: 1,
+        smsEnabled: true
+      })
 
     if (!available || available.length === 0) {
       console.warn('[onboard] No available Twilio numbers found')
@@ -115,6 +118,12 @@ async function purchaseTwilioNumber() {
         phoneNumber: available[0].phoneNumber,
         addressSid: 'AD0216919a7424ea5cbf727d98d88091e0'
       })
+
+    // Configure SMS webhook for incoming messages
+    await twilioClient.incomingPhoneNumbers(purchased.sid).update({
+      smsUrl: 'https://tradiepilot.vercel.app/api/twilio/incoming',
+      smsMethod: 'POST'
+    })
 
     return { number: purchased.phoneNumber }
   } catch (error) {

@@ -111,7 +111,10 @@ async function purchaseTwilioNumber() {
 
     // Purchase the first available number
     const purchased = await twilioClient.incomingPhoneNumbers
-      .create({ phoneNumber: available[0].phoneNumber })
+      .create({
+        phoneNumber: available[0].phoneNumber,
+        addressSid: 'AD0216919a7424ea5cbf727d98d88091e0'
+      })
 
     return { number: purchased.phoneNumber }
   } catch (error) {
@@ -161,7 +164,7 @@ The prompt should instruct LUNA to:
 Return ONLY the prompt text, no preamble.`
 
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,
       messages: [
         {

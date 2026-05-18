@@ -111,7 +111,7 @@ export default function JoinPage() {
             <p className="text-gray-400 text-sm mb-6">LUNA is already active and handling your leads.</p>
 
             <a
-              href="https://tradiepilot.vercel.app"
+              href="/login"
               className="inline-block bg-[#F97316] text-white px-6 py-2 rounded-lg font-medium hover:bg-orange-600 transition"
             >
               Go to Dashboard →
